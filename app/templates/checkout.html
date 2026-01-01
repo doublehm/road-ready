@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Secure Checkout 🔒</h4>
+            </div>
+            <div class="card-body p-4">
+                <h5 class="card-title mb-4">Order Summary</h5>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Driving Lesson ({{ booking.duration }} hr)</span>
+                    <span>${{ "%.2f"|format(booking.total_amount) }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-3 text-muted small">
+                    <span>Instructor: {{ booking.instructor.user.full_name }}</span>
+                    <span>{{ booking.date }} @ {{ booking.time }}</span>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between mb-4 fw-bold fs-5">
+                    <span>Total Due</span>
+                    <span>${{ "%.2f"|format(booking.total_amount) }}</span>
+                </div>
+
+                <!-- Mock Credit Card Form -->
+                <form action="/checkout/{{ booking.id }}/process" method="post" id="payment-form">
+                    <div class="mb-3">
+                        <label class="form-label">Cardholder Name</label>
+                        <input type="text" class="form-control" placeholder="John Doe" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Card Information</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
+                            <input type="text" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Expiry</label>
+                            <input type="text" class="form-control" placeholder="MM/YY" maxlength="5" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">CVC</label>
+                            <input type="text" class="form-control" placeholder="123" maxlength="3" required>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info small">
+                        <i class="bi bi-info-circle-fill"></i> This is a secure payment simulation. No real money will be charged.
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg" id="payBtn">
+                            Pay ${{ "%.2f"|format(booking.total_amount) }}
+                        </button>
+                        <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const form = document.getElementById('payment-form');
+    const btn = document.getElementById('payBtn');
+    
+    form.addEventListener('submit', function() {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+    });
+</script>
+{% endblock %}

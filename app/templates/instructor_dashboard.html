@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+      },
+      events: {{ calendar_events|safe }}
+    });
+    calendar.render();
+  });
+</script>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <h4>{{ user.full_name }}</h4>
+                <p class="text-muted">Instructor</p>
+                <div class="mb-3">
+                    {% if user.instructor_profile.is_verified %}
+                    <span class="badge bg-success">Verified ✅</span>
+                    {% else %}
+                    <span class="badge bg-warning text-dark">Pending Verification ⏳</span>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <form action="/toggle-availability" method="post">
+                    <div class="d-grid">
+                        {% if user.instructor_profile.is_available %}
+                            <button type="submit" class="btn btn-success">🟢 You are Available</button>
+                            <small class="text-muted mt-2">Click to go offline</small>
+                        {% else %}
+                            <button type="submit" class="btn btn-secondary">🔴 You are Offline</button>
+                            <small class="text-muted mt-2">Click to go online</small>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-warning-subtle">
+                <h5 class="mb-0">Incoming Requests</h5>
+            </div>
+            <div class="card-body">
+                {% if incoming_requests %}
+                    <div class="list-group">
+                    {% for booking in incoming_requests %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">
+                                    {{ booking.student.full_name }}
+                                    <a href="/messages/{{ booking.student.id }}" class="btn btn-sm btn-outline-primary ms-2" title="Message">Message</a>
+                                </h5>
+                                <small>{{ booking.date }}<br>{{ booking.time }}</small>
+                            </div>
+                            <p class="mb-1 small"><strong>Addr:</strong> {{ booking.pickup_address }}</p>
+                            <p class="mb-1 small"><strong>Dur:</strong> {{ booking.duration }} hr(s)</p>
+                            {% if booking.notes %}
+                            <small class="text-muted d-block text-truncate">Note: {{ booking.notes }}</small>
+                            {% endif %}
+                            
+                            <div class="mt-2">
+                                <form action="/booking/{{ booking.id }}/accept" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-success btn-sm me-1">Accept</button>
+                                </form>
+                                <form action="/booking/{{ booking.id }}/reject" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted py-3">No new requests.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-success-subtle">
+                <h5 class="mb-0">Active Appointments</h5>
+            </div>
+            <div class="card-body">
+                {% if active_appointments %}
+                    <div class="list-group">
+                    {% for booking in active_appointments %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">
+                                    {{ booking.student.full_name }}
+                                    <a href="/messages/{{ booking.student.id }}" class="btn btn-sm btn-outline-primary ms-2" title="Message">Message</a>
+                                </h5>
+                                <small>{{ booking.date }}<br>{{ booking.time }}</small>
+                            </div>
+                            <p class="mb-1 small"><strong>Addr:</strong> {{ booking.pickup_address }}</p>
+                            
+                            <div class="mt-2">
+                                {% if booking.status == 'accepted' %}
+                                    <span class="badge bg-success">Confirmed</span>
+                                    <a href="/log-session/{{ booking.id }}" class="btn btn-outline-primary btn-sm ms-1">📋 Log</a>
+                                    <button type="button" class="btn btn-outline-info btn-sm ms-1" 
+                                            onclick="openRouteModal({{ booking.id }}, '{{ booking.student.full_name }}', {{ booking.pickup_lat or 'null' }}, {{ booking.pickup_lng or 'null' }}, {{ booking.dropoff_lat or 'null' }}, {{ booking.dropoff_lng or 'null' }})">
+                                        📍 Route
+                                    </button>
+                                    <form action="/request-cancellation/{{ booking.id }}" method="post" class="d-inline float-end" onsubmit="return confirm('Request cancellation from student?');">
+                                        <button type="submit" class="btn btn-link text-danger btn-sm p-0" style="font-size: 0.8rem;">Request Cancel</button>
+                                    </form>
+                                {% elif booking.status == 'cancellation_requested' %}
+                                    <span class="badge bg-warning text-dark">Cancellation Requested</span>
+                                    <small class="d-block text-muted mt-1">Waiting for student...</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted py-3">No active appointments.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header ">
+                <h5 class="mb-0">Your Profile Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-3 fw-bold">Hourly Rate</div>
+                    <div class="col-sm-9">${{ user.instructor_profile.hourly_rate }}/hr</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3 fw-bold">City</div>
+                    <div class="col-sm-9">{{ user.instructor_profile.city }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3 fw-bold">Car</div>
+                    <div class="col-sm-9">{{ user.instructor_profile.car_model }}</div>
+                </div>
+                 <div class="row mb-3">
+                    <div class="col-sm-3 fw-bold">Bio</div>
+                    <div class="col-sm-9">{{ user.instructor_profile.bio }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Working Hours</h5>
+            </div>
+            <div class="card-body">
+                {% if user.instructor_profile.availabilities %}
+                <ul class="list-group mb-3">
+                    {% for slot in user.instructor_profile.availabilities %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            {% if slot.day_of_week == 0 %}Monday{% endif %}
+                            {% if slot.day_of_week == 1 %}Tuesday{% endif %}
+                            {% if slot.day_of_week == 2 %}Wednesday{% endif %}
+                            {% if slot.day_of_week == 3 %}Thursday{% endif %}
+                            {% if slot.day_of_week == 4 %}Friday{% endif %}
+                            {% if slot.day_of_week == 5 %}Saturday{% endif %}
+                            {% if slot.day_of_week == 6 %}Sunday{% endif %}
+                            : {{ slot.start_time }} - {{ slot.end_time }}
+                        </span>
+                        <form action="/availability/delete/{{ slot.id }}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No availability set. Students can currently request any time.</p>
+                {% endif %}
+
+                <hr>
+                <h6>Add New Slot</h6>
+                <form action="/availability/add" method="post" class="row g-2 align-items-center">
+                    <div class="col-auto">
+                        <select name="day_of_week" class="form-select" required>
+                            <option value="0">Monday</option>
+                            <option value="1">Tuesday</option>
+                            <option value="2">Wednesday</option>
+                            <option value="3">Thursday</option>
+                            <option value="4">Friday</option>
+                            <option value="5">Saturday</option>
+                            <option value="6">Sunday</option>
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <input type="time" name="start_time" class="form-control" required>
+                    </div>
+                    <div class="col-auto">
+                        <span>to</span>
+                    </div>
+                    <div class="col-auto">
+                        <input type="time" name="end_time" class="form-control" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary">Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header ">
+                <h5 class="mb-0">Your Schedule</h5>
+            </div>
+            <div class="card-body">
+                <div id='calendar'></div>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+    </div>
+</div>
+
+<!-- Route Mapping Modal -->
+<div class="modal fade" id="routeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set Lesson Route: <span id="modalStudentName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="routeForm" method="post">
+                <div class="modal-body">
+                    <p class="small text-muted mb-2">Click on the map to set <strong>Pickup</strong> (Green) and <strong>Drop-off</strong> (Red) points.</p>
+                    <div id="map" style="height: 400px; width: 100%; border-radius: 8px;"></div>
+                    
+                    <input type="hidden" name="pickup_lat" id="p_lat">
+                    <input type="hidden" name="pickup_lng" id="p_lng">
+                    <input type="hidden" name="dropoff_lat" id="d_lat">
+                    <input type="hidden" name="dropoff_lng" id="d_lng">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="resetMarkers()">Reset</button>
+                    <button type="submit" class="btn btn-primary">Save Route</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let map, pickupMarker, dropoffMarker;
+    let routeModalInstance = null;
+
+    function initMap() {
+        if (map) return;
+        // Default to Vancouver area
+        map = L.map('map').setView([49.2827, -123.1207], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        map.on('click', function(e) {
+            if (!pickupMarker) {
+                pickupMarker = L.marker(e.latlng, {draggable: true, icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                })}).addTo(map).bindPopup("Pickup").openPopup();
+                updateInputs();
+            } else if (!dropoffMarker) {
+                dropoffMarker = L.marker(e.latlng, {draggable: true, icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                })}).addTo(map).bindPopup("Drop-off").openPopup();
+                updateInputs();
+            }
+        });
+    }
+
+    function updateInputs() {
+        if (pickupMarker) {
+            document.getElementById('p_lat').value = pickupMarker.getLatLng().lat;
+            document.getElementById('p_lng').value = pickupMarker.getLatLng().lng;
+        }
+        if (dropoffMarker) {
+            document.getElementById('d_lat').value = dropoffMarker.getLatLng().lat;
+            document.getElementById('d_lng').value = dropoffMarker.getLatLng().lng;
+        }
+    }
+
+    function resetMarkers() {
+        if (pickupMarker) map.removeLayer(pickupMarker);
+        if (dropoffMarker) map.removeLayer(dropoffMarker);
+        pickupMarker = null;
+        dropoffMarker = null;
+        document.getElementById('p_lat').value = '';
+        document.getElementById('p_lng').value = '';
+        document.getElementById('d_lat').value = '';
+        document.getElementById('d_lng').value = '';
+    }
+
+    function openRouteModal(id, name, pLat, pLng, dLat, dLng) {
+        document.getElementById('modalStudentName').textContent = name;
+        document.getElementById('routeForm').action = `/booking/${id}/route`;
+        
+        if (!routeModalInstance) {
+            routeModalInstance = new bootstrap.Modal(document.getElementById('routeModal'));
+        }
+        routeModalInstance.show();
+        
+        // Timeout to fix Leaflet gray tiles in modal
+        setTimeout(() => {
+            initMap();
+            map.invalidateSize();
+            resetMarkers();
+
+            if (pLat && pLng) {
+                pickupMarker = L.marker([pLat, pLng], {draggable: true}).addTo(map).bindPopup("Pickup");
+                map.setView([pLat, pLng], 13);
+            }
+            if (dLat && dLng) {
+                dropoffMarker = L.marker([dLat, dLng], {draggable: true}).addTo(map).bindPopup("Drop-off");
+            }
+            updateInputs();
+        }, 300);
+    }
+</script>
+{% endblock %}
+

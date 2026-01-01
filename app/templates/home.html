@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Custom Hero Styles */
+    .hero-section {
+        background: #181917 !important; /* Ensure override */
+        padding: 5rem 0;
+        border-radius: 1rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 4rem;
+    }
+    
+    /* Removed hero-bg-pattern as it might interfere visually */
+
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+    }
+
+    /* New Hero Image Fade Style */
+    .hero-image-fade {
+        background-image: url('/static/bc-road-scenic.jpg'); /* Use the new image as background */
+        background-size: cover;
+        background-position: right center; /* Position image to the right */
+        position: relative;
+        border-radius: 0 1rem 1rem 0; /* Match hero border-radius, right side only */
+        min-height: 300px; /* Ensure it has height */
+    }
+    .hero-image-fade::before {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background: linear-gradient(to right, rgba(13, 102, 253, 0.95) 0%, rgba(13, 102, 253, 0.2) 60%, transparent 100%); /* Fade from hero color to transparent */
+        border-radius: 0 1rem 1rem 0;
+    }
+    @media (max-width: 991.98px) { /* Hide on small screens */
+        .hero-image-fade { display: none; }
+    }
+</style>
+
+<!-- Hero Section -->
+<div class="hero-section shadow-lg text-center text-lg-start">
+    <div class="container position-relative z-1">
+        <div class="row align-items-center">
+            <div class="col-lg-7">
+                <h1 class="display-3 fw-bolder mb-3">Master the Road with Confidence.</h1>
+                <p class="lead mb-4 opacity-90">
+                    Connect with certified driving instructors, track your progress in real-time, and access free official study guides. Your journey to a license starts here.
+                </p>
+                <div class="d-flex gap-3 justify-content-center justify-content-lg-start flex-wrap">
+                    <a href="/register" class="btn btn-light btn-lg fw-bold px-4 shadow-sm">
+                        Find an Instructor
+                    </a>
+                    <a href="/education" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-book me-2"></i>Study for Free
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center">
+                <img src="/static/logo.png" alt="Road Ready Logo" class="img-fluid" style="max-height: 350px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3)); transform: none;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mb-5 g-4">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 bg-body-tertiary hover-lift shadow-sm">
+            <div class="card-body p-4">
+                <div class="feature-icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-search"></i>
+                </div>
+                <h3 class="h4 fw-bold">Verified Instructors</h3>
+                <p class="text-muted">Browse profiles, read reviews, and book lessons with certified professionals in your city.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 bg-body-tertiary hover-lift shadow-sm">
+            <div class="card-body p-4">
+                <div class="feature-icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <h3 class="h4 fw-bold">Track Progress</h3>
+                <p class="text-muted">Get detailed feedback after every session. Visualize your improvement and know when you're test-ready.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 bg-body-tertiary hover-lift shadow-sm">
+            <div class="card-body p-4">
+                <div class="feature-icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-journal-text"></i>
+                </div>
+                <h3 class="h4 fw-bold">Free Education</h3>
+                <p class="text-muted">Prepare for your knowledge test with our interactive flipbooks and study guides. No account needed.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not user %}
+<!-- Instructor CTA -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card border-0 bg-dark text-white shadow overflow-hidden">
+            <div class="row g-0 align-items-center">
+                <div class="col-md-8 p-5">
+                    <h2 class="fw-bold mb-3">Are you a Driving Instructor?</h2>
+                    <p class="lead mb-4 text-white-50">Join Road Ready to manage your bookings, track student progress, and grow your business with our specialized tools.</p>
+                    <a href="/register" class="btn btn-primary btn-lg">Join as Instructor</a>
+                </div>
+                <div class="col-md-4 bg-body-tertiary text-center py-5 d-flex align-items-center justify-content-center">
+                    <i class="bi bi-briefcase-fill text-muted" style="font-size: 5rem;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Testimonials / Trust -->
+<div class="text-center py-4 text-muted">
+    <small class="text-uppercase fw-bold letter-spacing-2">Trusted by students in</small>
+    <div class="d-flex justify-content-center gap-4 mt-3 fs-5 fw-bold text-body">
+        <span><i class="bi bi-geo-alt-fill text-danger me-1"></i>British Columbia</span>
+        <span><i class="bi bi-geo-alt-fill text-danger me-1"></i>Ontario</span>
+        <span><i class="bi bi-geo-alt-fill text-danger me-1"></i>Alberta</span>
+    </div>
+</div>
+{% endblock %}

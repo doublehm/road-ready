@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>👮 Admin Dashboard</h2>
+        <p class="text-muted">Review and verify instructor applications.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-warning-subtle">
+        <h5 class="mb-0">Pending Verifications</h5>
+    </div>
+    <div class="card-body">
+        {% if pending_instructors %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>License ID</th>
+                            <th>Document</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in pending_instructors %}
+                        <tr>
+                            <td>{{ profile.user.full_name }}</td>
+                            <td>{{ profile.user.email }}</td>
+                            <td>{{ profile.certification_id }}</td>
+                            <td>
+                                {% if profile.license_image %}
+                                <a href="/static/uploads/{{ profile.license_image }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                    View ID 📄
+                                </a>
+                                {% else %}
+                                <span class="text-muted">No file</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form action="/admin/verify/{{ profile.id }}" method="post">
+                                    <button type="submit" class="btn btn-success btn-sm">Verify ✅</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted mb-0">No pending verifications. All caught up! 🎉</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

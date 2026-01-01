@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="mb-3">Instructor Verification</h3>
+            <p class="text-muted">Tell students about your experience and rates.</p>
+            
+            <form action="/setup-instructor" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="city" class="form-label">City of Operation</label>
+                    <input type="text" class="form-control" id="city" name="city" placeholder="e.g. Vancouver" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="hourly_rate" class="form-label">Hourly Rate ($)</label>
+                    <input type="number" class="form-control" id="hourly_rate" name="hourly_rate" min="1" step="0.5" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="bio" class="form-label">Bio / Experience</label>
+                    <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="I have 10 years of experience..." required></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="car_model" class="form-label">Car Model</label>
+                        <input type="text" class="form-control" id="car_model" name="car_model" placeholder="e.g. 2020 Toyota Corolla" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="certification_id" class="form-label">Instructor License ID</label>
+                        <input type="text" class="form-control" id="certification_id" name="certification_id" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="insurance_policy" class="form-label">Insurance Policy Number</label>
+                    <input type="text" class="form-control" id="insurance_policy" name="insurance_policy" required>
+                </div>
+
+                <div class="mb-4">
+                    <label for="license_image" class="form-label">Upload Instructor License (Photo/Scan)</label>
+                    <input type="file" class="form-control" id="license_image" name="license_image" accept="image/*,.pdf" required>
+                    <div class="form-text">This will be reviewed by an admin before you are verified.</div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Complete Setup</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

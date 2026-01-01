@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Book a Lesson with {{ instructor.user.full_name }}</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if error_message %}
+                <div class="alert alert-danger">
+                    <strong>⚠️ Unavailable:</strong> {{ error_message }}
+                </div>
+                {% endif %}
+
+                {% if existing_bookings %}
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">⚠️ Active Booking Found</h6>
+                    <p class="mb-0">You already have the following active request(s) with this instructor:</p>
+                    <ul class="mb-0 mt-2">
+                        {% for booking in existing_bookings %}
+                            <li><strong>{{ booking.date }} at {{ booking.time }}</strong> ({{ booking.status|title }})</li>
+                        {% endfor %}
+                    </ul>
+                    <hr>
+                    <p class="mb-0 small">You can still book another lesson below if you wish.</p>
+                </div>
+                {% endif %}
+
+                <div class="alert alert-info">
+                    <strong>Rate:</strong> ${{ instructor.hourly_rate }}/hr <br>
+                    <strong>Car:</strong> {{ instructor.car_model }}
+                </div>
+                
+                <form action="/book/{{ instructor.id }}" method="post">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Time</label>
+                            <input type="time" name="time" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Duration (Hours)</label>
+                        <select name="duration" class="form-select">
+                            <option value="1">1 Hour</option>
+                            <option value="2">2 Hours</option>
+                            <option value="3">3 Hours</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Pick-up Address</label>
+                        <input type="text" name="pickup_address" class="form-control" placeholder="e.g. 123 Main St, Toronto" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Notes / Focus Area (Optional)</label>
+                        <textarea name="notes" class="form-control" rows="3" placeholder="e.g. I need help with parallel parking"></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Confirm Request</button>
+                        <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

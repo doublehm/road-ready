@@ -1,0 +1,17 @@
+[Unit]
+Description=Road Ready FastAPI Application
+After=network.target
+
+[Service]
+User=roadready
+Group=www-data
+WorkingDirectory=/opt/road-ready
+Environment="PATH=/opt/road-ready/venv/bin"
+Environment="DATABASE_URL=sqlite:///./roadready.db"
+# Uncomment and set your real keys on the server
+# Environment="STRIPE_API_KEY=sk_test_..."
+# Environment="STRIPE_WEBHOOK_SECRET=whsec_..."
+ExecStart=/opt/road-ready/venv/bin/gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-5 text-center">
+    <div class="col-12">
+        <h1 class="display-4 fw-bold mb-3">Knowledge Test Prep 📚</h1>
+        <p class="lead text-muted">Study the official guides to pass your learner's license test.</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <!-- BC Card -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm border-0 bg-body-tertiary">
+            <div class="card-body text-center p-5">
+                <div class="display-1 mb-3">🇨🇦</div>
+                <h3 class="card-title mb-3">British Columbia</h3>
+                <p class="card-text mb-4">Based on ICBC's "Learn to Drive Smart". Covers signs, rules, and safe driving practices.</p>
+                <div class="d-grid">
+                    <a href="/education/bc" class="btn btn-primary btn-lg">Read Guide 📖</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Practice Quiz -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm border-0 bg-success-subtle">
+            <div class="card-body text-center p-5">
+                <div class="display-1 mb-3">📝</div>
+                <h3 class="card-title mb-3">Practice Quiz</h3>
+                <p class="card-text mb-4">Test your knowledge with random questions from the curriculum.</p>
+                <div class="d-grid">
+                    <a href="/education/quiz" class="btn btn-success btn-lg">Start Quiz 🚀</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coming Soon -->
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm border-0 opacity-50">
+            <div class="card-body text-center p-5">
+                <div class="display-1 mb-3">🍁</div>
+                <h3 class="card-title mb-3">Other Provinces</h3>
+                <p class="card-text mb-4">Ontario, Alberta, and more guides are coming soon.</p>
+                <div class="d-grid">
+                    <button class="btn btn-secondary btn-lg" disabled>Coming Soon</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

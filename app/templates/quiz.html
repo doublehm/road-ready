@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">🚗 Practice Theory Quiz</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">Test your knowledge of BC road rules. Good luck!</p>
+                <hr>
+                
+                <form action="/education/quiz/submit" method="post">
+                    {% for q in questions %}
+                    <div class="mb-5">
+                        <h5 class="mb-3">{{ loop.index }}. {{ q.question_text }}</h5>
+                        
+                        <div class="list-group">
+                            <label class="list-group-item list-group-item-action">
+                                <input class="form-check-input me-1" type="radio" name="q_{{ q.id }}" value="A" required>
+                                A) {{ q.option_a }}
+                            </label>
+                            <label class="list-group-item list-group-item-action">
+                                <input class="form-check-input me-1" type="radio" name="q_{{ q.id }}" value="B">
+                                B) {{ q.option_b }}
+                            </label>
+                            <label class="list-group-item list-group-item-action">
+                                <input class="form-check-input me-1" type="radio" name="q_{{ q.id }}" value="C">
+                                C) {{ q.option_c }}
+                            </label>
+                            <label class="list-group-item list-group-item-action">
+                                <input class="form-check-input me-1" type="radio" name="q_{{ q.id }}" value="D">
+                                D) {{ q.option_d }}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Submit Answers</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

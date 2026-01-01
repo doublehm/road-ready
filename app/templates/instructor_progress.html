@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-3">Instructor Performance Report 📊</h2>
+        <div class="row text-center">
+            <div class="col-md-6 mb-3">
+                <div class="card bg-primary text-white h-100">
+                    <div class="card-body">
+                        <h1 class="display-4">{{ stats.total_lessons }}</h1>
+                        <p class="card-text">Lessons Taught</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card bg-success text-white h-100">
+                    <div class="card-body">
+                        <h1 class="display-4">{{ stats.total_hours }}</h1>
+                        <p class="card-text">Total Hours Taught</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-md-5 mb-4">
+        <!-- Students List / Filter -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">🎓 My Students</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                    <a href="/instructor-progress" class="list-group-item list-group-item-action {% if not selected_student_id %}active{% endif %}">
+                        All Students
+                    </a>
+                    {% if students %}
+                        {% for s in students %}
+                        <a href="/instructor-progress?student_id={{ s.id }}" class="list-group-item list-group-item-action {% if selected_student_id == s.id|string or selected_student_id == s.id %}active{% endif %}">
+                            {{ s.full_name }}
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="p-3 text-muted small">No students yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Areas for Improvement -->
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">⚠️ Areas for Improvement</h5>
+            </div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                {% if grouped_faults %}
+                    <p class="text-muted small mb-3">
+                        {% if selected_student_id %}
+                            Categorized faults for this student:
+                        {% else %}
+                            Categorized faults across all students:
+                        {% endif %}
+                    </p>
+                    
+                    {% for category, faults in grouped_faults.items() %}
+                        <h6 class="border-bottom pb-1 mt-3 mb-2 text-primary">{{ category }}</h6>
+                        <ul class="list-group list-group-flush mb-2">
+                            {% for code, desc, count in faults %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-0">
+                                <div>
+                                    <span class="fw-bold small">{{ code }}</span> <span class="text-muted small">- {{ desc }}</span>
+                                </div>
+                                <span class="badge bg-secondary rounded-pill" style="font-size: 0.7em;">{{ count }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <p>No data available yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Detailed Session History -->
+    <div class="col-md-7">
+        <div class="card shadow-sm">
+            <div class="card-header  d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Teaching History</h5>
+                {% if selected_student_id %}
+                <span class="badge bg-info">Filtered View</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if bookings %}
+                    <div class="accordion" id="sessionAccordion">
+                        {% for booking in bookings %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sess{{ booking.id }}">
+                                    <div class="w-100 d-flex justify-content-between align-items-center me-3">
+                                        <div>
+                                            <strong>{{ booking.date }}</strong> <span class="text-muted small">{{ booking.time }}</span>
+                                            <div class="small text-muted">Student: {{ booking.student.full_name }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            {% if booking.status == 'completed' %}
+                                                <span class="badge bg-primary mb-1">Completed</span>
+                                                <div class="text-success fw-bold">${{ booking.earnings }}</div>
+                                            {% elif booking.status == 'cancelled' %}
+                                                <span class="badge bg-danger mb-1">Cancelled</span>
+                                            {% elif booking.status == 'accepted' %}
+                                                <span class="badge bg-success mb-1">Accepted</span>
+                                            {% elif booking.status == 'pending' %}
+                                                <span class="badge bg-warning text-dark mb-1">Pending</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary mb-1">{{ booking.status | title }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </button>
+                            </h2>
+                            <div id="sess{{ booking.id }}" class="accordion-collapse collapse" data-bs-parent="#sessionAccordion">
+                                <div class="accordion-body">
+                                    {% if booking.driving_session %}
+                                        <h6 class="text-success border-bottom pb-2">📋 Instructor Report</h6>
+                                        <p><strong>Feedback:</strong> {{ booking.driving_session.shared_feedback }}</p>
+                                        {% if booking.driving_session.instructor_private_notes %}
+                                            <p class="text-muted small"><strong>Private Notes:</strong> {{ booking.driving_session.instructor_private_notes }}</p>
+                                        {% endif %}
+                                        <div class="row small text-muted mb-3">
+                                            <div class="col-6">🌧️ {{ booking.driving_session.weather_condition }}</div>
+                                            <div class="col-6">🛣️ {{ booking.driving_session.road_type }}</div>
+                                            <div class="col-12 mt-1">⏱️ Duration: {{ booking.driving_session.duration_minutes }} mins</div>
+                                        </div>
+                                        
+                                        {% if booking.driving_session.observation_data or booking.driving_session.space_margin_data or booking.driving_session.speed_data or booking.driving_session.steering_data or booking.driving_session.communication_data %}
+                                        <h6>Flags / Areas Worked On:</h6>
+                                        <p class="mb-0 small">
+                                            {% if booking.driving_session.observation_data %}<div class="mb-1"><span class="badge bg-secondary border me-1">Observation:</span> {{ booking.driving_session.observation_data | expand_codes }}</div>{% endif %}
+                                            {% if booking.driving_session.space_margin_data %}<div class="mb-1"><span class="badge bg-secondary border me-1">Space:</span> {{ booking.driving_session.space_margin_data | expand_codes }}</div>{% endif %}
+                                            {% if booking.driving_session.speed_data %}<div class="mb-1"><span class="badge bg-secondary border me-1">Speed:</span> {{ booking.driving_session.speed_data | expand_codes }}</div>{% endif %}
+                                            {% if booking.driving_session.steering_data %}<div class="mb-1"><span class="badge bg-secondary border me-1">Steering:</span> {{ booking.driving_session.steering_data | expand_codes }}</div>{% endif %}
+                                            {% if booking.driving_session.communication_data %}<div class="mb-1"><span class="badge bg-secondary border me-1">Comm:</span> {{ booking.driving_session.communication_data | expand_codes }}</div>{% endif %}
+                                        </p>
+                                        {% else %}
+                                            <p class="small text-muted">No flags reported for this session.</p>
+                                        {% endif %}
+
+                                    {% else %}
+                                        <!-- No Log -->
+                                        {% if booking.status == 'cancelled' %}
+                                            <p class="text-danger">This lesson was cancelled.</p>
+                                        {% elif booking.status == 'completed' %}
+                                            <p class="text-muted">Lesson completed but no report logged.</p>
+                                        {% else %}
+                                            <p class="text-info">Upcoming Appointment.</p>
+                                            <ul class="list-unstyled small">
+                                                <li><strong>Location:</strong> {{ booking.pickup_address }}</li>
+                                                <li><strong>Duration:</strong> {{ booking.duration }} hr(s)</li>
+                                                {% if booking.notes %}<li><strong>Notes:</strong> {{ booking.notes }}</li>{% endif %}
+                                            </ul>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mt-4 pt-3 border-top text-end">
+                        <h4 class="text-success">Total Earnings: ${{ total_earnings }}</h4>
+                        <small class="text-muted">Cumulative for the displayed sessions</small>
+                    </div>
+
+                {% else %}
+                    <p class="text-center text-muted py-3">No teaching history found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

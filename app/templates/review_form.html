@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">Rate Your Experience with {{ instructor.user.full_name }}</h4>
+            </div>
+            <div class="card-body p-4">
+                <form action="/review/{{ instructor.id }}" method="post">
+                    <div class="mb-4 text-center">
+                        <label class="form-label d-block lead mb-3">How was your lesson?</label>
+                        <div class="btn-group" role="group" aria-label="Rating">
+                            <input type="radio" class="btn-check" name="rating" id="star5" value="5" checked>
+                            <label class="btn btn-outline-warning btn-lg" for="star5">⭐⭐⭐⭐⭐</label>
+
+                            <input type="radio" class="btn-check" name="rating" id="star4" value="4">
+                            <label class="btn btn-outline-warning btn-lg" for="star4">⭐⭐⭐⭐</label>
+                            
+                            <input type="radio" class="btn-check" name="rating" id="star3" value="3">
+                            <label class="btn btn-outline-warning btn-lg" for="star3">⭐⭐⭐</label>
+                            
+                            <input type="radio" class="btn-check" name="rating" id="star2" value="2">
+                            <label class="btn btn-outline-warning btn-lg" for="star2">⭐⭐</label>
+                            
+                            <input type="radio" class="btn-check" name="rating" id="star1" value="1">
+                            <label class="btn btn-outline-warning btn-lg" for="star1">⭐</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Comments</label>
+                        <textarea name="comment" class="form-control" rows="4" placeholder="Share details about your experience..." required></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">Submit Review</button>
+                        <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

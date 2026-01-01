@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Log Session: {{ booking.student.full_name }}</h4>
+                <small>{{ booking.date }} | {{ booking.time }}</small>
+            </div>
+            <div class="card-body p-4">
+                <form action="/log-session/{{ booking.id }}" method="post">
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">Duration (Minutes)</label>
+                            <input type="number" name="duration" class="form-control" value="60" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Weather</label>
+                            <select name="weather" class="form-select">
+                                <option>Sunny</option>
+                                <option>Cloudy</option>
+                                <option>Rainy</option>
+                                <option>Snowy</option>
+                                <option>Foggy</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Road Type</label>
+                            <select name="road_type" class="form-select">
+                                <option>Urban/Residential</option>
+                                <option>Highway/Freeway</option>
+                                <option>Rural</option>
+                                <option>Parking Lot</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 border-bottom pb-2">Road Test Criteria (Check items worked on or faults)</h5>
+
+                    <div class="accordion mb-4" id="criteriaAccordion">
+                        <!-- A: Observation -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseA">
+                                    A: Observation
+                                </button>
+                            </h2>
+                            <div id="collapseA" class="accordion-collapse collapse" data-bs-parent="#criteriaAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        {% for code, description in fault_map.items() %}
+                                            {% if code.startswith("A") %}
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <input type="hidden" name="counts_{{ code }}" value="0" id="hidden_input_{{ code }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary me-1 decrement-btn" data-code="{{ code }}">-</button>
+                                                    <span class="fault-count me-1" id="display_count_{{ code }}">0</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary increment-btn" data-code="{{ code }}">+</button>
+                                                    <label class="form-check-label ms-2" for="hidden_input_{{ code }}">
+                                                        {{ code }} - {{ description }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- B: Space Margin -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseB">
+                                    B: Space Margin
+                                </button>
+                            </h2>
+                            <div id="collapseB" class="accordion-collapse collapse" data-bs-parent="#criteriaAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        {% for code, description in fault_map.items() %}
+                                            {% if code.startswith("B") %}
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <input type="hidden" name="counts_{{ code }}" value="0" id="hidden_input_{{ code }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary me-1 decrement-btn" data-code="{{ code }}">-</button>
+                                                    <span class="fault-count me-1" id="display_count_{{ code }}">0</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary increment-btn" data-code="{{ code }}">+</button>
+                                                    <label class="form-check-label ms-2" for="hidden_input_{{ code }}">
+                                                        {{ code }} - {{ description }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- C: Speed -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseC">
+                                    C: Speed
+                                </button>
+                            </h2>
+                            <div id="collapseC" class="accordion-collapse collapse" data-bs-parent="#criteriaAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        {% for code, description in fault_map.items() %}
+                                            {% if code.startswith("C") %}
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <input type="hidden" name="counts_{{ code }}" value="0" id="hidden_input_{{ code }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary me-1 decrement-btn" data-code="{{ code }}">-</button>
+                                                    <span class="fault-count me-1" id="display_count_{{ code }}">0</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary increment-btn" data-code="{{ code }}">+</button>
+                                                    <label class="form-check-label ms-2" for="hidden_input_{{ code }}">
+                                                        {{ code }} - {{ description }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                         <!-- D: Steering -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseD">
+                                    D: Steering
+                                </button>
+                            </h2>
+                            <div id="collapseD" class="accordion-collapse collapse" data-bs-parent="#criteriaAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        {% for code, description in fault_map.items() %}
+                                            {% if code.startswith("D") %}
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <input type="hidden" name="counts_{{ code }}" value="0" id="hidden_input_{{ code }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary me-1 decrement-btn" data-code="{{ code }}">-</button>
+                                                    <span class="fault-count me-1" id="display_count_{{ code }}">0</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary increment-btn" data-code="{{ code }}">+</button>
+                                                    <label class="form-check-label ms-2" for="hidden_input_{{ code }}">
+                                                        {{ code }} - {{ description }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                         <!-- E: Communication -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseE">
+                                    E: Communication
+                                </button>
+                            </h2>
+                            <div id="collapseE" class="accordion-collapse collapse" data-bs-parent="#criteriaAccordion">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        {% for code, description in fault_map.items() %}
+                                            {% if code.startswith("E") %}
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <input type="hidden" name="counts_{{ code }}" value="0" id="hidden_input_{{ code }}">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary me-1 decrement-btn" data-code="{{ code }}">-</button>
+                                                    <span class="fault-count me-1" id="display_count_{{ code }}">0</span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary increment-btn" data-code="{{ code }}">+</button>
+                                                    <label class="form-check-label ms-2" for="hidden_input_{{ code }}">
+                                                        {{ code }} - {{ description }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Shared Feedback (Visible to Student)</label>
+                        <textarea name="shared_feedback" class="form-control" rows="3" placeholder="Great job on..." required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Private Notes (Only for you)</label>
+                        <textarea name="private_notes" class="form-control" rows="2" placeholder="Student struggles with..."></textarea>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">Log Session Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.increment-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const code = this.dataset.code;
+                const hiddenInput = document.getElementById(`hidden_input_${code}`);
+                const displayCount = document.getElementById(`display_count_${code}`);
+                
+                let currentVal = parseInt(hiddenInput.value);
+                currentVal++;
+                
+                hiddenInput.value = currentVal;
+                displayCount.textContent = currentVal;
+            });
+        });
+
+        document.querySelectorAll('.decrement-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const code = this.dataset.code;
+                const hiddenInput = document.getElementById(`hidden_input_${code}`);
+                const displayCount = document.getElementById(`display_count_${code}`);
+                
+                let currentVal = parseInt(hiddenInput.value);
+                if (currentVal > 0) {
+                    currentVal--;
+                }
+                
+                hiddenInput.value = currentVal;
+                displayCount.textContent = currentVal;
+            });
+        });
+    });
+</script>
+{% endblock %}

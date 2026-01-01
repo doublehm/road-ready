@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-header  d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <a href="/messages" class="text-decoration-none text-body me-2">←</a>
+                    {{ other_user.full_name }}
+                </h5>
+                <span class="badge bg-secondary">{{ other_user.role | title }}</span>
+            </div>
+            <div class="card-body bg-body-tertiary" style="height: 400px; overflow-y: auto; display: flex; flex-direction: column;">
+                {% if messages %}
+                    {% for msg in messages %}
+                        <div class="d-flex mb-3 {% if msg.sender_id == user.id %}justify-content-end{% else %}justify-content-start{% endif %}">
+                            <div class="card {% if msg.sender_id == user.id %}bg-primary text-white{% else %}bg-secondary text-white{% endif %}" style="max-width: 75%;">
+                                <div class="card-body py-2 px-3">
+                                    <p class="mb-0">{{ msg.content }}</p>
+                                    <small class="{% if msg.sender_id == user.id %}text-white-50{% else %}text-white-50{% endif %} d-block text-end mt-1" style="font-size: 0.7em;">
+                                        {{ msg.timestamp.split('T')[0] }} {{ msg.timestamp.split('T')[1][:5] }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-muted mt-auto mb-auto">No messages yet. Say hi! 👋</p>
+                {% endif %}
+            </div>
+            <div class="card-footer ">
+                <form action="/send-message" method="post" class="d-flex">
+                    <input type="hidden" name="recipient_id" value="{{ other_user.id }}">
+                    <input type="text" name="content" class="form-control me-2" placeholder="Type a message..." required autocomplete="off">
+                    <button type="submit" class="btn btn-primary">Send</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Scroll to bottom of chat
+    var chatBody = document.querySelector('.card-body');
+    chatBody.scrollTop = chatBody.scrollHeight;
+</script>
+{% endblock %}

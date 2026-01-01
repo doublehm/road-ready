@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/education">Provinces</a></li>
+                <li class="breadcrumb-item active" aria-current="page">British Columbia (Learn to Drive Smart)</li>
+            </ol>
+        </nav>
+        <div class="text-muted small d-none d-md-block">
+            <span id="pageInfo">Loading Book...</span> | Click corners to flip.
+        </div>
+    </div>
+</div>
+
+<!-- Loader -->
+<div id="loader" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2 text-muted">Loading the full guide. This may take a moment...</p>
+</div>
+
+<!-- Book Container -->
+<div class="row justify-content-center">
+    <div class="col-12 d-flex justify-content-center">
+        <div id="book" class="shadow-lg" style="display: none;">
+            <!-- Pages will be injected here by JS -->
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4 justify-content-center" id="controls" style="display: none;">
+    <div class="col-auto">
+        <button class="btn btn-secondary me-2" id="prevBtn">← Previous</button>
+        <button class="btn btn-primary" id="nextBtn">Next →</button>
+    </div>
+</div>
+
+<style>
+    /* Book Container Styles */
+    .my-page {
+        background-color: white; 
+        overflow: hidden;
+        border-right: 1px solid #eee;
+    }
+    
+    /* Responsive Book Size */
+    /* We set base size, PageFlip handles scaling */
+    #book {
+        /* Aspect ratio roughly A4 or Letter */
+        width: 550px; 
+        height: 780px; 
+    }
+    
+    canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    
+    @media (max-width: 768px) {
+        #book {
+            width: 90vw; 
+            height: 125vw;
+            max-height: 70vh;
+        }
+    }
+</style>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- PageFlip -->
+<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+
+<script>
+    // Set worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const url = '/static/driver-full.pdf';
+        const bookElem = document.getElementById('book');
+        const loader = document.getElementById('loader');
+        const controls = document.getElementById('controls');
+        const pageInfo = document.getElementById('pageInfo');
+
+        pdfjsLib.getDocument(url).promise.then(async pdf => {
+            console.log('PDF loaded. Pages: ' + pdf.numPages);
+            
+            // Generate DOM elements for pages
+            // Rendering ALL pages to canvas upfront is heavy. 
+            // However, StPageFlip needs DOM elements.
+            // Optimization: We render pages, but maybe with lower initial scale or rely on browser caching.
+            
+            const renderPromises = [];
+            
+            // Limit for prototype if pdf is huge, but user asked for "full book".
+            // We will loop all.
+            for (let i = 1; i <= pdf.numPages; i++) {
+                renderPromises.push(
+                    pdf.getPage(i).then(page => {
+                        // Create container
+                        const div = document.createElement('div');
+                        div.className = 'my-page';
+                        div.id = `page-${i}`;
+                        
+                        const canvas = document.createElement('canvas');
+                        div.appendChild(canvas);
+                        
+                        // Viewport
+                        // Scale 1.5 for decent quality on flip
+                        const viewport = page.getViewport({ scale: 1.5 });
+                        canvas.height = viewport.height;
+                        canvas.width = viewport.width;
+                        
+                        const renderContext = {
+                            canvasContext: canvas.getContext('2d'),
+                            viewport: viewport
+                        };
+                        
+                        return page.render(renderContext).promise.then(() => {
+                            return { dom: div, index: i };
+                        });
+                    })
+                );
+            }
+
+            // Wait for all to render (sequentially or parallel? Parallel might freeze UI)
+            // Let's Promise.all
+            try {
+                const results = await Promise.all(renderPromises);
+                
+                // Sort by index to ensure correct order
+                results.sort((a, b) => a.index - b.index);
+                
+                // Append to DOM
+                results.forEach(res => bookElem.appendChild(res.dom));
+                
+                // Hide loader, show book
+                loader.style.display = 'none';
+                bookElem.style.display = 'block';
+                controls.style.display = 'flex';
+                
+                // Init Flip
+                const pageFlip = new St.PageFlip(bookElem, {
+                    width: 550, // match css
+                    height: 780, // match css
+                    size: 'stretch',
+                    minWidth: 300,
+                    maxWidth: 1000,
+                    minHeight: 400,
+                    maxHeight: 1400,
+                    maxShadowOpacity: 0.5,
+                    showCover: true,
+                    mobileScrollSupport: false 
+                });
+
+                pageFlip.loadFromHTML(document.querySelectorAll('.my-page'));
+                
+                // Event Listeners
+                document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
+                document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
+                
+                pageFlip.on('flip', (e) => {
+                    pageInfo.textContent = `Page ${e.data + 1} of ${pageFlip.getPageCount()}`;
+                });
+                
+                // Check for page param
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetPage = parseInt(urlParams.get('page'));
+                
+                if (targetPage && targetPage > 0 && targetPage <= pageFlip.getPageCount()) {
+                    // Slight delay to ensure flip is ready
+                    setTimeout(() => {
+                        pageFlip.flip(targetPage - 1); // 0-based index
+                    }, 500);
+                } else {
+                    pageInfo.textContent = `Page 1 of ${pageFlip.getPageCount()}`;
+                }
+
+            } catch (error) {
+                console.error('Error rendering pages:', error);
+                loader.innerHTML = '<p class="text-danger">Error loading book. Please try again.</p>';
+            }
+
+        }).catch(err => {
+            console.error('Error loading PDF:', err);
+            loader.innerHTML = '<p class="text-danger">Could not load the PDF file.</p>';
+        });
+    });
+</script>
+{% endblock %}
