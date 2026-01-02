@@ -15,6 +15,11 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+          echo "--- SERVER VERIFICATION ---"
+          echo "Hostname: $(hostname)"
+          echo "Public IP: $(curl -s ifconfig.me)"
+          echo "---------------------------"
+          
           cd /opt/road-ready
           
           # Force clean state
