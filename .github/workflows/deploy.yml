@@ -17,11 +17,20 @@ jobs:
         script: |
           cd /opt/road-ready
           sudo git pull origin main
-          # Stop conflicting systemd service if it exists
+          
+          # Stop systemd service
           sudo systemctl stop roadready || true
           sudo systemctl disable roadready || true
-          # Start Docker container
+          
+          # Force kill anything on port 8000 (Failsafe)
+          sudo fuser -k 8000/tcp || true
+          
+          # Prune old images to save space and force fresh build context
+          sudo docker system prune -f || true
+          
+          # Rebuild and start
+          sudo docker compose down || true
           sudo docker compose up -d --build
-          # Restart Nginx to be safe
+          
           sudo systemctl restart nginx
           echo "Deployment successful!"
