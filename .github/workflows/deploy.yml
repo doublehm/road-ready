@@ -16,21 +16,27 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           cd /opt/road-ready
-          sudo git pull origin main
+          
+          # Force clean state
+          sudo git fetch origin main
+          sudo git reset --hard origin/main
+          
+          # DEBUG: Check if file updated
+          echo "--- CHECKING BASE.HTML ---"
+          grep "v2.0" app/templates/base.html || echo "VERSION MARKER NOT FOUND IN FILE!"
           
           # Stop systemd service
           sudo systemctl stop roadready || true
           sudo systemctl disable roadready || true
           
-          # Force kill anything on port 8000 (Failsafe)
+          # Force kill anything on port 8000
           sudo fuser -k 8000/tcp || true
           
-          # Prune old images to save space and force fresh build context
+          # Prune and Rebuild with NO CACHE
           sudo docker system prune -f || true
-          
-          # Rebuild and start
           sudo docker compose down || true
-          sudo docker compose up -d --build
+          sudo docker compose build --no-cache
+          sudo docker compose up -d
           
           sudo systemctl restart nginx
           echo "Deployment successful!"
