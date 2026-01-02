@@ -15,6 +15,18 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
+          # Ensure directory exists
+          if [ ! -d "/opt/road-ready/.git" ]; then
+            echo "Repository missing. Cloning fresh..."
+            sudo rm -rf /opt/road-ready
+            # Use HTTPS for public repo to avoid key issues, OR assume keys are set for SSH
+            # Let's use the public HTTPS URL since we know it works for public repos without auth
+            # IF your repo is private, we must use git@github.com...
+            # Use SSH to clone (uses the Deploy Key on the server)
+            sudo git clone git@github.com:doublehm/road-ready.git /opt/road-ready
+            sudo chown -R $(whoami) /opt/road-ready
+          fi
+
           cd /opt/road-ready
           
           # Fix permissions to ensure current user can pull
