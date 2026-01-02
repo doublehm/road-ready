@@ -15,52 +15,24 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "--- NUCLEAR DEPLOYMENT START ---"
+          cd /opt/road-ready
           
-          # 1. Stop everything
+          # Fix permissions to ensure current user can pull
+          sudo chown -R $(whoami) .
+          
+          # Pull latest changes
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # Stop conflicts
           sudo systemctl stop roadready || true
           sudo systemctl disable roadready || true
-          cd /opt/road-ready
-          sudo docker compose down || true
-          sudo fuser -k 8000/tcp || true
           
-          # 2. Backup Data
-          echo "Backing up data..."
-          sudo mkdir -p /tmp/roadready_backup
-          sudo cp roadready.db /tmp/roadready_backup/ || echo "No DB to backup"
-          sudo cp -r app/static/uploads /tmp/roadready_backup/ || echo "No uploads to backup"
+          # Rebuild and Restart Docker
+          sudo docker compose down
+          sudo docker compose up -d --build
           
-          # 3. Wipe & Re-clone
-          echo "Wiping directory..."
-          cd /opt
-          sudo rm -rf road-ready
-          
-          echo "Cloning fresh..."
-          # Ensure we can clone public repo without auth issues
-          sudo git clone https://github.com/doublehm/road-ready.git road-ready
-          cd road-ready
-          
-          # 4. Restore Data
-          echo "Restoring data..."
-          sudo cp /tmp/roadready_backup/roadready.db . || touch roadready.db
-          sudo mkdir -p app/static/uploads
-          sudo cp -r /tmp/roadready_backup/uploads/* app/static/uploads/ || true
-          
-          # 5. Fix Permissions
-          echo "Fixing permissions..."
-          sudo chown -R $(whoami) .
-          sudo chmod -R 755 .
-          
-          # 6. Verify Content
-          echo "--- VERIFYING FILE CONTENT ---"
-          grep "navbar-toggler" app/templates/base.html || echo "CRITICAL: NEW CODE NOT FOUND IN CLONE"
-          
-          # 7. Start Docker
-          echo "Starting Docker..."
-          # We use --build to ensure image matches new code
-          sudo docker compose up -d --build --force-recreate
-          
-          # 8. Restart Nginx
+          # Ensure Nginx is happy
           sudo systemctl restart nginx
           
           echo "Deployment successful!"
