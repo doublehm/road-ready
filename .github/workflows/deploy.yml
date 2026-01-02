@@ -15,40 +15,52 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "--- GIT DIAGNOSTICS ---"
-          cd /opt/road-ready
+          echo "--- NUCLEAR DEPLOYMENT START ---"
           
-          # Fix permissions first (ensure current user owns the dir)
-          # We assume the script runs as a user who can sudo.
-          echo "Fixing permissions..."
-          sudo chown -R $(whoami) . || echo "Failed to chown, trying as root..."
-          
-          echo "Current Dir: $(pwd)"
-          
-          echo "Remote URL:"
-          git remote -v || echo "Git remote failed"
-          
-          echo "Fetching..."
-          # specific fetch to ensure we get the latest
-          sudo git fetch origin main || echo "Git fetch failed"
-          
-          echo "Resetting..."
-          sudo git reset --hard origin/main || echo "Git reset failed"
-          
-          echo "Cleaning..."
-          sudo git clean -fd || echo "Git clean failed"
-          
-          echo "Latest Commit on Server:"
-          git log -n 1 || echo "Git log failed"
-          
-          echo "--- FILE CONTENT CHECK ---"
-          head -n 10 app/templates/base.html
-          echo "--------------------------"
-          
-          # Continue with build...
+          # 1. Stop everything
           sudo systemctl stop roadready || true
-          sudo fuser -k 8000/tcp || true
+          sudo systemctl disable roadready || true
+          cd /opt/road-ready
           sudo docker compose down || true
-          sudo docker compose build --no-cache
-          sudo docker compose up -d
+          sudo fuser -k 8000/tcp || true
+          
+          # 2. Backup Data
+          echo "Backing up data..."
+          sudo mkdir -p /tmp/roadready_backup
+          sudo cp roadready.db /tmp/roadready_backup/ || echo "No DB to backup"
+          sudo cp -r app/static/uploads /tmp/roadready_backup/ || echo "No uploads to backup"
+          
+          # 3. Wipe & Re-clone
+          echo "Wiping directory..."
+          cd /opt
+          sudo rm -rf road-ready
+          
+          echo "Cloning fresh..."
+          # Ensure we can clone public repo without auth issues
+          sudo git clone https://github.com/doublehm/road-ready.git road-ready
+          cd road-ready
+          
+          # 4. Restore Data
+          echo "Restoring data..."
+          sudo cp /tmp/roadready_backup/roadready.db . || touch roadready.db
+          sudo mkdir -p app/static/uploads
+          sudo cp -r /tmp/roadready_backup/uploads/* app/static/uploads/ || true
+          
+          # 5. Fix Permissions
+          echo "Fixing permissions..."
+          sudo chown -R $(whoami) .
+          sudo chmod -R 755 .
+          
+          # 6. Verify Content
+          echo "--- VERIFYING FILE CONTENT ---"
+          grep "navbar-toggler" app/templates/base.html || echo "CRITICAL: NEW CODE NOT FOUND IN CLONE"
+          
+          # 7. Start Docker
+          echo "Starting Docker..."
+          # We use --build to ensure image matches new code
+          sudo docker compose up -d --build --force-recreate
+          
+          # 8. Restart Nginx
           sudo systemctl restart nginx
+          
+          echo "Deployment successful!"
