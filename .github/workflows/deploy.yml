@@ -32,6 +32,9 @@ jobs:
           # Fix permissions to ensure current user can pull
           sudo chown -R $(whoami) .
           
+          # Switch remote to SSH to ensure auth works
+          git remote set-url origin git@github.com:doublehm/road-ready.git
+          
           # Pull latest changes
           git fetch origin main
           git reset --hard origin/main
