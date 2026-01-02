@@ -1,194 +1,444 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row mb-3">
-    <div class="col-12 d-flex justify-content-between align-items-center">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item"><a href="/education">Provinces</a></li>
-                <li class="breadcrumb-item active" aria-current="page">British Columbia (Learn to Drive Smart)</li>
-            </ol>
-        </nav>
-        <div class="text-muted small d-none d-md-block">
-            <span id="pageInfo">Loading Book...</span> | Click corners to flip.
-        </div>
-    </div>
-</div>
-
-<!-- Loader -->
-<div id="loader" class="text-center py-5">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="mt-2 text-muted">Loading the full guide. This may take a moment...</p>
-</div>
-
-<!-- Book Container -->
-<div class="row justify-content-center">
-    <div class="col-12 d-flex justify-content-center">
-        <div id="book" class="shadow-lg" style="display: none;">
-            <!-- Pages will be injected here by JS -->
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4 justify-content-center" id="controls" style="display: none;">
-    <div class="col-auto">
-        <button class="btn btn-secondary me-2" id="prevBtn">← Previous</button>
-        <button class="btn btn-primary" id="nextBtn">Next →</button>
-    </div>
-</div>
-
 <style>
-    /* Book Container Styles */
-    .my-page {
-        background-color: white; 
-        overflow: hidden;
-        border-right: 1px solid #eee;
+    /* Custom Scrollbar for Sidebar */
+    .custom-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* PDF Container */
+    #pdf-render-container {
+        background-color: #525659;
+        min-height: 80vh;
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+        position: relative;
     }
     
-    /* Responsive Book Size */
-    /* We set base size, PageFlip handles scaling */
-    #book {
-        /* Aspect ratio roughly A4 or Letter */
-        width: 550px; 
-        height: 780px; 
+    .pdf-page-canvas {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        margin-bottom: 20px;
+        max-width: 100%;
+        background: white;
     }
-    
-    canvas {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
+
+    /* Highlight Search Results */
+    .search-match {
+        background-color: yellow;
+        opacity: 0.4;
+        position: absolute;
     }
-    
-    @media (max-width: 768px) {
-        #book {
-            width: 90vw; 
-            height: 125vw;
-            max-height: 70vh;
+
+    /* Sidebar Styles */
+    #sidebar-wrapper {
+        height: calc(100vh - 70px); /* Adjust based on navbar height */
+        position: sticky;
+        top: 20px;
+    }
+
+    @media (max-width: 767.98px) {
+        #sidebar-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 80%;
+            max-width: 300px;
+            background: white;
+            z-index: 1050;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            padding: 1rem;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+        }
+        #sidebar-wrapper.show {
+            transform: translateX(0);
+        }
+        #pdf-render-container {
+            padding: 10px;
+            min-height: 60vh;
         }
     }
 </style>
 
+<div class="row">
+    <!-- Mobile Sidebar Toggle -->
+    <div class="col-12 d-md-none mb-3">
+        <button class="btn btn-primary w-100" id="mobile-menu-btn">
+            <i class="bi bi-list"></i> Menu / Table of Contents
+        </button>
+    </div>
+
+    <!-- Sidebar (TOC & Search) -->
+    <div class="col-md-4 col-lg-3" id="sidebar-wrapper">
+        <div class="d-flex flex-column h-100">
+            <!-- Header for Mobile -->
+            <div class="d-flex justify-content-between align-items-center d-md-none mb-3">
+                <h5 class="mb-0">Navigation</h5>
+                <button type="button" class="btn-close" id="mobile-menu-close"></button>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="bookTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="toc-tab" data-bs-toggle="tab" data-bs-target="#toc-pane" type="button" role="tab">Chapters</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-pane" type="button" role="tab">Search</button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content flex-grow-1 overflow-hidden" id="bookTabsContent">
+                
+                <!-- TOC Pane -->
+                <div class="tab-pane fade show active h-100" id="toc-pane" role="tabpanel">
+                    <div class="list-group custom-scroll h-100 overflow-y-auto">
+                        <button class="list-group-item list-group-item-action active" data-page="1">Cover</button>
+                        <button class="list-group-item list-group-item-action" data-page="5">Chapter 1: You in the Driver's Seat</button>
+                        <button class="list-group-item list-group-item-action" data-page="15">Chapter 2: Signs, Signals & Road Markings</button>
+                        <button class="list-group-item list-group-item-action" data-page="30">Chapter 3: The Rules of the Road</button>
+                        <button class="list-group-item list-group-item-action" data-page="50">Chapter 4: Driving Smart</button>
+                        <button class="list-group-item list-group-item-action" data-page="70">Chapter 5: Tuning Up for Drivers</button>
+                        <button class="list-group-item list-group-item-action" data-page="90">Chapter 6: Sharing the Road</button>
+                        <button class="list-group-item list-group-item-action" data-page="110">Chapter 7: Emergencies</button>
+                        <button class="list-group-item list-group-item-action" data-page="120">Chapter 8: Review</button>
+                    </div>
+                </div>
+
+                <!-- Search Pane -->
+                <div class="tab-pane fade h-100" id="search-pane" role="tabpanel">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="search-input" placeholder="Search term...">
+                        <button class="btn btn-outline-secondary" type="button" id="search-btn"><i class="bi bi-search"></i></button>
+                    </div>
+                    <div id="search-status" class="small text-muted mb-2"></div>
+                    <div class="list-group custom-scroll h-100 overflow-y-auto" id="search-results">
+                        <!-- Results injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (PDF Viewer) -->
+    <div class="col-md-8 col-lg-9">
+        <!-- Toolbar -->
+        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2 shadow-sm">
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" id="prev-page"><i class="bi bi-chevron-left"></i></button>
+                <span class="mx-2 small fw-bold">Page <span id="page-num">--</span> / <span id="page-count">--</span></span>
+                <button class="btn btn-sm btn-outline-secondary" id="next-page"><i class="bi bi-chevron-right"></i></button>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" id="zoom-out"><i class="bi bi-dash"></i></button>
+                <button class="btn btn-sm btn-outline-secondary" id="zoom-in"><i class="bi bi-plus"></i></button>
+            </div>
+        </div>
+
+        <!-- PDF Area -->
+        <div id="pdf-render-container" class="rounded">
+            <div id="pdf-loading" class="text-white mt-5 text-center">
+                <div class="spinner-border text-light" role="status"></div>
+                <p class="mt-2">Loading Document...</p>
+            </div>
+            <canvas id="pdf-canvas" class="d-none pdf-page-canvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Overlay for Mobile Sidebar -->
+<div id="sidebar-overlay" class="d-none" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:1040;"></div>
+
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<!-- PageFlip -->
-<script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
 
 <script>
-    // Set worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const url = '/static/driver-full.pdf';
-        const bookElem = document.getElementById('book');
-        const loader = document.getElementById('loader');
-        const controls = document.getElementById('controls');
-        const pageInfo = document.getElementById('pageInfo');
+    const state = {
+        pdfDoc: null,
+        pageNum: 1,
+        pageRendering: false,
+        pageNumPending: null,
+        scale: 1.2,
+        canvas: document.getElementById('pdf-canvas'),
+        ctx: document.getElementById('pdf-canvas').getContext('2d'),
+        textIndex: [] // Cache for search
+    };
 
-        pdfjsLib.getDocument(url).promise.then(async pdf => {
-            console.log('PDF loaded. Pages: ' + pdf.numPages);
+    const els = {
+        pdfContainer: document.getElementById('pdf-render-container'),
+        loader: document.getElementById('pdf-loading'),
+        pageNum: document.getElementById('page-num'),
+        pageCount: document.getElementById('page-count'),
+        searchResults: document.getElementById('search-results'),
+        searchStatus: document.getElementById('search-status')
+    };
+
+    // --- PDF Rendering ---
+    function renderPage(num) {
+        state.pageRendering = true;
+        
+        // Fetch page
+        state.pdfDoc.getPage(num).then(function(page) {
             
-            // Generate DOM elements for pages
-            // Rendering ALL pages to canvas upfront is heavy. 
-            // However, StPageFlip needs DOM elements.
-            // Optimization: We render pages, but maybe with lower initial scale or rely on browser caching.
+            // Adjust scale based on container width if mobile
+            const containerWidth = els.pdfContainer.clientWidth - 40; // padding
+            const viewportUnscaled = page.getViewport({scale: 1});
             
-            const renderPromises = [];
-            
-            // Limit for prototype if pdf is huge, but user asked for "full book".
-            // We will loop all.
-            for (let i = 1; i <= pdf.numPages; i++) {
-                renderPromises.push(
-                    pdf.getPage(i).then(page => {
-                        // Create container
-                        const div = document.createElement('div');
-                        div.className = 'my-page';
-                        div.id = `page-${i}`;
-                        
-                        const canvas = document.createElement('canvas');
-                        div.appendChild(canvas);
-                        
-                        // Viewport
-                        // Scale 1.5 for decent quality on flip
-                        const viewport = page.getViewport({ scale: 1.5 });
-                        canvas.height = viewport.height;
-                        canvas.width = viewport.width;
-                        
-                        const renderContext = {
-                            canvasContext: canvas.getContext('2d'),
-                            viewport: viewport
-                        };
-                        
-                        return page.render(renderContext).promise.then(() => {
-                            return { dom: div, index: i };
-                        });
-                    })
-                );
+            let scale = state.scale;
+            // If page is wider than container, shrink it
+            if (viewportUnscaled.width > containerWidth) {
+                scale = containerWidth / viewportUnscaled.width;
+            } else if (containerWidth > 600 && scale < 1.2) {
+                // Keep it readable on desktop
+                scale = 1.2;
             }
 
-            // Wait for all to render (sequentially or parallel? Parallel might freeze UI)
-            // Let's Promise.all
-            try {
-                const results = await Promise.all(renderPromises);
-                
-                // Sort by index to ensure correct order
-                results.sort((a, b) => a.index - b.index);
-                
-                // Append to DOM
-                results.forEach(res => bookElem.appendChild(res.dom));
-                
-                // Hide loader, show book
-                loader.style.display = 'none';
-                bookElem.style.display = 'block';
-                controls.style.display = 'flex';
-                
-                // Init Flip
-                const pageFlip = new St.PageFlip(bookElem, {
-                    width: 550, // match css
-                    height: 780, // match css
-                    size: 'stretch',
-                    minWidth: 300,
-                    maxWidth: 1000,
-                    minHeight: 400,
-                    maxHeight: 1400,
-                    maxShadowOpacity: 0.5,
-                    showCover: true,
-                    mobileScrollSupport: false 
-                });
+            const viewport = page.getViewport({scale: scale});
+            state.canvas.height = viewport.height;
+            state.canvas.width = viewport.width;
 
-                pageFlip.loadFromHTML(document.querySelectorAll('.my-page'));
+            // Render
+            const renderContext = {
+                canvasContext: state.ctx,
+                viewport: viewport
+            };
+            
+            const renderTask = page.render(renderContext);
+
+            // Wait for render to finish
+            renderTask.promise.then(function() {
+                state.pageRendering = false;
+                els.loader.style.display = 'none';
+                state.canvas.classList.remove('d-none');
                 
-                // Event Listeners
-                document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
-                document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
-                
-                pageFlip.on('flip', (e) => {
-                    pageInfo.textContent = `Page ${e.data + 1} of ${pageFlip.getPageCount()}`;
-                });
-                
-                // Check for page param
-                const urlParams = new URLSearchParams(window.location.search);
-                const targetPage = parseInt(urlParams.get('page'));
-                
-                if (targetPage && targetPage > 0 && targetPage <= pageFlip.getPageCount()) {
-                    // Slight delay to ensure flip is ready
-                    setTimeout(() => {
-                        pageFlip.flip(targetPage - 1); // 0-based index
-                    }, 500);
-                } else {
-                    pageInfo.textContent = `Page 1 of ${pageFlip.getPageCount()}`;
+                if (state.pageNumPending !== null) {
+                    renderPage(state.pageNumPending);
+                    state.pageNumPending = null;
                 }
+            });
+        });
 
-            } catch (error) {
-                console.error('Error rendering pages:', error);
-                loader.innerHTML = '<p class="text-danger">Error loading book. Please try again.</p>';
+        // Update counters & TOC
+        els.pageNum.textContent = num;
+        updateActiveToc(num);
+    }
+
+    function queueRenderPage(num) {
+        if (state.pageRendering) {
+            state.pageNumPending = num;
+        } else {
+            renderPage(num);
+        }
+    }
+
+    function onPrevPage() {
+        if (state.pageNum <= 1) return;
+        state.pageNum--;
+        queueRenderPage(state.pageNum);
+    }
+
+    function onNextPage() {
+        if (state.pageNum >= state.pdfDoc.numPages) return;
+        state.pageNum++;
+        queueRenderPage(state.pageNum);
+    }
+    
+    function onZoomIn() {
+        state.scale += 0.2;
+        queueRenderPage(state.pageNum);
+    }
+    
+    function onZoomOut() {
+        if (state.scale > 0.4) {
+            state.scale -= 0.2;
+            queueRenderPage(state.pageNum);
+        }
+    }
+
+    // --- Sidebar / TOC ---
+    function updateActiveToc(pageNum) {
+        // Find closest TOC item <= pageNum
+        const items = document.querySelectorAll('#toc-pane .list-group-item');
+        let activeItem = null;
+        
+        items.forEach(item => {
+            item.classList.remove('active');
+            const p = parseInt(item.dataset.page);
+            if (p <= pageNum) {
+                activeItem = item;
             }
+        });
+        
+        if (activeItem) {
+            activeItem.classList.add('active');
+            activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
 
-        }).catch(err => {
-            console.error('Error loading PDF:', err);
-            loader.innerHTML = '<p class="text-danger">Could not load the PDF file.</p>';
+    document.querySelectorAll('#toc-pane .list-group-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const p = parseInt(e.target.dataset.page);
+            state.pageNum = p;
+            queueRenderPage(p);
+            // Close mobile menu if open
+            closeMobileMenu();
         });
     });
+
+    // --- Search Logic ---
+    async function extractText() {
+        if (state.textIndex.length > 0) return; // Already indexed
+        
+        els.searchStatus.textContent = "Indexing document... this may take a moment.";
+        
+        const promises = [];
+        for(let i=1; i<=state.pdfDoc.numPages; i++) {
+            promises.push(
+                state.pdfDoc.getPage(i).then(page => 
+                    page.getTextContent().then(textContent => {
+                        return {
+                            pageNum: i,
+                            text: textContent.items.map(item => item.str).join(' ')
+                        };
+                    })
+                )
+            );
+        }
+        
+        try {
+            const pages = await Promise.all(promises);
+            state.textIndex = pages.sort((a,b) => a.pageNum - b.pageNum);
+            els.searchStatus.textContent = "Indexing complete. Ready to search.";
+            return true;
+        } catch(e) {
+            console.error(e);
+            els.searchStatus.textContent = "Error indexing document.";
+            return false;
+        }
+    }
+
+    async function performSearch() {
+        const query = document.getElementById('search-input').value.toLowerCase().trim();
+        if (!query) return;
+        
+        els.searchResults.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm"></div> Searching...</div>';
+        
+        // Ensure index exists
+        if (state.textIndex.length === 0) {
+            await extractText();
+        }
+
+        const results = state.textIndex.filter(page => page.text.toLowerCase().includes(query));
+        
+        els.searchResults.innerHTML = '';
+        els.searchStatus.textContent = `Found ${results.length} matches.`;
+
+        if (results.length === 0) {
+            els.searchResults.innerHTML = '<div class="list-group-item">No results found.</div>';
+            return;
+        }
+
+        results.forEach(res => {
+            // Create snippets
+            const textLower = res.text.toLowerCase();
+            const idx = textLower.indexOf(query);
+            const snippetStart = Math.max(0, idx - 20);
+            const snippetEnd = Math.min(res.text.length, idx + query.length + 40);
+            let snippet = res.text.substring(snippetStart, snippetEnd);
+            
+            // Highlight query (simple replace)
+            // Note: This simple replace is case-sensitive for display, might need regex for better highlighting
+            const regex = new RegExp(query, 'gi');
+            snippet = snippet.replace(regex, match => `<mark>${match}</mark>`);
+
+            const item = document.createElement('button');
+            item.className = 'list-group-item list-group-item-action';
+            item.innerHTML = `
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">Page ${res.pageNum}</h6>
+                </div>
+                <small class="text-muted">...${snippet}...</small>
+            `;
+            item.onclick = () => {
+                state.pageNum = res.pageNum;
+                queueRenderPage(res.pageNum);
+                closeMobileMenu();
+            };
+            els.searchResults.appendChild(item);
+        });
+    }
+
+    // --- Event Listeners ---
+    document.getElementById('prev-page').addEventListener('click', onPrevPage);
+    document.getElementById('next-page').addEventListener('click', onNextPage);
+    document.getElementById('zoom-in').addEventListener('click', onZoomIn);
+    document.getElementById('zoom-out').addEventListener('click', onZoomOut);
+    
+    document.getElementById('search-btn').addEventListener('click', performSearch);
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') performSearch();
+    });
+    
+    // Focus search tab triggers indexing if not done
+    document.getElementById('search-tab').addEventListener('shown.bs.tab', () => {
+        if (state.textIndex.length === 0 && state.pdfDoc) {
+            extractText(); // Start indexing in background
+        }
+    });
+
+    // Mobile Menu
+    const sidebar = document.getElementById('sidebar-wrapper');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    function openMobileMenu() {
+        sidebar.classList.add('show');
+        overlay.classList.remove('d-none');
+    }
+    
+    function closeMobileMenu() {
+        sidebar.classList.remove('show');
+        overlay.classList.add('d-none');
+    }
+    
+    document.getElementById('mobile-menu-btn').addEventListener('click', openMobileMenu);
+    document.getElementById('mobile-menu-close').addEventListener('click', closeMobileMenu);
+    overlay.addEventListener('click', closeMobileMenu);
+
+    // --- Init ---
+    const url = '/static/driver-full.pdf';
+    
+    pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+        state.pdfDoc = pdfDoc_;
+        els.pageCount.textContent = state.pdfDoc.numPages;
+
+        // Check for page param
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetPage = parseInt(urlParams.get('page'));
+        if (targetPage && targetPage > 0 && targetPage <= state.pdfDoc.numPages) {
+            state.pageNum = targetPage;
+        }
+
+        renderPage(state.pageNum);
+    }).catch(err => {
+        console.error("Error loading PDF", err);
+        els.loader.innerHTML = "<p class='text-danger'>Error loading document.</p>";
+    });
+
 </script>
 {% endblock %}
