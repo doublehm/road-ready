@@ -36,10 +36,15 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           
-          # Switch remote to SSH to ensure auth works
-          git remote set-url origin git@github.com:doublehm/road-ready.git
+          # FIX: Re-initialize git if broken
+          # We delete .git to force a clean slate without deleting data
+          if [ -d ".git" ]; then
+             sudo rm -rf .git
+          fi
           
-          # Pull latest changes
+          # Initialize fresh
+          git init
+          git remote add origin git@github.com:doublehm/road-ready.git
           git fetch origin main
           git reset --hard origin/main
           
