@@ -15,31 +15,32 @@ jobs:
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "--- DIAGNOSTICS ---"
-          IP=$(curl -s ifconfig.me)
-          echo "Public IP (obfuscated): ${IP//./_}"
-          echo "Hostname: $(hostname)"
-          echo "Nginx Sites Enabled:"
-          ls /etc/nginx/sites-enabled
-          echo "Docker Containers:"
-          sudo docker ps
-          echo "---------------------------"
-          
+          echo "--- GIT DIAGNOSTICS ---"
           cd /opt/road-ready
+          echo "Current Dir: $(pwd)"
+          echo "Remote URL:"
+          sudo git remote -v
+          echo "Git Status:"
+          sudo git status
+          
+          echo "Fetching..."
           sudo git fetch origin main
+          
+          echo "Resetting..."
           sudo git reset --hard origin/main
           
-          echo "--- CHECKING BASE.HTML ---"
-          grep "v2.0" app/templates/base.html || echo "VERSION MARKER NOT FOUND!"
+          echo "Latest Commit on Server:"
+          sudo git log -n 1
           
-          # Force stop and kill
+          echo "--- FILE CONTENT CHECK ---"
+          # Print the first 10 lines of base.html to see the title
+          sudo head -n 10 app/templates/base.html
+          echo "--------------------------"
+          
+          # Continue with build...
           sudo systemctl stop roadready || true
           sudo fuser -k 8000/tcp || true
-          
-          # Build and start
           sudo docker compose down || true
           sudo docker compose build --no-cache
           sudo docker compose up -d
-          
           sudo systemctl restart nginx
-          echo "Deployment successful!"
