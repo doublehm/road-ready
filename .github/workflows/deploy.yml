@@ -17,5 +17,11 @@ jobs:
         script: |
           cd /opt/road-ready
           sudo git pull origin main
+          # Stop conflicting systemd service if it exists
+          sudo systemctl stop roadready || true
+          sudo systemctl disable roadready || true
+          # Start Docker container
           sudo docker compose up -d --build
+          # Restart Nginx to be safe
+          sudo systemctl restart nginx
           echo "Deployment successful!"
