@@ -36,26 +36,16 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           
-          # FIX: Re-initialize git if broken
-          # We delete .git to force a clean slate without deleting data
-          if [ -d ".git" ]; then
-             sudo rm -rf .git
-          fi
+          # Ensure remote is correct SSH URL
+          git remote set-url origin git@github.com:doublehm/road-ready.git || git remote add origin git@github.com:doublehm/road-ready.git
           
-          # Initialize fresh
-          git init
-          git remote add origin git@github.com:doublehm/road-ready.git
+          # Pull latest changes
           git fetch origin main
           git reset --hard origin/main
           
           # Stop conflicts
           sudo systemctl stop roadready || true
           sudo systemctl disable roadready || true
-          
-          # Verify Content
-          echo "--- CHECKING TITLE TAG ---"
-          grep "<title>" app/templates/base.html
-          echo "--------------------------"
 
           # Rebuild and Restart Docker
           sudo docker compose down
