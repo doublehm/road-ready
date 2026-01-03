@@ -33,3 +33,5 @@ htmlcov/
 venv/
 server.log
 app/static/uploads/
+gh_deploy_key
+gh_deploy_key.pub

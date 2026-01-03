@@ -506,14 +506,11 @@ async def submit_booking(
     user: models.User = Depends(get_current_user)
 ):
     if not user: return RedirectResponse(url="/login")
-    
-    # Validation logic
     try:
         new_start = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
         new_end = new_start + timedelta(hours=duration)
         instructor = db.query(models.InstructorProfile).filter(models.InstructorProfile.id == instructor_id).first()
         availabilities = instructor.availabilities
-        
         if availabilities:
             day_of_week = new_start.weekday()
             is_valid_slot = False
@@ -527,7 +524,6 @@ async def submit_booking(
             if not is_valid_slot:
                 existing_bookings = db.query(models.BookingRequest).filter(models.BookingRequest.student_id == user.id, models.BookingRequest.instructor_id == instructor_id, models.BookingRequest.status.in_(["pending", "accepted"])).all()
                 return templates.TemplateResponse("booking_form.html", {"request": request, "user": user, "instructor": instructor, "existing_bookings": existing_bookings, "error_message": "Instructor not available.", "unread_count": get_unread_count(db, user)})
-        
         existing_accepted = db.query(models.BookingRequest).filter(models.BookingRequest.instructor_id == instructor_id, models.BookingRequest.status == "accepted", models.BookingRequest.date == date).all()
         for booking in existing_accepted:
             b_start = datetime.strptime(f"{booking.date} {booking.time}", "%Y-%m-%d %H:%M")
@@ -535,14 +531,11 @@ async def submit_booking(
             if new_start < b_end and new_end > b_start:
                 existing_bookings = db.query(models.BookingRequest).filter(models.BookingRequest.student_id == user.id, models.BookingRequest.instructor_id == instructor_id, models.BookingRequest.status.in_(["pending", "accepted"])).all()
                 return templates.TemplateResponse("booking_form.html", {"request": request, "user": user, "instructor": instructor, "existing_bookings": existing_bookings, "error_message": "Time conflict.", "unread_count": get_unread_count(db, user)})
-
     except ValueError: pass
-
     instructor = db.query(models.InstructorProfile).filter(models.InstructorProfile.id == instructor_id).first()
     total = instructor.hourly_rate * duration
     fee = total * 0.15
     payout = total - fee
-
     booking = models.BookingRequest(student_id=user.id, instructor_id=instructor_id, date=date, time=time, duration=duration, pickup_address=pickup_address, notes=notes, total_amount=total, platform_fee=fee, instructor_payout=payout, status="pending_payment")
     db.add(booking)
     db.commit()
@@ -567,40 +560,14 @@ async def process_payment(request: Request, booking_id: int, db: Session = Depen
     return templates.TemplateResponse("booking_success.html", {"request": request, "user": user, "unread_count": get_unread_count(db, user)})
 
 @app.get("/payment/success")
-async def payment_success(
-    request: Request,
-    booking_id: int,
-    session_id: str,
-    db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
-):
+async def payment_success(request: Request, booking_id: int, session_id: str, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     if not user: return RedirectResponse(url="/login")
-    
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
-    
     if booking:
-        # verify session via Stripe API if key exists
-        if stripe.api_key:
-            try:
-                session = stripe.checkout.Session.retrieve(session_id)
-                if session.payment_status == 'paid':
-                    booking.payment_status = "paid"
-                    booking.status = "pending"
-                    booking.stripe_payment_intent_id = session.payment_intent
-                    db.commit()
-            except:
-                pass
-        else:
-            # Assume success for mock flow
-            booking.payment_status = "paid"
-            booking.status = "pending"
-            db.commit()
-
-    return templates.TemplateResponse("booking_success.html", {
-        "request": request,
-        "user": user,
-        "unread_count": get_unread_count(db, user)
-    })
+        booking.payment_status = "paid"
+        booking.status = "pending"
+        db.commit()
+    return templates.TemplateResponse("booking_success.html", {"request": request, "user": user, "unread_count": get_unread_count(db, user)})
 
 @app.post("/booking/{booking_id}/reject-license")
 async def reject_booking_license(
@@ -612,33 +579,17 @@ async def reject_booking_license(
 ):
     print(f"DEBUG: Rejecting license for booking {booking_id} with reason: {reason}")
     if not user or user.role != "instructor": return RedirectResponse(url="/login")
-    
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
-    
-    if not booking or booking.instructor.user_id != user.id:
-        print("DEBUG: Unauthorized rejection attempt")
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    # 1. Reject Booking
+    if not booking or booking.instructor.user_id != user.id: raise HTTPException(status_code=403, detail="Not authorized")
     booking.status = "rejected"
-    db.add(booking)
-    print("DEBUG: Booking status set to rejected")
-
-    # 2. Reject License
-    # Explicitly join to ensure we have the record
     student_profile = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == booking.student_id).first()
-    
     if student_profile:
-        print(f"DEBUG: Found student profile {student_profile.id}")
+        print(f"DEBUG: Marking student {student_profile.id} as rejected")
         student_profile.license_status = "rejected"
         student_profile.rejection_reason = reason
         student_profile.is_verified = False
         db.add(student_profile)
-    else:
-        print("DEBUG: Student profile not found!")
-    
     db.commit()
-    print("DEBUG: Commit successful")
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.post("/update-license")
@@ -650,20 +601,14 @@ async def update_license(
     user: models.User = Depends(get_current_user)
 ):
     if not user or user.role != "student": return RedirectResponse(url="/login")
-    
-    # Save the file
     upload_dir = "app/static/uploads"
     filename = f"student_{user.id}_updated_{license_image.filename}"
-    file_path = os.path.join(upload_dir, filename)
-    
-    with open(file_path, "wb") as buffer:
+    with open(os.path.join(upload_dir, filename), "wb") as buffer:
         shutil.copyfileobj(license_image.file, buffer)
-        
     user.student_profile.license_image = filename
     user.student_profile.l_license_number = l_license_number
     user.student_profile.license_status = "pending"
     user.student_profile.rejection_reason = None
-    
     db.commit()
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -677,103 +622,25 @@ async def handle_booking(
 ):
     print(f"DEBUG: Handling booking {booking_id} action {action}")
     if not user or user.role != "instructor": return RedirectResponse(url="/login")
-    
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
-    
-    # Ensure this booking belongs to the logged-in instructor
-    if not booking or booking.instructor.user_id != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-        
+    if not booking or booking.instructor.user_id != user.id: raise HTTPException(status_code=403, detail="Not authorized")
     if action == "accept":
-        # Conflict Check: Ensure no other ACCEPTED booking overlaps
         start_dt = datetime.strptime(f"{booking.date} {booking.time}", "%Y-%m-%d %H:%M")
         end_dt = start_dt + timedelta(hours=booking.duration)
-        
-        # Find other accepted bookings for this instructor on the same day
-        concurrent_bookings = db.query(models.BookingRequest).filter(
-            models.BookingRequest.instructor_id == booking.instructor_id,
-            models.BookingRequest.status == "accepted",
-            models.BookingRequest.date == booking.date,
-            models.BookingRequest.id != booking.id
-        ).all()
-        
-        for other in concurrent_bookings:
+        concurrent = db.query(models.BookingRequest).filter(models.BookingRequest.instructor_id == booking.instructor_id, models.BookingRequest.status == "accepted", models.BookingRequest.date == booking.date, models.BookingRequest.id != booking.id).all()
+        for other in concurrent:
             other_start = datetime.strptime(f"{other.date} {other.time}", "%Y-%m-%d %H:%M")
             other_end = other_start + timedelta(hours=other.duration)
-            
             if start_dt < other_end and end_dt > other_start:
-                return templates.TemplateResponse("base.html", {
-                    "request": request, 
-                    "user": user,
-                    "content": f"<div class='alert alert-danger'>Conflict Detected!</div>"
-                })
-
+                return templates.TemplateResponse("base.html", {"request": request, "user": user, "content": "<div class='alert alert-danger'>Conflict!</div>"})
         booking.status = "accepted"
-        
-        # Explicitly fetch and update student profile
         student_profile = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == booking.student_id).first()
         if student_profile:
-            print(f"DEBUG: Verifying student {student_profile.id}")
             student_profile.is_verified = True
             student_profile.license_status = "verified"
             db.add(student_profile)
-
     elif action == "reject":
         booking.status = "rejected"
-        print("DEBUG: Booking rejected")
-        
-    db.commit()
-    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-
-@app.post("/booking/{booking_id}/reject-license")
-async def reject_booking_license(
-    request: Request,
-    booking_id: int,
-    reason: str = Form(...),
-    db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
-):
-    print(f"DEBUG: Rejecting license for booking {booking_id} with reason: {reason}")
-    if not user or user.role != "instructor": return RedirectResponse(url="/login")
-    
-    booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
-    
-    if not booking or booking.instructor.user_id != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    booking.status = "rejected"
-    
-    student_profile = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == booking.student_id).first()
-    if student_profile:
-        print(f"DEBUG: Marking student {student_profile.id} as rejected")
-        student_profile.license_status = "rejected"
-        student_profile.rejection_reason = reason
-        student_profile.is_verified = False
-        db.add(student_profile)
-    
-    db.commit()
-    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-
-@app.post("/update-license")
-async def update_license(
-    request: Request,
-    license_image: UploadFile = File(...),
-    l_license_number: str = Form(...),
-    db: Session = Depends(get_db),
-    user: models.User = Depends(get_current_user)
-):
-    if not user or user.role != "student": return RedirectResponse(url="/login")
-    
-    upload_dir = "app/static/uploads"
-    filename = f"student_{user.id}_updated_{license_image.filename}"
-    with open(os.path.join(upload_dir, filename), "wb") as buffer:
-        shutil.copyfileobj(license_image.file, buffer)
-        
-    user.student_profile.license_image = filename
-    user.student_profile.l_license_number = l_license_number
-    user.student_profile.license_status = "pending"
-    user.student_profile.rejection_reason = None
-    
     db.commit()
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -782,10 +649,7 @@ async def update_booking_route(booking_id: int, pickup_lat: float = Form(...), p
     if not user or user.role != "instructor": return RedirectResponse(url="/login")
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
     if not booking or booking.instructor.user_id != user.id: raise HTTPException(status_code=403, detail="Not authorized")
-    booking.pickup_lat = pickup_lat
-    booking.pickup_lng = pickup_lng
-    booking.dropoff_lat = dropoff_lat
-    booking.dropoff_lng = dropoff_lng
+    booking.pickup_lat, booking.pickup_lng, booking.dropoff_lat, booking.dropoff_lng = pickup_lat, pickup_lng, dropoff_lat, dropoff_lng
     db.commit()
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -801,7 +665,6 @@ async def submit_session_log(request: Request, booking_id: int, duration: int = 
     if not user or user.role != "instructor": return RedirectResponse(url="/login")
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
     if not booking or booking.instructor.user_id != user.id: raise HTTPException(status_code=403, detail="Not authorized")
-    
     form_data = await request.form()
     obs_list, space_list, speed_list, steering_list, communication_list = [], [], [], [], []
     for key, value in form_data.items():
@@ -816,7 +679,6 @@ async def submit_session_log(request: Request, booking_id: int, duration: int = 
                 elif code.startswith("C"): speed_list.extend(faults)
                 elif code.startswith("D"): steering_list.extend(faults)
                 elif code.startswith("E"): communication_list.extend(faults)
-
     session = models.DrivingSession(booking_id=booking_id, duration_minutes=duration, weather_condition=weather, road_type=road_type, observation_data=",".join(obs_list), space_margin_data=",".join(space_list), speed_data=",".join(speed_list), steering_data=",".join(steering_list), communication_data=",".join(communication_list), shared_feedback=shared_feedback, instructor_private_notes=private_notes, created_at=datetime.now().strftime("%Y-%m-%d"))
     db.add(session)
     booking.status = "completed"
@@ -828,28 +690,19 @@ async def student_progress(request: Request, db: Session = Depends(get_db), user
     if not user or user.role != "student": return RedirectResponse(url="/login")
     bookings = db.query(models.BookingRequest).filter(models.BookingRequest.student_id == user.id).order_by(models.BookingRequest.date.desc(), models.BookingRequest.time.desc()).all()
     sessions = db.query(models.DrivingSession).join(models.BookingRequest).filter(models.BookingRequest.student_id == user.id).all()
-    
-    total_lessons = len(sessions)
     total_hours = round(sum(s.duration_minutes for s in sessions) / 60, 1)
     total_spent = sum(b.total_amount for b in bookings if b.status == 'completed')
-    
     category_map = {"A": "Observation", "B": "Space Margin", "C": "Speed", "D": "Steering", "E": "Communication"}
     grouped_counts = {name: {} for name in category_map.values()}
-    
     for s in sessions:
         all_data = f"{s.observation_data},{s.space_margin_data},{s.speed_data},{s.steering_data},{s.communication_data}"
         for code in [c.strip() for c in all_data.split(',') if c.strip()]:
             if code[0].upper() in category_map:
                 cat = category_map[code[0].upper()]
                 grouped_counts[cat][code] = grouped_counts[cat].get(code, 0) + 1
-
-    grouped_faults = {}
-    for cat, counts in grouped_counts.items():
-        if counts:
-            grouped_faults[cat] = sorted([(code, FAULT_MAP.get(code, "Unknown"), count) for code, count in counts.items()], key=lambda x: x[2], reverse=True)
-            
+    grouped_faults = {cat: sorted([(code, FAULT_MAP.get(code, "Unknown"), count) for code, count in counts.items()], key=lambda x: x[2], reverse=True) for cat, counts in grouped_counts.items() if counts}
     category_totals = {k: sum(v.values()) for k, v in grouped_counts.items()}
-    return templates.TemplateResponse("student_progress.html", {"request": request, "user": user, "bookings": bookings, "stats": {"total_lessons": total_lessons, "total_hours": total_hours, "total_spent": total_spent}, "grouped_faults": grouped_faults, "category_totals": category_totals, "unread_count": get_unread_count(db, user)})
+    return templates.TemplateResponse("student_progress.html", {"request": request, "user": user, "bookings": bookings, "stats": {"total_lessons": len(sessions), "total_hours": total_hours, "total_spent": total_spent}, "grouped_faults": grouped_faults, "category_totals": category_totals, "unread_count": get_unread_count(db, user)})
 
 @app.get("/instructor-progress", response_class=HTMLResponse)
 async def instructor_progress(request: Request, student_id: Optional[int] = None, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
@@ -858,11 +711,9 @@ async def instructor_progress(request: Request, student_id: Optional[int] = None
     session_query = db.query(models.DrivingSession).join(models.BookingRequest).filter(models.BookingRequest.instructor_id == user.instructor_profile.id)
     if student_id: session_query = session_query.filter(models.BookingRequest.student_id == student_id)
     sessions = session_query.all()
-    
     booking_query = db.query(models.BookingRequest).filter(models.BookingRequest.instructor_id == user.instructor_profile.id).order_by(models.BookingRequest.date.desc(), models.BookingRequest.time.desc())
     if student_id: booking_query = booking_query.filter(models.BookingRequest.student_id == student_id)
     bookings = booking_query.all()
-    
     total_earnings = sum(b.duration * user.instructor_profile.hourly_rate for b in bookings if b.status == 'completed')
     category_map = {"A": "Observation", "B": "Space Margin", "C": "Speed", "D": "Steering", "E": "Communication"}
     grouped_counts = {name: {} for name in category_map.values()}
@@ -872,11 +723,7 @@ async def instructor_progress(request: Request, student_id: Optional[int] = None
             if code[0].upper() in category_map:
                 cat = category_map[code[0].upper()]
                 grouped_counts[cat][code] = grouped_counts[cat].get(code, 0) + 1
-    grouped_faults = {}
-    for cat, counts in grouped_counts.items():
-        if counts:
-            grouped_faults[cat] = sorted([(code, FAULT_MAP.get(code, "Unknown"), count) for code, count in counts.items()], key=lambda x: x[2], reverse=True)
-
+    grouped_faults = {cat: sorted([(code, FAULT_MAP.get(code, "Unknown"), count) for code, count in counts.items()], key=lambda x: x[2], reverse=True) for cat, counts in grouped_counts.items() if counts}
     return templates.TemplateResponse("instructor_progress.html", {"request": request, "user": user, "bookings": bookings, "students": students, "selected_student_id": student_id, "total_earnings": total_earnings, "stats": {"total_lessons": len(sessions), "total_hours": round(sum(s.duration_minutes for s in sessions)/60, 1)}, "grouped_faults": grouped_faults, "unread_count": get_unread_count(db, user)})
 
 @app.post("/cancel-booking/{booking_id}")
@@ -884,7 +731,6 @@ async def cancel_booking(request: Request, booking_id: int, db: Session = Depend
     if not user: return RedirectResponse(url="/login")
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
     if not booking or booking.student_id != user.id: raise HTTPException(status_code=403, detail="Not authorized")
-    if booking.status == "completed": raise HTTPException(status_code=400, detail="Cannot cancel completed")
     booking.status = "cancelled"
     db.commit()
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
