@@ -2,166 +2,127 @@
 
 {% block content %}
 <style>
-    /* Custom Scrollbar for Sidebar */
-    .custom-scroll::-webkit-scrollbar {
-        width: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-        background: #f1f1f1;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 3px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb:hover {
-        background: #555;
-    }
-
-    /* PDF Container */
-    #pdf-render-container {
-        background-color: #525659;
-        min-height: 80vh;
-        overflow: auto;
-        display: flex;
-        justify-content: center;
-        padding: 20px;
-        position: relative;
+    /* Reset main container padding for full screen experience */
+    .container {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
     }
     
-    .pdf-page-canvas {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        margin-bottom: 20px;
+    body {
+        overflow-x: hidden;
+        background-color: #333;
+    }
+
+    #book-viewer-container {
+        position: relative;
+        width: 100vw;
+        height: calc(100vh - 56px); /* Subtract navbar height */
+        background-color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    #pdf-render-canvas {
         max-width: 100%;
-        background: white;
+        max-height: 100%;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        transition: transform 0.2s ease;
     }
 
-    /* Highlight Search Results */
-    .search-match {
-        background-color: yellow;
-        opacity: 0.4;
+    /* Controls Overlay */
+    .controls-overlay {
         position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 1000;
     }
 
-    /* Sidebar Styles */
-    #sidebar-wrapper {
-        height: calc(100vh - 70px); /* Adjust based on navbar height */
-        position: sticky;
+    /* Show controls on hover or tap */
+    #book-viewer-container:hover .controls-overlay,
+    #book-viewer-container.show-controls .controls-overlay {
+        transform: translateY(0);
+    }
+
+    /* Range Slider */
+    input[type=range] {
+        width: 100%;
+        margin: 10px 0;
+        cursor: pointer;
+    }
+
+    /* Click Zones for Desktop (Invisible) */
+    .click-zone {
+        position: absolute;
+        top: 0;
+        bottom: 50px; /* Leave space for controls */
+        width: 20%;
+        z-index: 900;
+        cursor: pointer;
+    }
+    #prev-zone { left: 0; }
+    #next-zone { right: 0; }
+    
+    /* Loading Spinner */
+    #loading-indicator {
+        position: absolute;
+        color: white;
+        z-index: 100;
+    }
+
+    /* Page info pill */
+    .page-pill {
+        background: rgba(0,0,0,0.6);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        position: absolute;
         top: 20px;
-    }
-
-    @media (max-width: 767.98px) {
-        #sidebar-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: 80%;
-            max-width: 300px;
-            background: white;
-            z-index: 1050;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease-in-out;
-            padding: 1rem;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.5);
-        }
-        #sidebar-wrapper.show {
-            transform: translateX(0);
-        }
-        #pdf-render-container {
-            padding: 10px;
-            min-height: 60vh;
-        }
+        z-index: 100;
+        font-size: 0.9rem;
     }
 </style>
 
-<div class="row">
-    <!-- Mobile Sidebar Toggle -->
-    <div class="col-12 d-md-none mb-3">
-        <button class="btn btn-primary w-100" id="mobile-menu-btn">
-            <i class="bi bi-list"></i> Menu / Table of Contents
-        </button>
+<div id="book-viewer-container">
+    <div id="loading-indicator">
+        <div class="spinner-border" role="status"></div>
+        <div class="mt-2">Loading Book...</div>
+    </div>
+    
+    <div class="page-pill">
+        Page <span id="current-page">1</span> / <span id="total-pages">--</span>
     </div>
 
-    <!-- Sidebar (TOC & Search) -->
-    <div class="col-md-4 col-lg-3" id="sidebar-wrapper">
-        <div class="d-flex flex-column h-100">
-            <!-- Header for Mobile -->
-            <div class="d-flex justify-content-between align-items-center d-md-none mb-3">
-                <h5 class="mb-0">Navigation</h5>
-                <button type="button" class="btn-close" id="mobile-menu-close"></button>
-            </div>
+    <!-- Click zones for easy navigation on desktop -->
+    <div id="prev-zone" class="click-zone" title="Previous Page"></div>
+    <div id="next-zone" class="click-zone" title="Next Page"></div>
 
-            <!-- Tabs -->
-            <ul class="nav nav-tabs mb-3" id="bookTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="toc-tab" data-bs-toggle="tab" data-bs-target="#toc-pane" type="button" role="tab">Chapters</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="search-tab" data-bs-toggle="tab" data-bs-target="#search-pane" type="button" role="tab">Search</button>
-                </li>
-            </ul>
+    <canvas id="pdf-render-canvas"></canvas>
 
-            <!-- Tab Content -->
-            <div class="tab-content flex-grow-1 overflow-hidden" id="bookTabsContent">
-                
-                <!-- TOC Pane -->
-                <div class="tab-pane fade show active h-100" id="toc-pane" role="tabpanel">
-                    <div class="list-group custom-scroll h-100 overflow-y-auto">
-                        <button class="list-group-item list-group-item-action active" data-page="1">Cover</button>
-                        <button class="list-group-item list-group-item-action" data-page="5">Chapter 1: You in the Driver's Seat</button>
-                        <button class="list-group-item list-group-item-action" data-page="15">Chapter 2: Signs, Signals & Road Markings</button>
-                        <button class="list-group-item list-group-item-action" data-page="30">Chapter 3: The Rules of the Road</button>
-                        <button class="list-group-item list-group-item-action" data-page="50">Chapter 4: Driving Smart</button>
-                        <button class="list-group-item list-group-item-action" data-page="70">Chapter 5: Tuning Up for Drivers</button>
-                        <button class="list-group-item list-group-item-action" data-page="90">Chapter 6: Sharing the Road</button>
-                        <button class="list-group-item list-group-item-action" data-page="110">Chapter 7: Emergencies</button>
-                        <button class="list-group-item list-group-item-action" data-page="120">Chapter 8: Review</button>
-                    </div>
-                </div>
-
-                <!-- Search Pane -->
-                <div class="tab-pane fade h-100" id="search-pane" role="tabpanel">
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" id="search-input" placeholder="Search term...">
-                        <button class="btn btn-outline-secondary" type="button" id="search-btn"><i class="bi bi-search"></i></button>
-                    </div>
-                    <div id="search-status" class="small text-muted mb-2"></div>
-                    <div class="list-group custom-scroll h-100 overflow-y-auto" id="search-results">
-                        <!-- Results injected here -->
-                    </div>
-                </div>
-            </div>
+    <!-- Bottom Controls -->
+    <div class="controls-overlay" id="controls">
+        <div class="d-flex justify-content-between w-100 mb-2 px-2">
+            <span id="page-indicator-text">Page 1</span>
+            <span>
+                <i class="bi bi-arrow-left-circle fs-4 mx-2" id="btn-prev" style="cursor:pointer"></i>
+                <i class="bi bi-arrow-right-circle fs-4 mx-2" id="btn-next" style="cursor:pointer"></i>
+            </span>
         </div>
-    </div>
-
-    <!-- Main Content (PDF Viewer) -->
-    <div class="col-md-8 col-lg-9">
-        <!-- Toolbar -->
-        <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2 shadow-sm">
-            <div>
-                <button class="btn btn-sm btn-outline-secondary" id="prev-page"><i class="bi bi-chevron-left"></i></button>
-                <span class="mx-2 small fw-bold">Page <span id="page-num">--</span> / <span id="page-count">--</span></span>
-                <button class="btn btn-sm btn-outline-secondary" id="next-page"><i class="bi bi-chevron-right"></i></button>
-            </div>
-            <div>
-                <button class="btn btn-sm btn-outline-secondary" id="zoom-out"><i class="bi bi-dash"></i></button>
-                <button class="btn btn-sm btn-outline-secondary" id="zoom-in"><i class="bi bi-plus"></i></button>
-            </div>
-        </div>
-
-        <!-- PDF Area -->
-        <div id="pdf-render-container" class="rounded">
-            <div id="pdf-loading" class="text-white mt-5 text-center">
-                <div class="spinner-border text-light" role="status"></div>
-                <p class="mt-2">Loading Document...</p>
-            </div>
-            <canvas id="pdf-canvas" class="d-none pdf-page-canvas"></canvas>
-        </div>
+        <input type="range" class="form-range" id="page-slider" min="1" max="100" value="1">
     </div>
 </div>
-
-<!-- Overlay for Mobile Sidebar -->
-<div id="sidebar-overlay" class="d-none" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:1040;"></div>
 
 <!-- PDF.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -174,46 +135,45 @@
         pageNum: 1,
         pageRendering: false,
         pageNumPending: null,
-        scale: 1.2,
-        canvas: document.getElementById('pdf-canvas'),
-        ctx: document.getElementById('pdf-canvas').getContext('2d'),
-        textIndex: [] // Cache for search
+        scale: 1.0, // Initial scale, will be calculated
+        canvas: document.getElementById('pdf-render-canvas'),
+        ctx: document.getElementById('pdf-render-canvas').getContext('2d'),
+        touchStartX: 0,
+        touchEndX: 0
     };
 
     const els = {
-        pdfContainer: document.getElementById('pdf-render-container'),
-        loader: document.getElementById('pdf-loading'),
-        pageNum: document.getElementById('page-num'),
-        pageCount: document.getElementById('page-count'),
-        searchResults: document.getElementById('search-results'),
-        searchStatus: document.getElementById('search-status')
+        container: document.getElementById('book-viewer-container'),
+        slider: document.getElementById('page-slider'),
+        currentPage: document.getElementById('current-page'),
+        totalPages: document.getElementById('total-pages'),
+        pageIndicatorText: document.getElementById('page-indicator-text'),
+        loader: document.getElementById('loading-indicator'),
+        controls: document.getElementById('controls')
     };
 
-    // --- PDF Rendering ---
+    // --- Render Logic ---
     function renderPage(num) {
         state.pageRendering = true;
         
         // Fetch page
         state.pdfDoc.getPage(num).then(function(page) {
             
-            // Adjust scale based on container width if mobile
-            const containerWidth = els.pdfContainer.clientWidth - 40; // padding
-            const viewportUnscaled = page.getViewport({scale: 1});
+            // Calculate scale to fit best in container
+            const containerWidth = els.container.clientWidth;
+            const containerHeight = els.container.clientHeight;
             
-            let scale = state.scale;
-            // If page is wider than container, shrink it
-            if (viewportUnscaled.width > containerWidth) {
-                scale = containerWidth / viewportUnscaled.width;
-            } else if (containerWidth > 600 && scale < 1.2) {
-                // Keep it readable on desktop
-                scale = 1.2;
-            }
+            const unscaledViewport = page.getViewport({scale: 1});
+            const scaleX = containerWidth / unscaledViewport.width;
+            const scaleY = containerHeight / unscaledViewport.height;
+            
+            // Use the smaller scale to fit entire page
+            state.scale = Math.min(scaleX, scaleY) * 0.95; // 95% to leave a tiny margin
 
-            const viewport = page.getViewport({scale: scale});
+            const viewport = page.getViewport({scale: state.scale});
             state.canvas.height = viewport.height;
             state.canvas.width = viewport.width;
 
-            // Render
             const renderContext = {
                 canvasContext: state.ctx,
                 viewport: viewport
@@ -221,11 +181,9 @@
             
             const renderTask = page.render(renderContext);
 
-            // Wait for render to finish
             renderTask.promise.then(function() {
                 state.pageRendering = false;
                 els.loader.style.display = 'none';
-                state.canvas.classList.remove('d-none');
                 
                 if (state.pageNumPending !== null) {
                     renderPage(state.pageNumPending);
@@ -234,9 +192,10 @@
             });
         });
 
-        // Update counters & TOC
-        els.pageNum.textContent = num;
-        updateActiveToc(num);
+        // Update UI
+        els.currentPage.textContent = num;
+        els.slider.value = num;
+        els.pageIndicatorText.textContent = `Page ${num}`;
     }
 
     function queueRenderPage(num) {
@@ -258,186 +217,70 @@
         state.pageNum++;
         queueRenderPage(state.pageNum);
     }
+
+    // --- Interaction Listeners ---
     
-    function onZoomIn() {
-        state.scale += 0.2;
+    // Slider
+    els.slider.addEventListener('input', (e) => {
+        state.pageNum = parseInt(e.target.value);
         queueRenderPage(state.pageNum);
-    }
-    
-    function onZoomOut() {
-        if (state.scale > 0.4) {
-            state.scale -= 0.2;
-            queueRenderPage(state.pageNum);
-        }
-    }
-
-    // --- Sidebar / TOC ---
-    function updateActiveToc(pageNum) {
-        // Find closest TOC item <= pageNum
-        const items = document.querySelectorAll('#toc-pane .list-group-item');
-        let activeItem = null;
-        
-        items.forEach(item => {
-            item.classList.remove('active');
-            const p = parseInt(item.dataset.page);
-            if (p <= pageNum) {
-                activeItem = item;
-            }
-        });
-        
-        if (activeItem) {
-            activeItem.classList.add('active');
-            activeItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-    }
-
-    document.querySelectorAll('#toc-pane .list-group-item').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const p = parseInt(e.target.dataset.page);
-            state.pageNum = p;
-            queueRenderPage(p);
-            // Close mobile menu if open
-            closeMobileMenu();
-        });
     });
 
-    // --- Search Logic ---
-    async function extractText() {
-        if (state.textIndex.length > 0) return; // Already indexed
-        
-        els.searchStatus.textContent = "Indexing document... this may take a moment.";
-        
-        const promises = [];
-        for(let i=1; i<=state.pdfDoc.numPages; i++) {
-            promises.push(
-                state.pdfDoc.getPage(i).then(page => 
-                    page.getTextContent().then(textContent => {
-                        return {
-                            pageNum: i,
-                            text: textContent.items.map(item => item.str).join(' ')
-                        };
-                    })
-                )
-            );
-        }
-        
-        try {
-            const pages = await Promise.all(promises);
-            state.textIndex = pages.sort((a,b) => a.pageNum - b.pageNum);
-            els.searchStatus.textContent = "Indexing complete. Ready to search.";
-            return true;
-        } catch(e) {
-            console.error(e);
-            els.searchStatus.textContent = "Error indexing document.";
-            return false;
-        }
-    }
+    // Click Zones
+    document.getElementById('prev-zone').addEventListener('click', onPrevPage);
+    document.getElementById('next-zone').addEventListener('click', onNextPage);
+    document.getElementById('btn-prev').addEventListener('click', onPrevPage);
+    document.getElementById('btn-next').addEventListener('click', onNextPage);
 
-    async function performSearch() {
-        const query = document.getElementById('search-input').value.toLowerCase().trim();
-        if (!query) return;
-        
-        els.searchResults.innerHTML = '<div class="text-center p-3"><div class="spinner-border spinner-border-sm"></div> Searching...</div>';
-        
-        // Ensure index exists
-        if (state.textIndex.length === 0) {
-            await extractText();
-        }
-
-        const results = state.textIndex.filter(page => page.text.toLowerCase().includes(query));
-        
-        els.searchResults.innerHTML = '';
-        els.searchStatus.textContent = `Found ${results.length} matches.`;
-
-        if (results.length === 0) {
-            els.searchResults.innerHTML = '<div class="list-group-item">No results found.</div>';
-            return;
-        }
-
-        results.forEach(res => {
-            // Create snippets
-            const textLower = res.text.toLowerCase();
-            const idx = textLower.indexOf(query);
-            const snippetStart = Math.max(0, idx - 20);
-            const snippetEnd = Math.min(res.text.length, idx + query.length + 40);
-            let snippet = res.text.substring(snippetStart, snippetEnd);
-            
-            // Highlight query (simple replace)
-            // Note: This simple replace is case-sensitive for display, might need regex for better highlighting
-            const regex = new RegExp(query, 'gi');
-            snippet = snippet.replace(regex, match => `<mark>${match}</mark>`);
-
-            const item = document.createElement('button');
-            item.className = 'list-group-item list-group-item-action';
-            item.innerHTML = `
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">Page ${res.pageNum}</h6>
-                </div>
-                <small class="text-muted">...${snippet}...</small>
-            `;
-            item.onclick = () => {
-                state.pageNum = res.pageNum;
-                queueRenderPage(res.pageNum);
-                closeMobileMenu();
-            };
-            els.searchResults.appendChild(item);
-        });
-    }
-
-    // --- Event Listeners ---
-    document.getElementById('prev-page').addEventListener('click', onPrevPage);
-    document.getElementById('next-page').addEventListener('click', onNextPage);
-    document.getElementById('zoom-in').addEventListener('click', onZoomIn);
-    document.getElementById('zoom-out').addEventListener('click', onZoomOut);
-    
-    document.getElementById('search-btn').addEventListener('click', performSearch);
-    document.getElementById('search-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') performSearch();
+    // Touch / Swipe Logic
+    els.container.addEventListener('touchstart', e => {
+        state.touchStartX = e.changedTouches[0].screenX;
+        // Show controls on touch
+        els.container.classList.add('show-controls');
+        // Hide after 3s
+        clearTimeout(window.controlsTimeout);
+        window.controlsTimeout = setTimeout(() => {
+            els.container.classList.remove('show-controls');
+        }, 3000);
     });
+
+    els.container.addEventListener('touchend', e => {
+        state.touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    });
+
+    function handleSwipe() {
+        const threshold = 50; // min distance
+        if (state.touchEndX < state.touchStartX - threshold) {
+            // Swipe Left -> Next Page
+            onNextPage();
+        }
+        if (state.touchEndX > state.touchStartX + threshold) {
+            // Swipe Right -> Prev Page
+            onPrevPage();
+        }
+    }
     
-    // Focus search tab triggers indexing if not done
-    document.getElementById('search-tab').addEventListener('shown.bs.tab', () => {
-        if (state.textIndex.length === 0 && state.pdfDoc) {
-            extractText(); // Start indexing in background
+    // Resize Handler
+    window.addEventListener('resize', () => {
+        // Re-render to fit new dimensions
+        if(state.pdfDoc) {
+            renderPage(state.pageNum);
         }
     });
 
-    // Mobile Menu
-    const sidebar = document.getElementById('sidebar-wrapper');
-    const overlay = document.getElementById('sidebar-overlay');
-    
-    function openMobileMenu() {
-        sidebar.classList.add('show');
-        overlay.classList.remove('d-none');
-    }
-    
-    function closeMobileMenu() {
-        sidebar.classList.remove('show');
-        overlay.classList.add('d-none');
-    }
-    
-    document.getElementById('mobile-menu-btn').addEventListener('click', openMobileMenu);
-    document.getElementById('mobile-menu-close').addEventListener('click', closeMobileMenu);
-    overlay.addEventListener('click', closeMobileMenu);
-
-    // --- Init ---
+    // --- Load Document ---
     const url = '/static/driver-full.pdf';
     
     pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
         state.pdfDoc = pdfDoc_;
-        els.pageCount.textContent = state.pdfDoc.numPages;
-
-        // Check for page param
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetPage = parseInt(urlParams.get('page'));
-        if (targetPage && targetPage > 0 && targetPage <= state.pdfDoc.numPages) {
-            state.pageNum = targetPage;
-        }
+        els.totalPages.textContent = state.pdfDoc.numPages;
+        els.slider.max = state.pdfDoc.numPages;
 
         renderPage(state.pageNum);
     }).catch(err => {
         console.error("Error loading PDF", err);
-        els.loader.innerHTML = "<p class='text-danger'>Error loading document.</p>";
+        els.loader.innerHTML = "<div class='text-danger'>Error loading book.</div>";
     });
 
 </script>

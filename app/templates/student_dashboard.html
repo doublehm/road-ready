@@ -6,8 +6,40 @@
 
 <div class="row mb-4">
     <div class="col-12">
-        <h2>Welcome, {{ user.full_name }}! 👋</h2>
-        <p class="text-muted">Here are some recommended instructors for you.</p>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2>Welcome, {{ user.full_name }}! 👋</h2>
+                {% if user.student_profile.license_status == 'verified' %}
+                    <span class="badge bg-success">Verified Student ✅</span>
+                {% elif user.student_profile.license_status == 'rejected' %}
+                    <span class="badge bg-danger">ID Rejected ❌</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark">Pending Verification ⏳</span>
+                {% endif %}
+            </div>
+        </div>
+        <p class="text-muted mt-2">Here are some recommended instructors for you.</p>
+        
+        {% if user.student_profile.license_status == 'rejected' %}
+        <div class="alert alert-danger">
+            <h4><i class="bi bi-exclamation-triangle"></i> ID Verification Failed</h4>
+            <p>Your license was rejected by an instructor. Reason: <strong>{{ user.student_profile.rejection_reason }}</strong></p>
+            <hr>
+            <form action="/update-license" method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Re-upload 'L' License</label>
+                    <input type="file" name="license_image" class="form-control" accept="image/*" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Confirm License Number</label>
+                    <input type="text" name="l_license_number" class="form-control" value="{{ user.student_profile.l_license_number }}" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-danger w-100">Submit for Review</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -60,7 +92,11 @@
                             <div>✅ Verified Instructor</div>
                         </div>
                         <div class="d-grid">
-                            <a href="/book/{{ instructor.id }}" class="btn btn-outline-primary">Request Booking</a>
+                            {% if user.student_profile.is_verified %}
+                                <a href="/book/{{ instructor.id }}" class="btn btn-outline-primary">Request Booking</a>
+                            {% else %}
+                                <button class="btn btn-outline-secondary" disabled>Verify ID to Book</button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

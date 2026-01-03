@@ -1,4 +1,3 @@
-
 import sys
 import os
 
@@ -6,50 +5,37 @@ import os
 sys.path.append(os.path.join(os.getcwd(), "lib"))
 
 from app import models, database
-from sqlalchemy import text
+from sqlalchemy.orm import Session
 
-def clean_database():
+def clean_data():
     db = database.SessionLocal()
-    
-    print("🧹 Cleaning up dummy data...")
-    
-    # 1. Delete all bookings
-    db.query(models.BookingRequest).delete()
-    print("- Bookings deleted.")
-    
-    # 2. Delete all driving sessions
-    db.query(models.DrivingSession).delete()
-    print("- Driving sessions deleted.")
-    
-    # 3. Delete all reviews
-    db.query(models.Review).delete()
-    print("- Reviews deleted.")
-    
-    # 4. Delete all messages
-    db.query(models.Message).delete()
-    print("- Messages deleted.")
-    
-    # 5. Delete all availability slots
-    db.query(models.InstructorAvailability).delete()
-    print("- Availability slots deleted.")
-    
-    # 6. Delete all instructor profiles
-    db.query(models.InstructorProfile).delete()
-    print("- Instructor profiles deleted.")
-    
-    # 7. Delete all student profiles
-    db.query(models.StudentProfile).delete()
-    print("- Student profiles deleted.")
-    
-    # 8. Delete all users
-    db.query(models.User).delete()
-    print("- Users deleted.")
-    
-    # NOTE: We are NOT deleting QuizQuestion, as that is valid app content.
-    
-    db.commit()
-    db.close()
-    print("✨ Database is now clean and ready for real users!")
+    try:
+        print("Cleaning user-generated data...")
+        
+        # Delete dependent tables first to avoid FK constraint errors
+        db.query(models.Message).delete()
+        db.query(models.DrivingSession).delete()
+        db.query(models.Review).delete()
+        db.query(models.BookingRequest).delete()
+        db.query(models.InstructorAvailability).delete()
+        
+        # Delete Profiles
+        db.query(models.InstructorProfile).delete()
+        db.query(models.StudentProfile).delete()
+        
+        # Delete Users (except maybe an admin if you had one hardcoded, but here we wipe all)
+        db.query(models.User).delete()
+        
+        # Note: We are keeping QuizQuestion table intact
+        
+        db.commit()
+        print("Database cleaned successfully. Quiz questions preserved.")
+        
+    except Exception as e:
+        print(f"Error cleaning data: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 if __name__ == "__main__":
-    clean_database()
+    clean_data()

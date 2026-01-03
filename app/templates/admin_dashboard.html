@@ -57,4 +57,54 @@
         {% endif %}
     </div>
 </div>
+
+<div class="card mt-4">
+    <div class="card-header bg-info-subtle">
+        <h5 class="mb-0">Pending Student ID Checks</h5>
+    </div>
+    <div class="card-body">
+        {% if pending_students %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Age</th>
+                            <th>License #</th>
+                            <th>Document</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in pending_students %}
+                        <tr>
+                            <td>{{ profile.user.full_name }}</td>
+                            <td>{{ profile.age }}</td>
+                            <td>{{ profile.l_license_number }}</td>
+                            <td>
+                                {% if profile.license_image %}
+                                <a href="/static/uploads/{{ profile.license_image }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                    View ID 📄
+                                </a>
+                                {% else %}
+                                <span class="text-muted">No file</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form action="/admin/verify-student/{{ profile.id }}" method="post">
+                                    <button type="submit" class="btn btn-success btn-sm">Approve ✅</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <p class="text-muted mb-0">No pending student checks.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

@@ -55,6 +55,10 @@ class StudentProfile(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     age = Column(Integer)
     l_license_number = Column(String)
+    license_image = Column(String, nullable=True) # Path to uploaded file
+    is_verified = Column(Boolean, default=False) # Deprecated in favor of status, but kept for compat
+    license_status = Column(String, default="pending") # pending, verified, rejected
+    rejection_reason = Column(Text, nullable=True)
     
     user = relationship("User", back_populates="student_profile")
 

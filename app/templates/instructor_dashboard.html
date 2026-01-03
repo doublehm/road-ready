@@ -73,12 +73,57 @@
                             {% endif %}
                             
                             <div class="mt-2">
-                                <form action="/booking/{{ booking.id }}/accept" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-success btn-sm me-1">Accept</button>
+                                <!-- License Check -->
+                                <div class="mb-2 p-2 bg-light border rounded">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <small class="fw-bold">License Status:</small>
+                                        <span class="badge {% if booking.student.student_profile.license_status == 'verified' %}bg-success{% elif booking.student.student_profile.license_status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                            {{ booking.student.student_profile.license_status|title }}
+                                        </span>
+                                    </div>
+                                    <div class="mt-1">
+                                        {% if booking.student.student_profile.license_image %}
+                                        <a href="/static/uploads/{{ booking.student.student_profile.license_image }}" target="_blank" class="btn btn-sm btn-outline-info w-100 py-0" style="font-size: 0.8rem;">
+                                            <i class="bi bi-person-badge"></i> View Photo
+                                        </a>
+                                        {% else %}
+                                        <small class="text-danger d-block text-center">No ID Uploaded</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <form action="/booking/{{ booking.id }}/accept" method="post" class="d-grid mb-2">
+                                    <button type="submit" class="btn btn-success btn-sm">Accept & Verify</button>
                                 </form>
-                                <form action="/booking/{{ booking.id }}/reject" method="post" class="d-inline">
-                                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
-                                </form>
+                                <button type="button" class="btn btn-outline-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#rejectModal{{ booking.id }}">
+                                    Reject
+                                </button>
+                                
+                                <!-- Reject Modal -->
+                                <div class="modal fade" id="rejectModal{{ booking.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h6 class="modal-title">Reject Booking</h6>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="small">Is this due to an invalid license or scheduling conflict?</p>
+                                                
+                                                <form action="/booking/{{ booking.id }}/reject-license" method="post" class="mb-3 border-bottom pb-3">
+                                                    <label class="form-label fw-bold text-danger small">Option 1: Invalid License</label>
+                                                    <input type="text" name="reason" class="form-control form-control-sm mb-2" placeholder="Reason (e.g. Blurry photo)" required>
+                                                    <button type="submit" class="btn btn-danger btn-sm w-100">Reject License & Booking</button>
+                                                </form>
+                                                
+                                                <form action="/booking/{{ booking.id }}/reject" method="post">
+                                                    <label class="form-label fw-bold small">Option 2: Schedule Conflict</label>
+                                                    <button type="submit" class="btn btn-secondary btn-sm w-100">Reject Booking Only</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
@@ -338,4 +383,3 @@
     }
 </script>
 {% endblock %}
-

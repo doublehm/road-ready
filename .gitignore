@@ -31,3 +31,5 @@ htmlcov/
 # Env
 .env
 venv/
+server.log
+app/static/uploads/

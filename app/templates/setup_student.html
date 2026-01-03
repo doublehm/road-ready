@@ -12,18 +12,22 @@
                 <div class="alert alert-danger">{{ error }}</div>
                 {% endif %}
 
-                <form action="/setup-student" method="post">
+                <form action="/setup-student" method="post" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label class="form-label">Age</label>
-                        <input type="number" name="age" class="form-control" required>
+                        <input type="number" name="age" class="form-control" required min="16">
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">L License Number</label>
-                        <input type="text" name="l_license_number" class="form-control" required>
+                        <label class="form-label">BC Learner's License Number (7 digits)</label>
+                        <input type="text" name="l_license_number" class="form-control" placeholder="1234567" required>
                     </div>
-
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary">Complete Profile</button>
+                    <div class="mb-4">
+                        <label class="form-label">Upload Photo of 'L' License</label>
+                        <input type="file" name="license_image" class="form-control" accept="image/*" required>
+                        <div class="form-text">We need this to verify your eligibility to drive.</div>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Complete Setup</button>
                     </div>
                 </form>
             </div>

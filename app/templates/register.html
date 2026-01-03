@@ -12,15 +12,15 @@
                 <form action="/register" method="post">
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
-                        <input type="text" name="full_name" class="form-control" required>
+                        <input type="text" name="full_name" class="form-control" value="{{ name_value if name_value else '' }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Email address</label>
-                        <input type="email" name="email" class="form-control" required>
+                        <input type="email" name="email" class="form-control" value="{{ email_value if email_value else '' }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Phone Number</label>
-                        <input type="tel" name="phone" class="form-control" required>
+                        <input type="tel" name="phone" class="form-control" value="{{ phone_value if phone_value else '' }}" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Password</label>
