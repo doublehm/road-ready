@@ -1,67 +1,84 @@
 <!doctype html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en" data-bs-theme="light">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Road Ready</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        .navbar-brand { font-weight: bold; color: white !important; display: flex; align-items: center; letter-spacing: -0.5px; font-size: 1.35rem; }
-        .card { shadow: 0 4px 6px rgba(0,0,0,0.3); } /* Darker shadow for dark mode */
-    </style>
+    <!-- Custom Premium Styles -->
+    <link rel="stylesheet" href="/static/custom.css">
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom shadow-sm">
+    <nav class="navbar navbar-expand-lg fixed-top">
       <div class="container">
-        <a class="navbar-brand p-0" href="/">
-            <img src="/static/logo.png" alt="Road Ready Logo" height="55" class="d-inline-block align-text-top">
+        <a class="navbar-brand" href="/">
+            <img src="/static/logo.png" alt="Road Ready" height="40" class="d-inline-block align-text-top me-2">
+            Road Ready
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
+          <ul class="navbar-nav ms-auto align-items-center">
             {% if user %}
                 <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
                 {% if user.role == 'student' %}
-                <li class="nav-item"><a class="nav-link" href="/progress">My Progress</a></li>
+                <li class="nav-item"><a class="nav-link" href="/progress">Progress</a></li>
                 {% endif %}
                 {% if user.role == 'instructor' %}
-                <li class="nav-item"><a class="nav-link" href="/instructor-progress">My Performance</a></li>
+                <li class="nav-item"><a class="nav-link" href="/instructor-progress">Stats</a></li>
                 {% endif %}
-                <li class="nav-item">
+                <li class="nav-item me-2">
                     <a class="nav-link" href="/messages">
+                        Messages
                         {% if unread_count and unread_count > 0 %}
-                            <span class="fw-bold">Messages</span>
                             <span class="badge rounded-pill bg-danger ms-1">{{ unread_count }}</span>
-                        {% else %}
-                            Messages
                         {% endif %}
                     </a>
                 </li>
-                <li class="nav-item"><a class="btn btn-outline-danger btn-sm ms-2" href="/logout">Logout</a></li>
+                
+                <!-- User Dropdown -->
+                <li class="nav-item dropdown ms-lg-3">
+                    <a class="nav-link dropdown-toggle btn btn-outline-primary px-3 py-1 border-0" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ user.full_name }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                        <li><h6 class="dropdown-header text-muted">Signed in as<br>{{ user.email }}</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/dashboard">My Profile</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
             {% else %}
-                <li class="nav-item"><a class="nav-link" href="/login">Login</a></li>
-                <li class="nav-item"><a class="btn btn-primary text-white ms-2" href="/register">Sign Up</a></li>
+                <li class="nav-item mt-2 mt-lg-0"><a class="nav-link" href="/login">Login</a></li>
+                <li class="nav-item mt-2 mt-lg-0 ms-lg-2"><a class="btn btn-primary" href="/register">Get Started</a></li>
             {% endif %}
           </ul>
         </div>
       </div>
     </nav>
 
-    <div class="container mt-4">
+    <div class="container mt-5 pt-4 min-vh-100">
       {% block content %}{% endblock %}
     </div>
 
-    <footer class="text-center text-muted py-4 mt-5 border-top">
+    <footer class="text-center text-muted py-5 mt-5">
         <div class="container">
-            <p class="mb-1">&copy; 2025 Road Ready. All rights reserved.</p>
-            <small>
-                <a href="/terms" class="text-decoration-none text-muted me-3">Terms of Service</a>
-                <a href="/privacy" class="text-decoration-none text-muted me-3">Privacy Policy</a>
-                <a href="/contact" class="text-decoration-none text-muted">Contact Us</a>
-            </small>
+            <div class="mb-4">
+                <img src="/static/logo.png" alt="Road Ready" height="30" style="opacity: 0.5; filter: grayscale(100%);">
+            </div>
+            <p class="mb-3 small">&copy; 2025 Road Ready. All rights reserved.</p>
+            <div class="small">
+                <a href="/terms" class="text-decoration-none text-muted me-3">Terms</a>
+                <a href="/privacy" class="text-decoration-none text-muted me-3">Privacy</a>
+                <a href="/contact" class="text-decoration-none text-muted">Contact</a>
+            </div>
         </div>
     </footer>
 

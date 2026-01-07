@@ -4,19 +4,34 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<style>
+    /* Modern Calendar Overrides */
+    .fc { border: none !important; font-family: inherit; }
+    .fc-theme-standard td, .fc-theme-standard th { border-color: #f0f0f0 !important; }
+    .fc-col-header-cell { padding: 10px 0 !important; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #888; border-bottom: 0 !important; }
+    .fc-daygrid-day-number { font-size: 0.9rem; color: #555; padding: 8px !important; }
+    .fc-day-today { background-color: rgba(25, 135, 84, 0.05) !important; }
+    .fc-event { border: none !important; border-radius: 4px !important; padding: 2px 4px !important; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.1s; }
+    .fc-event:hover { transform: scale(1.02); }
+</style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     var calendarEl = document.getElementById('calendar');
     var calendar = new FullCalendar.Calendar(calendarEl, {
       initialView: 'dayGridMonth',
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      events: {{ calendar_events|safe }}
+      headerToolbar: false, 
+      events: {{ calendar_events|safe }},
+      height: 'auto',
+      dayMaxEvents: true
     });
     calendar.render();
+
+    document.getElementById('cal-prev').addEventListener('click', function() { calendar.prev(); updateTitle(); });
+    document.getElementById('cal-next').addEventListener('click', function() { calendar.next(); updateTitle(); });
+    document.getElementById('cal-today').addEventListener('click', function() { calendar.today(); updateTitle(); });
+
+    function updateTitle() { document.getElementById('cal-title').innerText = calendar.view.title; }
+    updateTitle();
   });
 </script>
 
@@ -161,7 +176,7 @@
                                         📍 Route
                                     </button>
                                     <form action="/request-cancellation/{{ booking.id }}" method="post" class="d-inline float-end" onsubmit="return confirm('Request cancellation from student?');">
-                                        <button type="submit" class="btn btn-link text-danger btn-sm p-0" style="font-size: 0.8rem;">Request Cancel</button>
+                                        <button type="submit" class="btn btn-outline-warning btn-sm py-0" title="Request Cancellation"><i class="bi bi-x-circle"></i></button>
                                     </form>
                                 {% elif booking.status == 'cancellation_requested' %}
                                     <span class="badge bg-warning text-dark">Cancellation Requested</span>
@@ -223,7 +238,7 @@
                             : {{ slot.start_time }} - {{ slot.end_time }}
                         </span>
                         <form action="/availability/delete/{{ slot.id }}" method="post" class="d-inline">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            <button type="submit" class="btn btn-sm btn-outline-danger py-0 border-0"><i class="bi bi-trash"></i></button>
                         </form>
                     </li>
                     {% endfor %}
@@ -262,12 +277,20 @@
             </div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header ">
-                <h5 class="mb-0">Your Schedule</h5>
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <h5 class="mb-0 me-3">Schedule</h5>
+                    <span id="cal-title" class="text-muted fw-bold small text-uppercase"></span>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-outline-secondary btn-sm" id="cal-prev"><i class="bi bi-chevron-left"></i></button>
+                    <button class="btn btn-outline-secondary btn-sm" id="cal-today">Today</button>
+                    <button class="btn btn-outline-secondary btn-sm" id="cal-next"><i class="bi bi-chevron-right"></i></button>
+                </div>
             </div>
-            <div class="card-body">
-                <div id='calendar'></div>
+            <div class="card-body p-0">
+                <div id='calendar' class="p-3"></div>
             </div>
         </div>
     </div>

@@ -1,39 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Book a Lesson with {{ instructor.user.full_name }}</h4>
+    <div class="col-md-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Book Lesson</h4>
+                <span class="badge bg-light text-primary fs-6">{{ instructor.user.full_name }}</span>
             </div>
             <div class="card-body p-4">
+                
                 {% if error_message %}
                 <div class="alert alert-danger">
-                    <strong>⚠️ Unavailable:</strong> {{ error_message }}
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error_message }}
                 </div>
                 {% endif %}
 
-                {% if existing_bookings %}
-                <div class="alert alert-warning">
-                    <h6 class="alert-heading">⚠️ Active Booking Found</h6>
-                    <p class="mb-0">You already have the following active request(s) with this instructor:</p>
-                    <ul class="mb-0 mt-2">
-                        {% for booking in existing_bookings %}
-                            <li><strong>{{ booking.date }} at {{ booking.time }}</strong> ({{ booking.status|title }})</li>
-                        {% endfor %}
-                    </ul>
-                    <hr>
-                    <p class="mb-0 small">You can still book another lesson below if you wish.</p>
+                <!-- Map Section -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Set Location</label>
+                    <p class="small text-muted mb-2">Drag the pins to set precise locations.</p>
+                    <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"></div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="sameLocationCheck" checked>
+                        <label class="form-check-label user-select-none" for="sameLocationCheck">
+                            Drop-off is same as Pick-up
+                        </label>
+                    </div>
                 </div>
-                {% endif %}
 
-                <div class="alert alert-info">
-                    <strong>Rate:</strong> ${{ instructor.hourly_rate }}/hr <br>
-                    <strong>Car:</strong> {{ instructor.car_model }}
-                </div>
-                
-                <form action="/book/{{ instructor.id }}" method="post">
+                <form action="/book/{{ instructor.id }}" method="post" id="bookingForm">
+                    <!-- Hidden Coordinates -->
+                    <input type="hidden" name="pickup_lat" id="pickup_lat">
+                    <input type="hidden" name="pickup_lng" id="pickup_lng">
+                    <input type="hidden" name="dropoff_lat" id="dropoff_lat">
+                    <input type="hidden" name="dropoff_lng" id="dropoff_lng">
+                    <input type="hidden" name="extra_cost" id="extra_cost_input" value="0">
+
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Date</label>
@@ -46,26 +52,72 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Duration (Hours)</label>
-                        <select name="duration" class="form-select">
+                        <label class="form-label">Duration</label>
+                        <select name="duration" id="durationSelect" class="form-select">
                             <option value="1">1 Hour</option>
                             <option value="2">2 Hours</option>
                             <option value="3">3 Hours</option>
                         </select>
                     </div>
 
+                    <!-- Addresses -->
                     <div class="mb-3">
                         <label class="form-label">Pick-up Address</label>
-                        <input type="text" name="pickup_address" class="form-control" placeholder="e.g. 123 Main St, Toronto" required>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <input type="text" name="address_line" class="form-control" placeholder="Street Address" required>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" name="city" class="form-control" placeholder="City" required>
+                            </div>
+                            <div class="col-md-4">
+                                <select name="province" class="form-select" required>
+                                    <option value="BC" selected>BC</option>
+                                    <option value="AB">AB</option>
+                                    <option value="ON">ON</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="postal_code" class="form-control" placeholder="Postal" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="dropoffInputDiv" style="display:none;">
+                        <label class="form-label">Drop-off Address Details</label>
+                        <input type="text" name="dropoff_address" id="dropoffAddressInput" class="form-control" placeholder="Street, City, Postal Code (Optional)">
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Notes / Focus Area (Optional)</label>
-                        <textarea name="notes" class="form-control" rows="3" placeholder="e.g. I need help with parallel parking"></textarea>
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Focus areas, gate codes, etc."></textarea>
+                    </div>
+
+                    <!-- Price Summary -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Lesson Rate:</span>
+                                <span>${{ instructor.hourly_rate }}/hr</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>Duration Cost:</span>
+                                <span id="durationCost">$0.00</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1 text-danger" id="travelFeeRow" style="display:none;">
+                                <span>Travel Fee (<span id="distDisplay">0</span> km):</span>
+                                <span id="travelFeeDisplay">$0.00</span>
+                            </div>
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between fw-bold fs-5">
+                                <span>Total Estimated:</span>
+                                <span id="totalDisplay">$0.00</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-success btn-lg">Confirm Request</button>
+                        <button type="submit" class="btn btn-success btn-lg">Request Booking</button>
                         <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </form>
@@ -73,4 +125,154 @@
         </div>
     </div>
 </div>
+
+<script>
+    // --- Constants ---
+    const RATE = {{ instructor.hourly_rate }};
+    const PRICE_PER_KM = 0.50;
+    
+    // --- Map Init ---
+    // Default to Vancouver/BC area or user's city if we had it. 
+    // Ideally we'd use Geolocation API here.
+    const map = L.map('map').setView([49.2827, -123.1207], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // --- Icons ---
+    const greenIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+    const redIcon = new L.Icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    });
+
+    // --- Markers ---
+    let pickupMarker = L.marker(map.getCenter(), {draggable: true, icon: greenIcon}).addTo(map).bindPopup("Pickup").openPopup();
+    let dropoffMarker = null;
+
+    // --- Update Inputs on Drag ---
+    function updateCoords() {
+        const pPos = pickupMarker.getLatLng();
+        document.getElementById('pickup_lat').value = pPos.lat;
+        document.getElementById('pickup_lng').value = pPos.lng;
+
+        if (dropoffMarker) {
+            const dPos = dropoffMarker.getLatLng();
+            document.getElementById('dropoff_lat').value = dPos.lat;
+            document.getElementById('dropoff_lng').value = dPos.lng;
+            
+            // Calculate Distance
+            const dist = getDistance(pPos.lat, pPos.lng, dPos.lat, dPos.lng);
+            updatePrice(dist);
+        } else {
+            // Dropoff is same
+            document.getElementById('dropoff_lat').value = pPos.lat;
+            document.getElementById('dropoff_lng').value = pPos.lng;
+            updatePrice(0);
+        }
+    }
+
+    pickupMarker.on('dragend', updateCoords);
+    map.on('click', function(e) {
+        // Move active marker to click
+        if (dropoffMarker && !document.getElementById('sameLocationCheck').checked) {
+            // Heuristic: move whichever is closer? No, simpler to just move Dropoff if Dropoff mode is active?
+            // Actually dragging is better UX. Let's just set Pickup if single, or Dropoff if distinct?
+            // Let's stick to dragging for precision.
+        } else {
+            pickupMarker.setLatLng(e.latlng);
+            updateCoords();
+        }
+    });
+
+    // --- Logic for Dropoff Toggle ---
+    const checkbox = document.getElementById('sameLocationCheck');
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            // Remove Dropoff Marker
+            if (dropoffMarker) {
+                map.removeLayer(dropoffMarker);
+                dropoffMarker = null;
+            }
+            document.getElementById('dropoffInputDiv').style.display = 'none';
+            document.getElementById('dropoffAddressInput').required = false;
+            updateCoords();
+        } else {
+            // Add Dropoff Marker (offset slightly)
+            const pPos = pickupMarker.getLatLng();
+            const dPos = [pPos.lat + 0.01, pPos.lng + 0.01];
+            dropoffMarker = L.marker(dPos, {draggable: true, icon: redIcon}).addTo(map).bindPopup("Drop-off").openPopup();
+            dropoffMarker.on('dragend', updateCoords);
+            
+            document.getElementById('dropoffInputDiv').style.display = 'block';
+            document.getElementById('dropoffAddressInput').required = true;
+            
+            map.fitBounds([pPos, dPos], {padding: [50, 50]});
+            updateCoords();
+        }
+    });
+
+    // --- Distance Calc (Haversine) ---
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of earth in km
+        const dLat = deg2rad(lat2-lat1);
+        const dLon = deg2rad(lon2-lon1); 
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2); 
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+        const d = R * c; // Distance in km
+        return d;
+    }
+
+    function deg2rad(deg) {
+        return deg * (Math.PI/180)
+    }
+
+    // --- Price Update ---
+    function updatePrice(distanceKm) {
+        const duration = parseInt(document.getElementById('durationSelect').value);
+        const baseCost = duration * RATE;
+        let travelCost = 0;
+
+        if (distanceKm > 0) {
+            travelCost = distanceKm * PRICE_PER_KM;
+            document.getElementById('travelFeeRow').style.display = 'flex';
+            document.getElementById('distDisplay').innerText = distanceKm.toFixed(1);
+            document.getElementById('travelFeeDisplay').innerText = '$' + travelCost.toFixed(2);
+        } else {
+            document.getElementById('travelFeeRow').style.display = 'none';
+        }
+
+        const total = baseCost + travelCost;
+        
+        document.getElementById('durationCost').innerText = '$' + baseCost.toFixed(2);
+        document.getElementById('totalDisplay').innerText = '$' + total.toFixed(2);
+        document.getElementById('extra_cost_input').value = travelCost.toFixed(2);
+    }
+
+    document.getElementById('durationSelect').addEventListener('change', () => updateCoords()); // Re-calc with current distance
+
+    // Init
+    updateCoords();
+    
+    // Geolocation (Optional enhancement)
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const newLatLng = new L.LatLng(lat, lng);
+            pickupMarker.setLatLng(newLatLng);
+            map.setView(newLatLng, 13);
+            updateCoords();
+        });
+    }
+
+</script>
 {% endblock %}

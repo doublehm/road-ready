@@ -73,6 +73,7 @@ class BookingRequest(Base):
     time = Column(String) # HH:MM
     duration = Column(Integer) # in hours
     pickup_address = Column(String)
+    dropoff_address = Column(String, nullable=True)
     
     # Route Coordinates
     pickup_lat = Column(Float, nullable=True)
@@ -86,6 +87,7 @@ class BookingRequest(Base):
     payment_status = Column(String, default="pending") # pending, paid, refunded
     stripe_payment_intent_id = Column(String, nullable=True)
     total_amount = Column(Float, default=0.0)
+    extra_travel_cost = Column(Float, default=0.0) # Cost for distance
     platform_fee = Column(Float, default=0.0) # Our commission
     instructor_payout = Column(Float, default=0.0) # Amount for instructor
     

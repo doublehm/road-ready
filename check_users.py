@@ -1,21 +1,30 @@
-
 import sys
 import os
+import sqlite3
 
-# Add local lib directory to sys.path
-sys.path.append(os.path.join(os.getcwd(), "lib"))
-
-from app import models, database
-
-def check_users():
-    db = database.SessionLocal()
-    users = db.query(models.User).all()
+def check_db():
+    conn = sqlite3.connect('roadready.db')
+    cursor = conn.cursor()
     
-    print(f"Total Users Found: {len(users)}")
-    for user in users:
-        print(f" - {user.email} (ID: {user.id})")
+    print("--- USERS ---")
+    cursor.execute("SELECT id, full_name, role, email FROM users")
+    users = cursor.fetchall()
+    for u in users:
+        print(u)
         
-    db.close()
+    print("\n--- STUDENT PROFILES ---")
+    cursor.execute("SELECT user_id, license_status FROM student_profiles")
+    s_profiles = cursor.fetchall()
+    for p in s_profiles:
+        print(p)
+
+    print("\n--- INSTRUCTOR PROFILES ---")
+    cursor.execute("SELECT user_id, is_verified FROM instructor_profiles")
+    i_profiles = cursor.fetchall()
+    for p in i_profiles:
+        print(p)
+        
+    conn.close()
 
 if __name__ == "__main__":
-    check_users()
+    check_db()

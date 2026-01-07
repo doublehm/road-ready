@@ -3,108 +3,376 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h2>👮 Admin Dashboard</h2>
-        <p class="text-muted">Review and verify instructor applications.</p>
+        <h2 class="display-6">🛠️ Admin & Management</h2>
+        <p class="text-muted">Manage all users, content, and system status.</p>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header bg-warning-subtle">
-        <h5 class="mb-0">Pending Verifications</h5>
-    </div>
-    <div class="card-body">
-        {% if pending_instructors %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>License ID</th>
-                            <th>Document</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for profile in pending_instructors %}
-                        <tr>
-                            <td>{{ profile.user.full_name }}</td>
-                            <td>{{ profile.user.email }}</td>
-                            <td>{{ profile.certification_id }}</td>
-                            <td>
-                                {% if profile.license_image %}
-                                <a href="/static/uploads/{{ profile.license_image }}" target="_blank" class="btn btn-sm btn-outline-info">
-                                    View ID 📄
-                                </a>
-                                {% else %}
-                                <span class="text-muted">No file</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <form action="/admin/verify/{{ profile.id }}" method="post">
-                                    <button type="submit" class="btn btn-success btn-sm">Verify ✅</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="text-center py-5">
-                <p class="text-muted mb-0">No pending verifications. All caught up! 🎉</p>
-            </div>
-        {% endif %}
-    </div>
-</div>
+<!-- Navigation Tabs -->
+<ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="instructors-tab" data-bs-toggle="tab" data-bs-target="#instructors" type="button">👨‍🏫 Instructors</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button">🎓 Students</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="bookings-tab" data-bs-toggle="tab" data-bs-target="#bookings" type="button">📅 All Bookings</button>
+    </li>
+</ul>
 
-<div class="card mt-4">
-    <div class="card-header bg-info-subtle">
-        <h5 class="mb-0">Pending Student ID Checks</h5>
-    </div>
-    <div class="card-body">
-        {% if pending_students %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Age</th>
-                            <th>License #</th>
-                            <th>Document</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for profile in pending_students %}
-                        <tr>
-                            <td>{{ profile.user.full_name }}</td>
-                            <td>{{ profile.age }}</td>
-                            <td>{{ profile.l_license_number }}</td>
-                            <td>
-                                {% if profile.license_image %}
-                                <a href="/static/uploads/{{ profile.license_image }}" target="_blank" class="btn btn-sm btn-outline-info">
-                                    View ID 📄
-                                </a>
-                                {% else %}
-                                <span class="text-muted">No file</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <form action="/admin/verify-student/{{ profile.id }}" method="post">
-                                    <button type="submit" class="btn btn-success btn-sm">Approve ✅</button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="tab-content" id="adminTabsContent">
+    
+    <!-- Instructors Tab -->
+    <div class="tab-pane fade show active" id="instructors" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Manage Instructors</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Details</th>
+                                <th>Documents</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inst in instructors %}
+                            <tr>
+                                <td>#{{ inst.user_id }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ inst.user.full_name }}</div>
+                                    <div class="small text-muted">{{ inst.user.email }}</div>
+                                    <div class="small text-muted">{{ inst.user.phone_number }}</div>
+                                    <div class="small">City: {{ inst.city }} | Rate: ${{ inst.hourly_rate }}</div>
+                                </td>
+                                <td>
+                                    <div class="d-grid gap-1">
+                                        {% if inst.license_image %}
+                                        <a href="/static/uploads/{{ inst.license_image }}" target="_blank" class="btn btn-sm btn-outline-info py-0">View ID 📄</a>
+                                        {% else %}
+                                        <span class="text-muted small">No ID</span>
+                                        {% endif %}
+                                        
+                                        <div class="small text-muted">Cert: {{ inst.certification_id }}</div>
+                                        <div class="small text-muted">Ins: {{ inst.insurance_policy }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if inst.is_verified %}
+                                        <span class="badge bg-success">Verified</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary py-0" data-bs-toggle="modal" data-bs-target="#editInst{{ inst.user_id }}"><i class="bi bi-pencil-square"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger py-0" data-bs-toggle="modal" data-bs-target="#delUser{{ inst.user_id }}"><i class="bi bi-trash"></i></button>
+                                    
+                                    <!-- Edit Modal -->
+                                    <div class="modal fade" id="editInst{{ inst.user_id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form action="/admin/update-profile/{{ inst.user_id }}" method="post">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Manage Instructor</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="role" value="instructor">
+                                                        
+                                                        <div class="alert alert-info py-2">
+                                                            <strong>Review Documents:</strong><br>
+                                                            Cert ID: {{ inst.certification_id }}<br>
+                                                            Policy: {{ inst.insurance_policy }}
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Full Name</label>
+                                                            <input type="text" name="full_name" class="form-control" value="{{ inst.user.full_name }}" required>
+                                                        </div>
+                                                        
+                                                        <hr>
+                                                        <label class="form-label fw-bold">Verification Status</label>
+                                                        <div class="form-check form-switch mb-3">
+                                                            <input class="form-check-input" type="checkbox" name="is_verified" value="true" {% if inst.is_verified %}checked{% endif %}>
+                                                            <label class="form-check-label">
+                                                                {% if inst.is_verified %}
+                                                                    <span class="text-success fw-bold">Verified (Active)</span>
+                                                                {% else %}
+                                                                    <span class="text-warning fw-bold">Pending Approval</span>
+                                                                {% endif %}
+                                                            </label>
+                                                        </div>
+                                                        <hr>
+
+                                                        <div class="row">
+                                                            <div class="col-6 mb-3">
+                                                                <label class="form-label">City</label>
+                                                                <input type="text" name="city" class="form-control" value="{{ inst.city }}">
+                                                            </div>
+                                                            <div class="col-6 mb-3">
+                                                                <label class="form-label">Rate ($)</label>
+                                                                <input type="number" step="0.5" name="hourly_rate" class="form-control" value="{{ inst.hourly_rate }}">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <button type="submit" class="btn btn-success">Save Changes</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Delete Modal -->
+                                    <div class="modal fade" id="delUser{{ inst.user_id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title text-danger">Delete User?</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    Are you sure you want to delete <strong>{{ inst.user.full_name }}</strong>? This will remove all their profile data and history permanently.
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <form action="/admin/delete-user/{{ inst.user_id }}" method="post">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        {% else %}
-            <div class="text-center py-5">
-                <p class="text-muted mb-0">No pending student checks.</p>
-            </div>
-        {% endif %}
+        </div>
     </div>
+
+    <!-- Students Tab -->
+    <div class="tab-pane fade" id="students" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Manage Students</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>License #</th>
+                                <th>ID Status</th>
+                                <th>License Image</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stu in students %}
+                            <tr>
+                                <td>#{{ stu.user_id }}</td>
+                                <td>
+                                    <div class="fw-bold">{{ stu.user.full_name }}</div>
+                                    <div class="small text-muted">{{ stu.user.email }}</div>
+                                    <div class="small text-muted">{{ stu.user.phone_number }}</div>
+                                </td>
+                                <td>{{ stu.l_license_number }}</td>
+                                <td>
+                                    <span class="badge {% if stu.license_status == 'verified' %}bg-success{% elif stu.license_status == 'rejected' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                        {{ stu.license_status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if stu.license_image %}
+                                    <a href="/static/uploads/{{ stu.license_image }}" target="_blank" class="btn btn-sm btn-outline-info">View ID</a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary py-0" data-bs-toggle="modal" data-bs-target="#editStu{{ stu.user_id }}"><i class="bi bi-pencil-square"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger py-0" data-bs-toggle="modal" data-bs-target="#delUser{{ stu.user_id }}"><i class="bi bi-trash"></i></button>
+                                    
+                                    <!-- Edit Modal -->
+                                    <div class="modal fade" id="editStu{{ stu.user_id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form action="/admin/update-profile/{{ stu.user_id }}" method="post">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Edit Student</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="role" value="student">
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Full Name</label>
+                                                            <input type="text" name="full_name" class="form-control" value="{{ stu.user.full_name }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">License Status</label>
+                                                            <select name="license_status" class="form-select">
+                                                                <option value="pending" {% if stu.license_status == 'pending' %}selected{% endif %}>Pending</option>
+                                                                <option value="verified" {% if stu.license_status == 'verified' %}selected{% endif %}>Verified</option>
+                                                                <option value="rejected" {% if stu.license_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Re-use Delete Modal Logic (ID matches loop) -->
+                                    <!-- Note: We must duplicate the modal HTML if IDs overlap, but here we used unique user_id so it's fine -->
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookings Tab -->
+    <div class="tab-pane fade" id="bookings" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">All System Bookings</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Date/Time</th>
+                                <th>Instructor</th>
+                                <th>Student</th>
+                                <th>Details</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in bookings %}
+                            <tr>
+                                <td>#{{ booking.id }}</td>
+                                <td>{{ booking.date }} <br> <small>{{ booking.time }}</small></td>
+                                <td>{{ booking.instructor.user.full_name }}</td>
+                                <td>{{ booking.student.full_name }}</td>
+                                <td>
+                                    <div class="small text-muted">{{ booking.duration }} hr(s)</div>
+                                    <div class="small text-truncate" style="max-width: 150px;" title="{{ booking.pickup_address }}">{{ booking.pickup_address }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge {% if booking.status == 'accepted' %}bg-success{% elif booking.status == 'completed' %}bg-info{% elif booking.status == 'cancelled' or booking.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                        {{ booking.status|replace('_', ' ')|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary py-0" data-bs-toggle="modal" data-bs-target="#editBooking{{ booking.id }}"><i class="bi bi-pencil-square"></i></button>
+                                    
+                                    {% if booking.status == 'completed' and booking.driving_session %}
+                                    <button class="btn btn-sm btn-info py-0" data-bs-toggle="modal" data-bs-target="#viewReport{{ booking.id }}"><i class="bi bi-file-earmark-text"></i></button>
+                                    
+                                    <!-- View Report Modal -->
+                                    <div class="modal fade" id="viewReport{{ booking.id }}" tabindex="-1">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Session Report #{{ booking.id }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <h6>Feedback</h6>
+                                                    <div class="alert alert-secondary">{{ booking.driving_session.shared_feedback }}</div>
+                                                    
+                                                    <h6>Faults Recorded</h6>
+                                                    <ul>
+                                                        <li><strong>Observation:</strong> {{ booking.driving_session.observation_data|expand_codes }}</li>
+                                                        <li><strong>Space Margin:</strong> {{ booking.driving_session.space_margin_data|expand_codes }}</li>
+                                                        <li><strong>Speed:</strong> {{ booking.driving_session.speed_data|expand_codes }}</li>
+                                                        <li><strong>Steering:</strong> {{ booking.driving_session.steering_data|expand_codes }}</li>
+                                                        <li><strong>Communication:</strong> {{ booking.driving_session.communication_data|expand_codes }}</li>
+                                                    </ul>
+                                                    
+                                                    <div class="text-muted small">
+                                                        Conditions: {{ booking.driving_session.weather_condition }}, {{ booking.driving_session.road_type }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+
+                                    <form action="/admin/delete-booking/{{ booking.id }}" method="post" class="d-inline" onsubmit="return confirm('Delete this booking permanently?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+                                    </form>
+
+                                    <!-- Edit Booking Modal -->
+                                    <div class="modal fade" id="editBooking{{ booking.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form action="/admin/update-booking/{{ booking.id }}" method="post">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Edit Booking #{{ booking.id }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <div class="col-6 mb-3">
+                                                                <label class="form-label">Date</label>
+                                                                <input type="date" name="date" class="form-control" value="{{ booking.date }}" required>
+                                                            </div>
+                                                            <div class="col-6 mb-3">
+                                                                <label class="form-label">Time</label>
+                                                                <input type="time" name="time" class="form-control" value="{{ booking.time }}" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Pickup Address</label>
+                                                            <input type="text" name="pickup_address" class="form-control" value="{{ booking.pickup_address }}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Status</label>
+                                                            <select name="status" class="form-select">
+                                                                <option value="pending" {% if booking.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                                <option value="accepted" {% if booking.status == 'accepted' %}selected{% endif %}>Accepted</option>
+                                                                <option value="completed" {% if booking.status == 'completed' %}selected{% endif %}>Completed</option>
+                                                                <option value="cancelled" {% if booking.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                                                <option value="rejected" {% if booking.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

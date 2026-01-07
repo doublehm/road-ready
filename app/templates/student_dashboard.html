@@ -143,7 +143,7 @@
                                         </button>
                                     {% endif %}
                                     <form action="/cancel-booking/{{ booking.id }}" method="post" class="d-inline float-end" onsubmit="return confirm('Are you sure you want to cancel?');">
-                                        <button type="submit" class="btn btn-link text-danger btn-sm p-0">Cancel</button>
+                                        <button type="submit" class="btn btn-outline-danger btn-sm py-0" title="Cancel Booking"><i class="bi bi-trash"></i></button>
                                     </form>
                                 {% elif booking.status == 'cancellation_requested' %}
                                     <div class="alert alert-warning py-1 px-2 mb-0 mt-2 small">
