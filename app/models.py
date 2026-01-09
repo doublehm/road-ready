@@ -173,3 +173,19 @@ InstructorProfile.reviews = relationship("Review", back_populates="instructor")
 User.sent_messages = relationship("Message", foreign_keys=[Message.sender_id], back_populates="sender")
 User.received_messages = relationship("Message", foreign_keys=[Message.recipient_id], back_populates="recipient")
 
+class DriveLog(Base):
+    __tablename__ = "drive_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    start_time = Column(String)
+    end_time = Column(String)
+    duration_minutes = Column(Float)
+    distance_km = Column(Float)
+    route_coords = Column(Text) # JSON string of coordinates
+    notes = Column(Text, nullable=True)
+    
+    user = relationship("User", back_populates="drive_logs")
+
+User.drive_logs = relationship("DriveLog", back_populates="user")
+

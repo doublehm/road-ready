@@ -122,3 +122,95 @@ class StudentProfile(StudentProfileBase):
 class SearchFilter(BaseModel):
     city: Optional[str] = None
     max_rate: Optional[float] = None
+
+# --- Auth Schemas ---
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    role: str
+    user_id: int
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+# --- Drive Log Schemas ---
+class DriveLogBase(BaseModel):
+    start_time: str
+    end_time: str
+    duration_minutes: float
+    distance_km: float
+    route_coords: str
+    notes: Optional[str] = None
+
+class DriveLogCreate(DriveLogBase):
+    pass
+
+class DriveLog(DriveLogBase):
+    id: int
+    user_id: int
+    
+    class Config:
+        orm_mode = True
+
+# --- Booking Schemas ---
+class BookingRequestBase(BaseModel):
+    instructor_id: int
+    date: str
+    time: str
+    duration: int
+    pickup_address: str
+    dropoff_address: Optional[str] = None
+    notes: Optional[str] = None
+
+class BookingRequestCreate(BookingRequestBase):
+    pass
+
+class BookingRequest(BookingRequestBase):
+    id: int
+    student_id: int
+    status: str
+    total_amount: float
+    instructor: Optional[InstructorProfile] = None
+    
+    class Config:
+        orm_mode = True
+
+# --- Session Schemas ---
+class DrivingSessionBase(BaseModel):
+    booking_id: int
+    duration_minutes: int
+    weather_condition: str
+    road_type: str
+    observation_data: str # JSON list of codes
+    space_margin_data: str
+    speed_data: str
+    steering_data: str
+    communication_data: str
+    shared_feedback: str
+    instructor_private_notes: Optional[str] = None
+
+class DrivingSessionCreate(DrivingSessionBase):
+    pass
+
+class DrivingSession(DrivingSessionBase):
+    id: int
+    created_at: str
+    
+    class Config:
+        orm_mode = True
+
+# --- Quiz Schemas ---
+class QuizQuestionBase(BaseModel):
+    question_text: str
+    option_a: str
+    option_b: str
+    option_c: str
+    option_d: str
+    correct_option: str
+    explanation: Optional[str] = None
+
+class QuizQuestion(QuizQuestionBase):
+    id: int
+    
+    class Config:
+        orm_mode = True

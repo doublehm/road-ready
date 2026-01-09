@@ -39,6 +39,9 @@ models.Base.metadata.create_all(bind=database.engine)
 
 app = FastAPI(title="Road Ready")
 
+from app.api.router import api_router
+app.include_router(api_router, prefix="/api/v1")
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
