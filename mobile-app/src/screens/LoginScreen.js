@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { AuthContext } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login } = useContext(AuthContext);
@@ -57,6 +57,13 @@ const LoginScreen = () => {
           ) : (
             <Text style={styles.buttonText}>Log In</Text>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.registerLink} 
+          onPress={() => navigation.navigate('Register')}
+        >
+          <Text style={styles.registerText}>Don't have an account? Sign Up</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -113,6 +120,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     textAlign: 'center',
   },
+  registerLink: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  registerText: {
+    color: '#007bff',
+    fontSize: 16,
+  }
 });
 
 export default LoginScreen;

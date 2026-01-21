@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import client from '../api/client';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const FindInstructorScreen = () => {
+const FindInstructorScreen = ({ navigation }) => {
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchInstructors();
@@ -15,100 +18,99 @@ const FindInstructorScreen = () => {
       const response = await client.get('/instructors/');
       setInstructors(response.data);
     } catch (e) {
-      console.log("Error fetching instructors", e);
-      Alert.alert("Error", "Could not load instructors.");
+      console.log(e);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleBook = async (instructor) => {
-    // Simple booking flow for prototype
-    Alert.alert(
-      "Confirm Booking",
-      `Book a session with ${instructor.city} Instructor?`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Confirm",
-          onPress: async () => {
-             try {
-               await client.post('/bookings/', {
-                 instructor_id: instructor.id,
-                 date: "2024-01-20", // Mock date
-                 time: "10:00", // Mock time
-                 duration: 2,
-                 pickup_address: "123 Main St",
-                 notes: "Mobile App Booking"
-               });
-               Alert.alert("Success", "Booking request sent!");
-             } catch (e) {
-               Alert.alert("Error", "Failed to book.");
-             }
-          }
-        }
-      ]
-    );
-  };
-
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardContent}>
-        <View>
-           <Text style={styles.name}>Instructor in {item.city}</Text>
-           <Text style={styles.rate}>${item.hourly_rate}/hr</Text>
-           <Text style={styles.bio}>{item.bio}</Text>
-        </View>
-      </View>
-      <TouchableOpacity style={styles.bookButton} onPress={() => handleBook(item)}>
-        <Text style={styles.bookButtonText}>Book Now</Text>
-      </TouchableOpacity>
-    </View>
+  const filteredInstructors = instructors.filter(i => 
+    i.city.toLowerCase().includes(search.toLowerCase()) || 
+    i.user?.full_name?.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) {
-    return <ActivityIndicator style={{flex: 1}} size="large" color="#007bff" />;
-  }
+  const renderItem = ({ item }) => (
+    <TouchableOpacity 
+      style={styles.card}
+      onPress={() => navigation.navigate('InstructorProfile', { instructor: item })}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{item.user?.full_name?.[0]}</Text>
+        </View>
+        <View style={styles.cardInfo}>
+          <Text style={styles.name}>{item.user?.full_name}</Text>
+          <Text style={styles.city}><Ionicons name="location-outline" /> {item.city}</Text>
+        </View>
+        <View style={styles.rating}>
+          <Text style={styles.ratingText}>⭐ {item.rating || 'New'}</Text>
+        </View>
+      </View>
+      
+      <View style={styles.cardFooter}>
+        <Text style={styles.price}>${item.hourly_rate}<Text style={styles.perHour}>/hr</Text></Text>
+        <Text style={styles.viewLink}>View Profile →</Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={instructors}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-      />
-    </View>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search by city or name..."
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      {loading ? (
+        <ActivityIndicator style={{marginTop: 50}} size="large" />
+      ) : (
+        <FlatList
+          data={filteredInstructors}
+          keyExtractor={item => item.id.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={<Text style={styles.empty}>No instructors found.</Text>}
+        />
+      )}
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
-  list: { padding: 20 },
+  searchContainer: { 
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', 
+    margin: 15, paddingHorizontal: 15, borderRadius: 10, height: 50,
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
+  },
+  searchIcon: { marginRight: 10 },
+  searchInput: { flex: 1, fontSize: 16 },
+  
+  list: { paddingHorizontal: 15 },
   card: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    elevation: 3,
+    backgroundColor: 'white', borderRadius: 12, padding: 15, marginBottom: 15,
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
   },
-  cardContent: { flexDirection: 'row', marginBottom: 10 },
-  name: { fontSize: 18, fontWeight: 'bold' },
-  rate: { fontSize: 16, color: '#28a745', marginVertical: 5 },
-  bio: { color: '#666' },
-  bookButton: {
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  bookButtonText: { color: 'white', fontWeight: 'bold' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#e3f2fd', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontSize: 20, fontWeight: 'bold', color: '#007bff' },
+  cardInfo: { flex: 1, marginLeft: 15 },
+  name: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  city: { color: '#666', marginTop: 2 },
+  rating: { backgroundColor: '#fff3cd', paddingVertical: 4, paddingHorizontal: 8, borderRadius: 10 },
+  ratingText: { fontWeight: 'bold', color: '#856404', fontSize: 12 },
+  
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: '#f0f0f0', paddingTop: 10 },
+  price: { fontSize: 18, fontWeight: 'bold', color: '#28a745' },
+  perHour: { fontSize: 12, color: '#666', fontWeight: 'normal' },
+  viewLink: { color: '#007bff', fontWeight: '600' },
+  
+  empty: { textAlign: 'center', marginTop: 50, color: '#999' }
 });
 
 export default FindInstructorScreen;

@@ -1,46 +1,152 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, Button } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const InstructorHomeScreen = ({ navigation }) => {
-  const { logout } = useContext(AuthContext);
+  const { logout, userInfo, unreadCount } = useContext(AuthContext);
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.text}>Welcome, Instructor! 👨‍🏫</Text>
-      <View style={styles.buttonContainer}>
-        <Button title="Grade Student" onPress={() => navigation.navigate('GradeStudent')} />
-      </View>
-      <View style={styles.buttonContainer}>
-         <Button title="My Schedule" onPress={() => {}} />
-      </View>
-      <View style={styles.buttonContainer}>
-         <Button title="Earnings" onPress={() => {}} />
-      </View>
-      <View style={{ marginTop: 20 }}>
-        <Button title="Logout" color="red" onPress={logout} />
-      </View>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Welcome back,</Text>
+            <Text style={styles.name}>{userInfo?.full_name || 'Instructor'}</Text>
+          </View>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconBtn}>
+              <Ionicons name="notifications-outline" size={24} color="#666" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} style={styles.iconBtn}>
+              <Ionicons name="settings-outline" size={24} color="#666" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={logout} style={styles.iconBtn}>
+              <Ionicons name="log-out-outline" size={24} color="#dc3545" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate('Earnings')}>
+            <Text style={styles.statLabel}>Earnings</Text>
+            <Text style={styles.statValue}>$0.00</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.statCard} onPress={() => navigation.navigate('Schedule')}>
+            <Text style={styles.statLabel}>Today</Text>
+            <Text style={styles.statValue}>0 Lessons</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Actions */}
+        <Text style={styles.sectionTitle}>Manage Students</Text>
+        
+        <TouchableOpacity 
+          style={styles.actionCard}
+          onPress={() => navigation.navigate('BookingRequests')}
+        >
+          <View style={[styles.iconBg, { backgroundColor: '#fff3cd' }]}>
+            <Ionicons name="notifications-outline" size={24} color="#ffc107" />
+          </View>
+          <View style={styles.actionInfo}>
+            <Text style={styles.actionTitle}>Booking Requests</Text>
+            <Text style={styles.actionDesc}>Approve incoming lessons</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.actionCard}
+          onPress={() => navigation.navigate('GradeStudent')}
+        >
+          <View style={[styles.iconBg, { backgroundColor: '#e8f5e9' }]}>
+            <Ionicons name="create-outline" size={24} color="#28a745" />
+          </View>
+          <View style={styles.actionInfo}>
+            <Text style={styles.actionTitle}>Grade Student</Text>
+            <Text style={styles.actionDesc}>Log a new driving session</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.actionCard}
+          onPress={() => navigation.navigate('Messages')}
+        >
+          <View style={[styles.iconBg, { backgroundColor: '#e3f2fd' }]}>
+            <Ionicons name="chatbubbles-outline" size={24} color="#007bff" />
+          </View>
+          <View style={styles.actionInfo}>
+            <Text style={styles.actionTitle}>Messages</Text>
+            <Text style={styles.actionDesc}>Chat with students</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.actionCard}
+          onPress={() => navigation.navigate('Schedule')}
+        >
+          <View style={[styles.iconBg, { backgroundColor: '#fff3cd' }]}>
+            <Ionicons name="calendar-outline" size={24} color="#ffc107" />
+          </View>
+          <View style={styles.actionInfo}>
+            <Text style={styles.actionTitle}>My Schedule</Text>
+            <Text style={styles.actionDesc}>View upcoming bookings</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        </TouchableOpacity>
+
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  container: { flex: 1, backgroundColor: '#fff' },
+  scroll: { padding: 20 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25 },
+  greeting: { fontSize: 16, color: '#666' },
+  name: { fontSize: 24, fontWeight: 'bold', color: '#333' },
+  headerIcons: { flexDirection: 'row' },
+  iconBtn: { marginLeft: 15 },
+
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
+  statCard: { 
+    width: '48%', 
+    backgroundColor: '#f8f9fa', 
+    padding: 20, 
+    borderRadius: 15, 
+    borderWidth: 1,
+    borderColor: '#eee'
+  },
+  statLabel: { color: '#666', fontSize: 14, marginBottom: 5 },
+  statValue: { fontSize: 24, fontWeight: 'bold', color: '#333' },
+
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#333' },
+
+  actionCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    padding: 15,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 }
   },
-  text: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  buttonContainer: {
-    marginVertical: 10,
-    width: '80%',
-  },
+  iconBg: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  actionInfo: { flex: 1 },
+  actionTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+  actionDesc: { fontSize: 14, color: '#888' }
 });
 
 export default InstructorHomeScreen;

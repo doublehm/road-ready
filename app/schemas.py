@@ -12,8 +12,8 @@ class UserBase(BaseModel):
     def validate_phone(cls, v):
         # Remove common delimiters
         clean_number = re.sub(r'[\s\-\(\)\.]', '', v)
-        if not re.match(r'^\+?1?\d{10,15}$', clean_number):
-            raise ValueError('Phone number must be valid (10-15 digits)')
+        if not re.match(r'^\+?1?\d{7,15}$', clean_number):
+            raise ValueError('Phone number must be valid (7-15 digits)')
         return clean_number
 
 class UserCreate(UserBase):
@@ -39,9 +39,23 @@ class User(UserBase):
     role: str
     
     class Config:
-        orm_mode = True  # v1 uses orm_mode, not from_attributes
+        from_attributes = True
 
 # --- Instructor Schemas ---
+class InstructorLicenseClassBase(BaseModel):
+    license_class: str
+    price: float
+
+class InstructorLicenseClassCreate(InstructorLicenseClassBase):
+    pass
+
+class InstructorLicenseClass(InstructorLicenseClassBase):
+    id: int
+    instructor_id: int
+    
+    class Config:
+        from_attributes = True
+
 class InstructorAvailabilityBase(BaseModel):
     day_of_week: int
     start_time: str
@@ -55,7 +69,7 @@ class InstructorAvailability(InstructorAvailabilityBase):
     instructor_id: int
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class InstructorProfileBase(BaseModel):
     bio: str
@@ -64,6 +78,7 @@ class InstructorProfileBase(BaseModel):
     car_model: str
     insurance_policy: str
     certification_id: str
+    certification_expiry: Optional[str] = None
     is_available: bool = True
 
     @validator('insurance_policy')
@@ -81,7 +96,9 @@ class InstructorProfileBase(BaseModel):
         return v
 
 class InstructorProfileCreate(InstructorProfileBase):
-    pass
+    license_image: Optional[str] = None
+    insurance_image: Optional[str] = None
+    license_classes: List[InstructorLicenseClassCreate] = []
 
 class InstructorProfile(InstructorProfileBase):
     id: int
@@ -89,24 +106,30 @@ class InstructorProfile(InstructorProfileBase):
     is_verified: bool
     user: Optional[User] = None
     availabilities: List[InstructorAvailability] = []
+    license_classes: List[InstructorLicenseClass] = []
+    license_image: Optional[str] = None
+    insurance_image: Optional[str] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Student Schemas ---
 class StudentProfileBase(BaseModel):
     age: int
     l_license_number: str
+    license_expiry: Optional[str] = None
 
     @validator('l_license_number')
     def validate_license(cls, v):
-        # BC Driver's License is typically 7 digits
-        if not re.match(r'^\d{7}$', v):
+        # BC Driver's License is typically 7 digits, sometimes written with L-
+        # Allow L- prefix or just digits
+        clean_license = v.replace('L-', '').replace('l-', '')
+        if not re.match(r'^\d{7}$', clean_license):
             raise ValueError('BC Driver License must be exactly 7 digits')
         return v
 
 class StudentProfileCreate(StudentProfileBase):
-    pass
+    license_image: Optional[str] = None
 
 class StudentProfile(StudentProfileBase):
     id: int
@@ -116,7 +139,14 @@ class StudentProfile(StudentProfileBase):
     user: Optional[User] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+class UserWithProfile(User):
+    student_profile: Optional[StudentProfile] = None
+    instructor_profile: Optional[InstructorProfile] = None
+
+    class Config:
+        from_attributes = True
 
 # --- Search Schema ---
 class SearchFilter(BaseModel):
@@ -150,7 +180,7 @@ class DriveLog(DriveLogBase):
     user_id: int
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Booking Schemas ---
 class BookingRequestBase(BaseModel):
@@ -165,15 +195,23 @@ class BookingRequestBase(BaseModel):
 class BookingRequestCreate(BookingRequestBase):
     pass
 
+class BookingAction(BaseModel):
+    action: str
+    reason: Optional[str] = None
+
 class BookingRequest(BookingRequestBase):
     id: int
     student_id: int
     status: str
     total_amount: float
+    instructor_payout: float = 0.0
+    platform_fee: float = 0.0
     instructor: Optional[InstructorProfile] = None
+    student: Optional[UserWithProfile] = None
+    driving_session: Optional['DrivingSession'] = None
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Session Schemas ---
 class DrivingSessionBase(BaseModel):
@@ -197,7 +235,7 @@ class DrivingSession(DrivingSessionBase):
     created_at: str
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 # --- Quiz Schemas ---
 class QuizQuestionBase(BaseModel):
@@ -213,4 +251,31 @@ class QuizQuestion(QuizQuestionBase):
     id: int
     
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+# --- Message Schemas ---
+class MessageBase(BaseModel):
+    recipient_id: int
+    content: str
+
+class MessageCreate(MessageBase):
+    pass
+
+class Message(MessageBase):
+    id: int
+    sender_id: int
+    timestamp: str
+    is_read: bool
+
+    class Config:
+        from_attributes = True
+
+class Notification(BaseModel):
+    id: int
+    title: str
+    message: str
+    timestamp: str
+    is_read: bool
+    
+    class Config:
+        from_attributes = True

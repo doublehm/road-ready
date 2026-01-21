@@ -8,8 +8,9 @@ from fastapi import FastAPI, Depends, Request, Form, status, HTTPException, Uplo
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, timedelta
 import json
 import uuid
@@ -20,6 +21,7 @@ from pydantic import ValidationError
 import stripe
 
 from . import models, schemas, database
+from app.api import deps
 
 # Stripe Configuration
 stripe.api_key = os.getenv("STRIPE_API_KEY")
@@ -44,6 +46,10 @@ app.include_router(api_router, prefix="/api/v1")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return FileResponse('app/favicon.ico')
 
 # --- Constants ---
 FAULT_MAP = {
@@ -138,6 +144,10 @@ async def education_book_bc(request: Request, user: models.User = Depends(get_cu
         "user": user,
         "unread_count": get_unread_count(db, user) if user else 0
     })
+
+@app.get("/education/bc/html", response_class=HTMLResponse)
+async def education_book_bc_html(request: Request):
+    return templates.TemplateResponse("handbook_content.html", {"request": request})
 
 @app.get("/education/quiz", response_class=HTMLResponse)
 async def education_quiz(request: Request, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -330,32 +340,138 @@ async def setup_instructor(
     insurance_policy: str = Form(...),
     certification_id: str = Form(...),
     license_image: UploadFile = File(...),
+    insurance_image: UploadFile = File(...),
+    license_classes: str = Form("[]"), # JSON string: [{"license_class": "Class 5", "price": 50.0}]
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
 ):
-    try:
-        if not user: return RedirectResponse(url="/login")
-        try:
-            schemas.InstructorProfileBase(bio=bio, hourly_rate=hourly_rate, city=city, car_model=car_model, insurance_policy=insurance_policy, certification_id=certification_id)
-        except ValidationError as e:
-            try: error_msg = e.errors()[0]['msg']
-            except: error_msg = str(e)
-            return templates.TemplateResponse("setup_instructor.html", {"request": request, "user": user, "error": error_msg, "unread_count": get_unread_count(db, user)})
+    if not user: return RedirectResponse(url="/login")
+    
+    # Save the files
+    upload_dir = "app/static/uploads"
+    
+    # License Image
+    filename_license = f"{user.id}_{license_image.filename}"
+    file_path_license = os.path.join(upload_dir, filename_license)
+    with open(file_path_license, "wb") as buffer:
+        shutil.copyfileobj(license_image.file, buffer)
 
-        upload_dir = "app/static/uploads"
-        if not os.path.exists(upload_dir): os.makedirs(upload_dir)
-        filename = f"{user.id}_{license_image.filename}"
-        with open(os.path.join(upload_dir, filename), "wb") as buffer:
-            shutil.copyfileobj(license_image.file, buffer)
-        
-        profile = models.InstructorProfile(user_id=user.id, bio=bio, hourly_rate=hourly_rate, city=city, car_model=car_model, insurance_policy=insurance_policy, certification_id=certification_id, license_image=filename, is_verified=False)
+    # Insurance Image
+    filename_insurance = f"{user.id}_ins_{insurance_image.filename}"
+    file_path_insurance = os.path.join(upload_dir, filename_insurance)
+    with open(file_path_insurance, "wb") as buffer:
+        shutil.copyfileobj(insurance_image.file, buffer)
+    
+    profile = models.InstructorProfile(
+        user_id=user.id,
+        bio=bio,
+        hourly_rate=hourly_rate,
+        city=city,
+        car_model=car_model,
+        insurance_policy=insurance_policy,
+        certification_id=certification_id,
+        license_image=filename_license,
+        insurance_image=filename_insurance,
+        is_verified=False # Pending admin approval
+    )
+    db.add(profile)
+    db.flush() # Flush to get profile.id
+
+    # Parse and add license classes
+    try:
+        classes_data = json.loads(license_classes)
+        for cls in classes_data:
+            new_license_class = models.InstructorLicenseClass(
+                instructor_id=profile.id,
+                license_class=cls.get('license_class'),
+                price=float(cls.get('price', hourly_rate))
+            )
+            db.add(new_license_class)
+    except json.JSONDecodeError:
+        pass # Ignore bad JSON
+
+    db.commit()
+    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.post("/api/v1/setup-instructor")
+async def setup_instructor_api(
+    request: Request,
+    bio: str = Form(...),
+    hourly_rate: float = Form(...),
+    city: str = Form(...),
+    car_model: str = Form(...),
+    insurance_policy: str = Form(...),
+    certification_id: str = Form(...),
+    license_image: UploadFile = File(...),
+    insurance_image: UploadFile = File(...),
+    license_classes: str = Form("[]"),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(deps.get_current_user)
+):
+    if not user: raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    # Save the files
+    upload_dir = "app/static/uploads"
+    
+    filename_license = f"{user.id}_{license_image.filename}"
+    with open(os.path.join(upload_dir, filename_license), "wb") as buffer:
+        shutil.copyfileobj(license_image.file, buffer)
+
+    filename_insurance = f"{user.id}_ins_{insurance_image.filename}"
+    with open(os.path.join(upload_dir, filename_insurance), "wb") as buffer:
+        shutil.copyfileobj(insurance_image.file, buffer)
+    
+    # Check for existing profile
+    profile = db.query(models.InstructorProfile).filter(models.InstructorProfile.user_id == user.id).first()
+    
+    if profile:
+        # Update existing
+        profile.bio = bio
+        profile.hourly_rate = hourly_rate
+        profile.city = city
+        profile.car_model = car_model
+        profile.insurance_policy = insurance_policy
+        profile.certification_id = certification_id
+        profile.license_image = filename_license
+        profile.insurance_image = filename_insurance
+        # is_verified stays as is or reset? Let's keep is_verified False on update for safety? 
+        # Or maybe True for prototype. Let's reset to False to require re-approval if docs change.
+        profile.is_verified = False 
+    else:
+        # Create new
+        profile = models.InstructorProfile(
+            user_id=user.id,
+            bio=bio,
+            hourly_rate=hourly_rate,
+            city=city,
+            car_model=car_model,
+            insurance_policy=insurance_policy,
+            certification_id=certification_id,
+            license_image=filename_license,
+            insurance_image=filename_insurance,
+            is_verified=False
+        )
         db.add(profile)
-        db.commit()
-        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return templates.TemplateResponse("setup_instructor.html", {"request": request, "user": user, "error": f"Internal Error: {str(e)}", "unread_count": get_unread_count(db, user) if user else 0})
+    
+    db.flush()
+
+    # Update License Classes: Delete old, add new
+    db.query(models.InstructorLicenseClass).filter(models.InstructorLicenseClass.instructor_id == profile.id).delete()
+    
+    try:
+        classes_data = json.loads(license_classes)
+        for cls in classes_data:
+            new_license_class = models.InstructorLicenseClass(
+                instructor_id=profile.id,
+                license_class=cls.get('license_class'),
+                price=float(cls.get('price', hourly_rate))
+            )
+            db.add(new_license_class)
+    except json.JSONDecodeError:
+        pass
+
+    db.commit()
+    return {"status": "success"}
 
 @app.post("/setup-student")
 async def setup_student(
@@ -851,8 +967,25 @@ async def cancel_booking(request: Request, booking_id: int, db: Session = Depend
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
     if not booking or booking.student_id != user.id: raise HTTPException(status_code=403, detail="Not authorized")
     if booking.status == "completed": raise HTTPException(status_code=400, detail="Cannot cancel completed")
-    booking.status = "cancelled"
-    db.commit()
+    # Check 24h rule
+    try:
+        booking_dt = datetime.strptime(f"{booking.date} {booking.time}", "%Y-%m-%d %H:%M")
+        time_diff = booking_dt - datetime.now()
+        
+        if time_diff < timedelta(hours=24):
+            # Late cancellation: 25% penalty towards instructor
+            # Instructor gets 25% of total amount
+            booking.instructor_payout = booking.total_amount * 0.25
+            print(f"PENALTY: Student {user.email} cancelled booking {booking_id} within 24h. 25% fee applies.")
+        else:
+            # Early cancellation: Full refund, instructor gets 0
+            booking.instructor_payout = 0.0
+            
+        booking.status = "cancelled"
+        db.commit()
+        
+    except ValueError:
+        pass
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.post("/request-cancellation/{booking_id}")

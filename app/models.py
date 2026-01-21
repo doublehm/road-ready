@@ -28,7 +28,9 @@ class InstructorProfile(Base):
     car_model = Column(String)
     insurance_policy = Column(String)
     certification_id = Column(String)
+    certification_expiry = Column(String, nullable=True) # YYYY-MM-DD
     license_image = Column(String, nullable=True) # Filename of the uploaded license
+    insurance_image = Column(String, nullable=True) # Filename of the uploaded insurance
     is_verified = Column(Boolean, default=False)
     is_available = Column(Boolean, default=True)
 
@@ -36,6 +38,17 @@ class InstructorProfile(Base):
     booking_requests = relationship("BookingRequest", back_populates="instructor")
     reviews = relationship("Review", back_populates="instructor")
     availabilities = relationship("InstructorAvailability", back_populates="instructor", cascade="all, delete-orphan")
+    license_classes = relationship("InstructorLicenseClass", back_populates="instructor", cascade="all, delete-orphan")
+
+class InstructorLicenseClass(Base):
+    __tablename__ = "instructor_license_classes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    instructor_id = Column(Integer, ForeignKey("instructor_profiles.id"))
+    license_class = Column(String) # "Class 5", "Class 7", "Class 4", etc.
+    price = Column(Float)
+
+    instructor = relationship("InstructorProfile", back_populates="license_classes")
 
 class InstructorAvailability(Base):
     __tablename__ = "instructor_availabilities"
@@ -58,6 +71,7 @@ class StudentProfile(Base):
     license_image = Column(String, nullable=True) # Path to uploaded file
     is_verified = Column(Boolean, default=False) # Deprecated in favor of status, but kept for compat
     license_status = Column(String, default="pending") # pending, verified, rejected
+    license_expiry = Column(String, nullable=True) # YYYY-MM-DD
     rejection_reason = Column(Text, nullable=True)
     
     user = relationship("User", back_populates="student_profile")
@@ -162,6 +176,18 @@ class QuizQuestion(Base):
     correct_option = Column(String) # "A", "B", "C", "D"
     explanation = Column(Text)
 
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String)
+    message = Column(Text)
+    timestamp = Column(String)
+    is_read = Column(Boolean, default=False)
+    
+    user = relationship("User", back_populates="notifications")
+
 # Update BookingRequest to link to a session
 BookingRequest.driving_session = relationship("DrivingSession", back_populates="booking", uselist=False)
 
@@ -172,6 +198,7 @@ InstructorProfile.reviews = relationship("Review", back_populates="instructor")
 # Update User relationships for messages
 User.sent_messages = relationship("Message", foreign_keys=[Message.sender_id], back_populates="sender")
 User.received_messages = relationship("Message", foreign_keys=[Message.recipient_id], back_populates="recipient")
+User.notifications = relationship("Notification", back_populates="user")
 
 class DriveLog(Base):
     __tablename__ = "drive_logs"
