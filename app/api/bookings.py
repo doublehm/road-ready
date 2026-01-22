@@ -48,19 +48,29 @@ async def create_booking(
 
 @router.get("/", response_model=List[schemas.BookingRequest])
 async def read_bookings(
-    skip: int = 0, 
-    limit: int = 100, 
+    skip: int = 0,
+    limit: int = 100,
+    module_id: int = None,
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_user)
 ):
+    """
+    List bookings with optional module filtering.
+    """
     if current_user.role == "instructor":
-        bookings = db.query(models.BookingRequest).filter(
+        query = db.query(models.BookingRequest).filter(
             models.BookingRequest.instructor_id == current_user.instructor_profile.id
-        ).offset(skip).limit(limit).all()
+        )
     else:
-        bookings = db.query(models.BookingRequest).filter(
+        query = db.query(models.BookingRequest).filter(
             models.BookingRequest.student_id == current_user.id
-        ).offset(skip).limit(limit).all()
+        )
+
+    # Filter by module if specified
+    if module_id:
+        query = query.filter(models.BookingRequest.module_id == module_id)
+
+    bookings = query.offset(skip).limit(limit).all()
     return bookings
 
 @router.post("/{booking_id}/action")
@@ -104,6 +114,68 @@ async def handle_booking(
         timestamp=datetime.now().isoformat()
     )
     db.add(notif)
-        
+
     db.commit()
     return {"status": "success", "booking_status": booking.status}
+
+
+@router.post("/{booking_id}/complete")
+async def complete_booking(
+    booking_id: int,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Mark a booking as completed and update module progress hours.
+    """
+    if current_user.role != "instructor":
+        raise HTTPException(status_code=403, detail="Only instructors can complete bookings")
+
+    booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
+
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    # Ensure this booking belongs to the logged-in instructor
+    if booking.instructor.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Mark booking as completed
+    booking.status = "completed"
+
+    # If booking is associated with a module, update progress
+    if booking.module_id:
+        progress = db.query(models.StudentModuleProgress).filter(
+            models.StudentModuleProgress.student_id == booking.student_id,
+            models.StudentModuleProgress.module_id == booking.module_id
+        ).first()
+
+        if progress:
+            progress.hours_completed += booking.duration
+
+            # Check if module is completed
+            module = db.query(models.LearningModule).filter(
+                models.LearningModule.id == booking.module_id
+            ).first()
+
+            if module and progress.hours_completed >= module.min_hours:
+                progress.status = "completed"
+                progress.completed_at = datetime.now().isoformat()
+
+                # Unlock next module (if any)
+                next_module = db.query(models.LearningModule).filter(
+                    models.LearningModule.order == module.order + 1
+                ).first()
+
+                if next_module:
+                    next_progress = db.query(models.StudentModuleProgress).filter(
+                        models.StudentModuleProgress.student_id == booking.student_id,
+                        models.StudentModuleProgress.module_id == next_module.id
+                    ).first()
+
+                    if next_progress and next_progress.status == "locked":
+                        next_progress.status = "unlocked"
+                        next_progress.unlocked_at = datetime.now().isoformat()
+
+    db.commit()
+    return {"status": "success", "message": "Booking marked as completed"}

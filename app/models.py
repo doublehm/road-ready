@@ -73,8 +73,16 @@ class StudentProfile(Base):
     license_status = Column(String, default="pending") # pending, verified, rejected
     license_expiry = Column(String, nullable=True) # YYYY-MM-DD
     rejection_reason = Column(Text, nullable=True)
-    
+
+    # Diagnostic ride fields
+    diagnostic_completed = Column(Boolean, default=False)
+    diagnostic_ride_id = Column(Integer, ForeignKey("diagnostic_rides.id"), nullable=True)
+    current_module_id = Column(Integer, ForeignKey("learning_modules.id"), nullable=True)
+    basics_skipped = Column(Boolean, default=False)
+
     user = relationship("User", back_populates="student_profile")
+    diagnostic_ride = relationship("DiagnosticRide", foreign_keys=[diagnostic_ride_id])
+    current_module = relationship("LearningModule", foreign_keys=[current_module_id])
 
 class BookingRequest(Base):
     __tablename__ = "booking_requests"
@@ -82,21 +90,21 @@ class BookingRequest(Base):
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"))
     instructor_id = Column(Integer, ForeignKey("instructor_profiles.id"))
-    
+
     date = Column(String) # Storing as string for simplicity in prototype (YYYY-MM-DD)
     time = Column(String) # HH:MM
     duration = Column(Integer) # in hours
     pickup_address = Column(String)
     dropoff_address = Column(String, nullable=True)
-    
+
     # Route Coordinates
     pickup_lat = Column(Float, nullable=True)
     pickup_lng = Column(Float, nullable=True)
     dropoff_lat = Column(Float, nullable=True)
     dropoff_lng = Column(Float, nullable=True)
-    
+
     notes = Column(Text)
-    
+
     # Payment Fields
     payment_status = Column(String, default="pending") # pending, paid, refunded
     stripe_payment_intent_id = Column(String, nullable=True)
@@ -104,11 +112,16 @@ class BookingRequest(Base):
     extra_travel_cost = Column(Float, default=0.0) # Cost for distance
     platform_fee = Column(Float, default=0.0) # Our commission
     instructor_payout = Column(Float, default=0.0) # Amount for instructor
-    
+
     status = Column(String, default="pending_payment") # Changed default: pending -> pending_payment -> pending (approval)
+
+    # Module and lesson type support
+    module_id = Column(Integer, ForeignKey("learning_modules.id"), nullable=True)
+    lesson_type = Column(String, default="regular") # regular, diagnostic, module_lesson
 
     student = relationship("User", foreign_keys=[student_id])
     instructor = relationship("InstructorProfile", foreign_keys=[instructor_id], back_populates="booking_requests")
+    module = relationship("LearningModule", foreign_keys=[module_id])
 
 class Review(Base):
     __tablename__ = "reviews"
@@ -199,6 +212,70 @@ InstructorProfile.reviews = relationship("Review", back_populates="instructor")
 User.sent_messages = relationship("Message", foreign_keys=[Message.sender_id], back_populates="sender")
 User.received_messages = relationship("Message", foreign_keys=[Message.recipient_id], back_populates="recipient")
 User.notifications = relationship("Notification", back_populates="user")
+
+class LearningModule(Base):
+    __tablename__ = "learning_modules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String) # "Basics", "Advanced/Test Prep"
+    description = Column(Text)
+    package_price = Column(Float) # Discounted package cost
+    hourly_rate = Column(Float) # Individual lesson rate
+    min_hours = Column(Integer) # Minimum hours for completion
+    order = Column(Integer) # Display order
+    skills_covered = Column(Text) # JSON string
+    prerequisites = Column(Text) # JSON string - module IDs
+
+class StudentModuleProgress(Base):
+    __tablename__ = "student_module_progress"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    module_id = Column(Integer, ForeignKey("learning_modules.id"))
+    status = Column(String) # "locked", "unlocked", "in_progress", "completed"
+    enrollment_type = Column(String) # "package", "hourly", "none"
+    package_purchased = Column(Boolean, default=False)
+    unlocked_at = Column(String, nullable=True) # ISO timestamp
+    completed_at = Column(String, nullable=True) # ISO timestamp
+    hours_completed = Column(Float, default=0.0)
+
+    student = relationship("User", foreign_keys=[student_id])
+    module = relationship("LearningModule", foreign_keys=[module_id])
+
+class DiagnosticRide(Base):
+    __tablename__ = "diagnostic_rides"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    ride_type = Column(String) # "parent_supervised", "instructor_supervised"
+    instructor_id = Column(Integer, ForeignKey("instructor_profiles.id"), nullable=True)
+
+    start_time = Column(String) # ISO format
+    end_time = Column(String, nullable=True) # ISO format
+    duration_minutes = Column(Float, nullable=True)
+    distance_km = Column(Float, nullable=True)
+
+    route_coords = Column(Text, nullable=True) # JSON GPS coordinates
+    acceleration_data = Column(Text, nullable=True) # JSON sensor data
+    rotation_data = Column(Text, nullable=True) # JSON sensor data
+    speed_data = Column(Text, nullable=True) # JSON GPS speed + coords
+
+    braking_score = Column(Float, nullable=True) # 0-100
+    speed_score = Column(Float, nullable=True) # 0-100
+    cornering_score = Column(Float, nullable=True) # 0-100
+    overall_score = Column(Float, nullable=True) # 0-100
+    passed = Column(Boolean, nullable=True)
+
+    evaluation_result = Column(Text, nullable=True) # JSON detailed feedback
+    evaluator_notes = Column(Text, nullable=True) # instructor notes
+    instructor_override = Column(Boolean, default=False)
+
+    status = Column(String, default="pending") # "pending", "evaluating", "completed"
+    created_at = Column(String) # ISO timestamp
+    evaluated_at = Column(String, nullable=True) # ISO timestamp
+
+    student = relationship("User", foreign_keys=[student_id])
+    instructor = relationship("InstructorProfile", foreign_keys=[instructor_id])
 
 class DriveLog(Base):
     __tablename__ = "drive_logs"

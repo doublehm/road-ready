@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api import auth, users, instructors, drivelogs, bookings, sessions, quiz, messages, notifications
+from app.api import auth, users, instructors, drivelogs, bookings, sessions, quiz, messages, notifications, modules, diagnostic_rides
 
 api_router = APIRouter()
 
@@ -12,3 +12,5 @@ api_router.include_router(sessions.router, prefix="/sessions", tags=["sessions"]
 api_router.include_router(quiz.router, prefix="/quiz", tags=["quiz"])
 api_router.include_router(messages.router, prefix="/messages", tags=["messages"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(modules.router, prefix="/modules", tags=["modules"])
+api_router.include_router(diagnostic_rides.router, prefix="/diagnostic-rides", tags=["diagnostic-rides"])

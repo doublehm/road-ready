@@ -32,6 +32,11 @@ import StudentEditProfileScreen from './src/screens/StudentEditProfileScreen';
 import SessionDetailScreen from './src/screens/SessionDetailScreen';
 import StudentDetailStatsScreen from './src/screens/StudentDetailStatsScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import DiagnosticRideIntroScreen from './src/screens/DiagnosticRideIntroScreen';
+import DiagnosticRideSetupScreen from './src/screens/DiagnosticRideSetupScreen';
+import DiagnosticRideActiveScreen from './src/screens/DiagnosticRideActiveScreen';
+import DiagnosticRideResultsScreen from './src/screens/DiagnosticRideResultsScreen';
+import ModulesScreen from './src/screens/ModulesScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -156,6 +161,11 @@ const AppNav = () => {
             <Stack.Screen name="SessionDetail" component={SessionDetailScreen} />
             <Stack.Screen name="StudentDetailStats" component={StudentDetailStatsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="DiagnosticRideIntro" component={DiagnosticRideIntroScreen} />
+            <Stack.Screen name="DiagnosticRideSetup" component={DiagnosticRideSetupScreen} />
+            <Stack.Screen name="DiagnosticRideActive" component={DiagnosticRideActiveScreen} />
+            <Stack.Screen name="DiagnosticRideResults" component={DiagnosticRideResultsScreen} />
+            <Stack.Screen name="Modules" component={ModulesScreen} />
           </>
         )}
       </Stack.Navigator>

@@ -276,6 +276,112 @@ class Notification(BaseModel):
     message: str
     timestamp: str
     is_read: bool
-    
+
+    class Config:
+        from_attributes = True
+
+# --- Learning Module Schemas ---
+class LearningModuleBase(BaseModel):
+    name: str
+    description: str
+    package_price: float
+    hourly_rate: float
+    min_hours: int
+    order: int
+    skills_covered: str # JSON string
+    prerequisites: str # JSON string
+
+class LearningModuleCreate(LearningModuleBase):
+    pass
+
+class LearningModule(LearningModuleBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+# --- Student Module Progress Schemas ---
+class StudentModuleProgressBase(BaseModel):
+    module_id: int
+    status: str
+    enrollment_type: str
+    package_purchased: bool = False
+    hours_completed: float = 0.0
+
+class StudentModuleProgressCreate(StudentModuleProgressBase):
+    student_id: int
+
+class StudentModuleProgress(StudentModuleProgressBase):
+    id: int
+    student_id: int
+    unlocked_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    module: Optional[LearningModule] = None
+
+    class Config:
+        from_attributes = True
+
+# --- Diagnostic Ride Schemas ---
+class SensorDataPoint(BaseModel):
+    timestamp: float
+    x: Optional[float] = None
+    y: Optional[float] = None
+    z: Optional[float] = None
+    speed: Optional[float] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+class DiagnosticRideBase(BaseModel):
+    ride_type: str # "parent_supervised", "instructor_supervised"
+    instructor_id: Optional[int] = None
+
+class DiagnosticRideCreate(DiagnosticRideBase):
+    start_time: str
+    end_time: Optional[str] = None
+    duration_minutes: Optional[float] = None
+    distance_km: Optional[float] = None
+    route_coords: Optional[str] = None # JSON string
+    acceleration_data: Optional[str] = None # JSON string
+    rotation_data: Optional[str] = None # JSON string
+    speed_data: Optional[str] = None # JSON string
+
+class DiagnosticRideEvaluation(BaseModel):
+    braking_score: float
+    speed_score: float
+    cornering_score: float
+    overall_score: float
+    passed: bool
+    evaluation_result: str # JSON string with detailed feedback
+
+class InstructorReview(BaseModel):
+    evaluator_notes: str
+    override_passed: Optional[bool] = None
+    override_braking_score: Optional[float] = None
+    override_speed_score: Optional[float] = None
+    override_cornering_score: Optional[float] = None
+
+class DiagnosticRide(DiagnosticRideBase):
+    id: int
+    student_id: int
+    start_time: str
+    end_time: Optional[str] = None
+    duration_minutes: Optional[float] = None
+    distance_km: Optional[float] = None
+    route_coords: Optional[str] = None
+    acceleration_data: Optional[str] = None
+    rotation_data: Optional[str] = None
+    speed_data: Optional[str] = None
+    braking_score: Optional[float] = None
+    speed_score: Optional[float] = None
+    cornering_score: Optional[float] = None
+    overall_score: Optional[float] = None
+    passed: Optional[bool] = None
+    evaluation_result: Optional[str] = None
+    evaluator_notes: Optional[str] = None
+    instructor_override: bool = False
+    status: str
+    created_at: str
+    evaluated_at: Optional[str] = None
+
     class Config:
         from_attributes = True

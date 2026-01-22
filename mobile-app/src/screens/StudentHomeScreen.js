@@ -120,14 +120,24 @@ const StudentHomeScreen = ({ navigation }) => {
             <Text style={styles.gridLabel}>Practice Quiz</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.gridItem} 
+          <TouchableOpacity
+            style={styles.gridItem}
             onPress={() => navigation.navigate('DriveLog')}
           >
             <View style={[styles.iconBg, { backgroundColor: '#f8d7da' }]}>
               <Ionicons name="car" size={28} color="#dc3545" />
             </View>
             <Text style={styles.gridLabel}>Drive Log</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.gridItem}
+            onPress={() => navigation.navigate('DiagnosticRideIntro')}
+          >
+            <View style={[styles.iconBg, { backgroundColor: '#e0d9f7' }]}>
+              <Ionicons name="speedometer" size={28} color="#6610f2" />
+            </View>
+            <Text style={styles.gridLabel}>Diagnostic Ride</Text>
           </TouchableOpacity>
 
         </View>
