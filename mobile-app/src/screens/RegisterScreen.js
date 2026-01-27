@@ -36,9 +36,15 @@ const RegisterScreen = ({ navigation }) => {
       ]);
       
     } catch (e) {
-      console.log(e.response?.data);
-      const msg = e.response?.data?.detail || "Registration failed";
-      Alert.alert('Error', Array.isArray(msg) ? msg[0].msg : msg);
+      console.log("Registration Error:", e);
+      if (e.response) {
+          console.log("Response Data:", e.response.data);
+          const msg = e.response.data.detail || "Registration failed";
+          Alert.alert('Error', Array.isArray(msg) ? msg[0].msg : msg);
+      } else {
+          console.log("No response received");
+          Alert.alert('Network Error', 'Could not connect to server. Check your internet or server status.\n' + e.message);
+      }
     } finally {
       setLoading(false);
     }

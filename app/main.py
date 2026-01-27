@@ -22,6 +22,7 @@ import stripe
 
 from . import models, schemas, database
 from app.api import deps
+from app.services.notification_service import create_notification
 
 # Stripe Configuration
 stripe.api_key = os.getenv("STRIPE_API_KEY")
@@ -209,6 +210,11 @@ async def contact_page(request: Request):
 @app.post("/contact", response_class=HTMLResponse)
 async def submit_contact(request: Request):
     return templates.TemplateResponse("contact.html", {"request": request, "success": True})
+
+@app.get("/ping")
+def ping():
+    print("PING RECEIVED FROM CLIENT!")
+    return {"message": "pong"}
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -770,6 +776,10 @@ async def process_payment(request: Request, booking_id: int, db: Session = Depen
     booking.status = "pending"
     booking.stripe_payment_intent_id = f"pi_mock_{uuid.uuid4()}"
     db.commit()
+    
+    # Notify Instructor
+    create_notification(db, booking.instructor.user_id, "New Booking Request", f"You have a new booking request from {booking.student.full_name}.")
+    
     return templates.TemplateResponse("booking_success.html", {"request": request, "user": user, "unread_count": get_unread_count(db, user)})
 
 @app.get("/payment/success")
@@ -984,6 +994,9 @@ async def cancel_booking(request: Request, booking_id: int, db: Session = Depend
         booking.status = "cancelled"
         db.commit()
         
+        # Notify Instructor
+        create_notification(db, booking.instructor.user_id, "Booking Cancelled", f"Student {user.full_name} has cancelled their booking for {booking.date} at {booking.time}.")
+        
     except ValueError:
         pass
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
@@ -1061,12 +1074,101 @@ async def handle_booking(
                 return templates.TemplateResponse("base.html", {"request": request, "user": user, "content": "<div class='alert alert-danger'>Conflict!</div>"})
         
         booking.status = "accepted"
-        if not booking.student.student_profile.is_verified:
+        if booking.student.student_profile and not booking.student.student_profile.is_verified:
             booking.student.student_profile.is_verified = True
             booking.student.student_profile.license_status = "verified"
+        
+        # Notify Student
+        create_notification(db, booking.student_id, "Booking Confirmed", f"Your lesson with {booking.instructor.user.full_name} has been confirmed.")
             
     elif action == "reject":
         booking.status = "rejected"
+        # Notify Student
+        create_notification(db, booking.student_id, "Booking Declined", f"Your lesson with {booking.instructor.user.full_name} has been declined.")
         
     db.commit()
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.get("/notifications", response_class=HTMLResponse)
+async def view_notifications(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    if not user: return RedirectResponse(url="/login")
+    
+    notifications = db.query(models.Notification).filter(
+        models.Notification.user_id == user.id
+    ).order_by(models.Notification.id.desc()).all()
+    
+    # Mark all as read
+    for n in notifications:
+        n.is_read = True
+    db.commit()
+    
+    return templates.TemplateResponse("notifications.html", {
+        "request": request, 
+        "user": user, 
+        "notifications": notifications,
+        "unread_count": get_unread_count(db, user)
+    })
+
+@app.get("/profile/edit", response_class=HTMLResponse)
+async def edit_profile_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    if not user: return RedirectResponse(url="/login")
+    return templates.TemplateResponse("profile_edit.html", {
+        "request": request,
+        "user": user,
+        "unread_count": get_unread_count(db, user)
+    })
+
+@app.post("/profile/edit", response_class=HTMLResponse)
+async def update_profile(
+    request: Request,
+    full_name: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(...),
+    password: Optional[str] = Form(None),
+    # Optional fields depending on role
+    age: Optional[int] = Form(None),
+    l_license_number: Optional[str] = Form(None),
+    bio: Optional[str] = Form(None),
+    hourly_rate: Optional[float] = Form(None),
+    city: Optional[str] = Form(None),
+    car_model: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    if not user: return RedirectResponse(url="/login")
+    
+    # 1. Update User Basic Info
+    user.full_name = full_name
+    user.email = email
+    user.phone_number = phone_number
+    
+    if password and len(password.strip()) > 0:
+        user.hashed_password = get_password_hash(password) # Using the helper defined in main.py
+    
+    # 2. Update Role Specific Info
+    if user.role == "student" and user.student_profile:
+        if age: user.student_profile.age = age
+        if l_license_number: user.student_profile.l_license_number = l_license_number
+        
+    elif user.role == "instructor" and user.instructor_profile:
+        if bio: user.instructor_profile.bio = bio
+        if hourly_rate: user.instructor_profile.hourly_rate = hourly_rate
+        if city: user.instructor_profile.city = city
+        if car_model: user.instructor_profile.car_model = car_model
+        
+    db.commit()
+    
+    return templates.TemplateResponse("profile_edit.html", {
+        "request": request,
+        "user": user,
+        "message": "Profile updated successfully!",
+        "unread_count": get_unread_count(db, user)
+    })

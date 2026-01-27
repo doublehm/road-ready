@@ -1,75 +1,171 @@
 import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView, Image } from 'react-native';
 import client from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+
+// Update this to your machine's IP
+const SERVER_URL = 'http://192.168.1.235:8001';
 
 const EditProfileScreen = ({ navigation }) => {
   const { userInfo, fetchUser, userToken } = useContext(AuthContext);
   const profile = userInfo?.instructor_profile || {};
 
+  // Basic Info
+  const [fullName, setFullName] = useState(userInfo?.full_name || '');
+  const [phone, setPhone] = useState(userInfo?.phone_number || '');
+  const [email, setEmail] = useState(userInfo?.email || '');
+
+  // Instructor Info
   const [city, setCity] = useState(profile.city || '');
   const [hourlyRate, setHourlyRate] = useState(profile.hourly_rate?.toString() || '');
   const [bio, setBio] = useState(profile.bio || '');
   const [carModel, setCarModel] = useState(profile.car_model || '');
+  const [insurancePolicy, setInsurancePolicy] = useState(profile.insurance_policy || '');
+  const [certificationId, setCertificationId] = useState(profile.certification_id || '');
+
+  // Images
+  const [licenseImage, setLicenseImage] = useState(null);
+  const [insuranceImage, setInsuranceImage] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const currentLicenseImage = profile.license_image ? `${SERVER_URL}/static/uploads/${profile.license_image}` : null;
+  const currentInsuranceImage = profile.insurance_image ? `${SERVER_URL}/static/uploads/${profile.insurance_image}` : null;
+
+  const pickImage = async (setter) => {
+    Alert.alert("Upload Photo", "Choose an option", [
+        {
+          text: "Camera",
+          onPress: async () => {
+            try {
+              let result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.5 });
+              if (!result.canceled) setter(result.assets[0].uri);
+            } catch (e) { Alert.alert("Error", e.message); }
+          }
+        },
+        {
+          text: "Gallery",
+          onPress: async () => {
+            try {
+              let result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.5 });
+              if (!result.canceled) setter(result.assets[0].uri);
+            } catch (e) { Alert.alert("Error", e.message); }
+          }
+        },
+        { text: "Cancel", style: "cancel" }
+    ]);
+  };
+
+  const uploadFile = async (uri) => {
+    const formData = new FormData();
+    formData.append('file', { uri: uri, name: 'upload.jpg', type: 'image/jpeg' });
+    const res = await client.post('/users/me/upload-license', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data.filename;
+  };
 
   const handleSave = async () => {
     setLoading(true);
     try {
+      // 1. Update Basic Info
+      await client.put('/users/me', {
+        full_name: fullName,
+        phone_number: phone,
+        email: email
+      });
+
+      // 2. Upload Images
+      let newLicenseImg = profile.license_image;
+      let newInsuranceImg = profile.insurance_image;
+
+      if (licenseImage) newLicenseImg = await uploadFile(licenseImage);
+      if (insuranceImage) newInsuranceImg = await uploadFile(insuranceImage);
+
+      // 3. Update Instructor Profile
       await client.put('/users/me/instructor-profile', {
         city,
         hourly_rate: parseFloat(hourlyRate),
         bio,
         car_model: carModel,
-        insurance_policy: profile.insurance_policy, // Keep existing
-        certification_id: profile.certification_id // Keep existing
+        insurance_policy: insurancePolicy,
+        certification_id: certificationId,
+        license_image: newLicenseImg,
+        insurance_image: newInsuranceImg
       });
       
-      await fetchUser(userToken); // Refresh context
-      Alert.alert("Success", "Profile updated!");
+      await fetchUser(userToken);
+      Alert.alert("Success", "Profile updated! Re-verification may be required.");
       navigation.goBack();
     } catch (e) {
       console.log(e);
-      Alert.alert("Error", "Failed to update profile.");
+      Alert.alert("Error", "Failed to update profile. " + (e.response?.data?.detail || e.message));
     } finally {
       setLoading(false);
     }
   };
+
+  const renderImagePicker = (label, imageUri, setter, currentUri) => (
+    <View style={styles.imageSection}>
+        <Text style={styles.label}>{label}</Text>
+        <TouchableOpacity style={styles.cameraBtn} onPress={() => pickImage(setter)}>
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={styles.preview} />
+          ) : currentUri ? (
+            <Image source={{ uri: currentUri }} style={styles.preview} />
+          ) : (
+            <View style={styles.cameraPlaceholder}>
+              <Ionicons name="camera" size={30} color="#666" />
+              <Text style={styles.cameraText}>Upload Photo</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.header}>Edit Profile</Text>
 
-        <Text style={styles.label}>City</Text>
-        <TextInput style={styles.input} value={city} onChangeText={setCity} />
+        <Text style={styles.sectionHeader}>Personal Info</Text>
+        <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
+        <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"/>
+        <TextInput style={styles.input} placeholder="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
 
-        <Text style={styles.label}>Hourly Rate ($)</Text>
+        <Text style={styles.sectionHeader}>Instructor Details</Text>
+        <TextInput style={styles.input} placeholder="City" value={city} onChangeText={setCity} />
+        <TextInput style={styles.input} placeholder="Hourly Rate ($)" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" />
+        <TextInput style={styles.input} placeholder="Car Model" value={carModel} onChangeText={setCarModel} />
         <TextInput 
-          style={styles.input} 
-          value={hourlyRate} 
-          onChangeText={setHourlyRate} 
-          keyboardType="numeric" 
-        />
-
-        <Text style={styles.label}>Car Model</Text>
-        <TextInput style={styles.input} value={carModel} onChangeText={setCarModel} />
-
-        <Text style={styles.label}>Bio</Text>
-        <TextInput 
-          style={[styles.input, {height: 100}]} 
+          style={[styles.input, {height: 80}]} 
+          placeholder="Bio" 
           value={bio} 
           onChangeText={setBio} 
           multiline 
           textAlignVertical="top"
         />
 
-        <TouchableOpacity 
-          style={styles.saveBtn} 
-          onPress={handleSave}
-          disabled={loading}
-        >
+        <Text style={styles.sectionHeader}>Documents (Updates Require Approval)</Text>
+        <TextInput style={styles.input} placeholder="Insurance Policy #" value={insurancePolicy} onChangeText={setInsurancePolicy} />
+        <TextInput style={styles.input} placeholder="Certification ID" value={certificationId} onChangeText={setCertificationId} />
+
+        <View style={styles.row}>
+            <View style={{flex: 1, marginRight: 10}}>
+                {renderImagePicker("Driver's License", licenseImage, setLicenseImage, currentLicenseImage)}
+            </View>
+            <View style={{flex: 1}}>
+                {renderImagePicker("Insurance Proof", insuranceImage, setInsuranceImage, currentInsuranceImage)}
+            </View>
+        </View>
+
+        <Text style={styles.warningText}>
+          Note: Updating documents will temporarily hide your profile until admin approval.
+        </Text>
+
+        <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
           {loading ? <ActivityIndicator color="white" /> : <Text style={styles.saveText}>Save Changes</Text>}
         </TouchableOpacity>
       </ScrollView>
@@ -81,14 +177,27 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scroll: { padding: 20 },
   header: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, color: '#333' },
+  sectionHeader: { fontSize: 18, fontWeight: 'bold', marginTop: 10, marginBottom: 15, color: '#007bff' },
   
-  label: { fontWeight: '600', marginBottom: 5, color: '#555' },
+  label: { fontWeight: '600', marginBottom: 5, color: '#555', fontSize: 14 },
   input: { 
     borderWidth: 1, borderColor: '#ddd', borderRadius: 8, 
-    padding: 12, fontSize: 16, backgroundColor: '#f9f9f9', marginBottom: 20 
+    padding: 12, fontSize: 16, backgroundColor: '#f9f9f9', marginBottom: 15 
   },
   
-  saveBtn: { backgroundColor: '#007bff', padding: 15, borderRadius: 10, alignItems: 'center' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  imageSection: { marginBottom: 10 },
+  cameraBtn: { alignItems: 'center' },
+  cameraPlaceholder: {
+    width: '100%', height: 100, backgroundColor: '#f0f0f0', borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderStyle: 'dashed'
+  },
+  preview: { width: '100%', height: 100, borderRadius: 10, resizeMode: 'cover' },
+  cameraText: { marginTop: 5, color: '#666', fontSize: 12 },
+
+  warningText: { color: '#856404', backgroundColor: '#fff3cd', padding: 10, borderRadius: 5, marginBottom: 20, fontSize: 12 },
+  
+  saveBtn: { backgroundColor: '#007bff', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 40 },
   saveText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
 });
 

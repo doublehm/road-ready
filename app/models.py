@@ -96,28 +96,27 @@ class BookingRequest(Base):
     duration = Column(Integer) # in hours
     pickup_address = Column(String)
     dropoff_address = Column(String, nullable=True)
-
-    # Route Coordinates
+    
+    # Coordinates for Map
     pickup_lat = Column(Float, nullable=True)
     pickup_lng = Column(Float, nullable=True)
     dropoff_lat = Column(Float, nullable=True)
     dropoff_lng = Column(Float, nullable=True)
-
+    
+    extra_travel_cost = Column(Float, default=0.0)
+    
     notes = Column(Text)
 
     # Payment Fields
     payment_status = Column(String, default="pending") # pending, paid, refunded
     stripe_payment_intent_id = Column(String, nullable=True)
     total_amount = Column(Float, default=0.0)
-    extra_travel_cost = Column(Float, default=0.0) # Cost for distance
-    platform_fee = Column(Float, default=0.0) # Our commission
-    instructor_payout = Column(Float, default=0.0) # Amount for instructor
+    platform_fee = Column(Float, default=0.0)
+    instructor_payout = Column(Float, default=0.0)
 
     status = Column(String, default="pending_payment") # Changed default: pending -> pending_payment -> pending (approval)
-
-    # Module and lesson type support
+    
     module_id = Column(Integer, ForeignKey("learning_modules.id"), nullable=True)
-    lesson_type = Column(String, default="regular") # regular, diagnostic, module_lesson
 
     student = relationship("User", foreign_keys=[student_id])
     instructor = relationship("InstructorProfile", foreign_keys=[instructor_id], back_populates="booking_requests")

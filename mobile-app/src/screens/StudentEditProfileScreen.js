@@ -7,19 +7,29 @@ import * as ImagePicker from 'expo-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+// Update this to your machine's IP
+const SERVER_URL = 'http://192.168.1.235:8001';
+
 const StudentEditProfileScreen = ({ navigation }) => {
   const { userInfo, fetchUser, userToken } = useContext(AuthContext);
   const profile = userInfo?.student_profile || {};
 
+  // Basic Info State
+  const [fullName, setFullName] = useState(userInfo?.full_name || '');
+  const [phone, setPhone] = useState(userInfo?.phone_number || '');
+  const [email, setEmail] = useState(userInfo?.email || '');
+
+  // Profile Info State
   const [age, setAge] = useState(profile.age?.toString() || '');
   const [licenseNumber, setLicenseNumber] = useState(profile.l_license_number || '');
   const [expiry, setExpiry] = useState(profile.license_expiry ? new Date(profile.license_expiry) : new Date());
+  
   const [showPicker, setShowPicker] = useState(false);
   const [image, setImage] = useState(null); // New image URI
   const [loading, setLoading] = useState(false);
 
   // Existing image
-  const currentImage = profile.license_image ? `http://192.168.1.74:8000/static/uploads/${profile.license_image}` : null;
+  const currentImage = profile.license_image ? `${SERVER_URL}/static/uploads/${profile.license_image}` : null;
 
   const onDateChange = (event, selectedDate) => {
     setShowPicker(false);
@@ -35,16 +45,13 @@ const StudentEditProfileScreen = ({ navigation }) => {
           text: "Camera",
           onPress: async () => {
             try {
-              console.log("Launching Camera...");
               let result = await ImagePicker.launchCameraAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 quality: 0.5,
               });
-              console.log("Camera Result:", result);
               if (!result.canceled) setImage(result.assets[0].uri);
             } catch (e) {
-              console.log("Camera Error:", e);
               Alert.alert("Error", "Could not open camera: " + e.message);
             }
           }
@@ -53,16 +60,13 @@ const StudentEditProfileScreen = ({ navigation }) => {
           text: "Gallery",
           onPress: async () => {
             try {
-              console.log("Launching Gallery...");
               let result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
                 quality: 0.5,
               });
-              console.log("Gallery Result:", result);
               if (!result.canceled) setImage(result.assets[0].uri);
             } catch (e) {
-              console.log("Gallery Error:", e);
               Alert.alert("Error", "Could not open gallery: " + e.message);
             }
           }
@@ -75,9 +79,15 @@ const StudentEditProfileScreen = ({ navigation }) => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      let filename = profile.license_image;
+      // 1. Update Basic User Info
+      await client.put('/users/me', {
+        full_name: fullName,
+        phone_number: phone,
+        email: email
+      });
 
-      // 1. Upload new image if selected
+      // 2. Upload Image if new
+      let filename = profile.license_image;
       if (image) {
         const formData = new FormData();
         formData.append('file', { uri: image, name: 'license.jpg', type: 'image/jpeg' });
@@ -89,7 +99,7 @@ const StudentEditProfileScreen = ({ navigation }) => {
 
       const dateStr = expiry.toISOString().split('T')[0];
 
-      // 2. Update Profile
+      // 3. Update Student Profile
       await client.put('/users/me/student-profile', {
         age: parseInt(age),
         l_license_number: licenseNumber,
@@ -98,11 +108,11 @@ const StudentEditProfileScreen = ({ navigation }) => {
       });
       
       await fetchUser(userToken);
-      Alert.alert('Success', 'Profile updated!');
+      Alert.alert('Success', 'Profile updated! Re-verification may be required.');
       navigation.goBack();
     } catch (e) {
       console.log(e);
-      Alert.alert('Error', 'Update failed.');
+      Alert.alert('Error', 'Update failed. ' + (e.response?.data?.detail || e.message));
     } finally {
       setLoading(false);
     }
@@ -113,6 +123,17 @@ const StudentEditProfileScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.header}>Edit Profile</Text>
 
+        <Text style={styles.sectionHeader}>Personal Info</Text>
+        <Text style={styles.label}>Full Name</Text>
+        <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
+        
+        <Text style={styles.label}>Email</Text>
+        <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"/>
+
+        <Text style={styles.label}>Phone</Text>
+        <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+
+        <Text style={styles.sectionHeader}>License Info</Text>
         <Text style={styles.label}>Age</Text>
         <TextInput style={styles.input} value={age} onChangeText={setAge} keyboardType="numeric" />
 
@@ -147,7 +168,10 @@ const StudentEditProfileScreen = ({ navigation }) => {
             </View>
           )}
         </TouchableOpacity>
-        {currentImage && !image && <Text style={styles.hint}>Tap image to retake</Text>}
+        
+        <Text style={styles.warningText}>
+          Note: Updating license info will require admin approval again.
+        </Text>
 
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
           {loading ? <ActivityIndicator color="white" /> : <Text style={styles.saveText}>Save Changes</Text>}
@@ -161,10 +185,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   scroll: { padding: 20 },
   header: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, color: '#333' },
+  sectionHeader: { fontSize: 18, fontWeight: 'bold', marginTop: 10, marginBottom: 15, color: '#007bff' },
   label: { fontWeight: '600', marginBottom: 5, color: '#555' },
   input: { 
     borderWidth: 1, borderColor: '#ddd', borderRadius: 8, 
-    padding: 12, fontSize: 16, backgroundColor: '#f9f9f9', marginBottom: 20 
+    padding: 12, fontSize: 16, backgroundColor: '#f9f9f9', marginBottom: 15 
   },
   dateBtn: { 
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -176,9 +201,10 @@ const styles = StyleSheet.create({
     width: '100%', height: 200, backgroundColor: '#f0f0f0', borderRadius: 10,
     justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#ddd', borderStyle: 'dashed'
   },
-  preview: { width: '100%', height: 200, borderRadius: 10 },
+  preview: { width: '100%', height: 200, borderRadius: 10, resizeMode: 'cover' },
   cameraText: { marginTop: 10, color: '#666' },
   hint: { textAlign: 'center', color: '#999', marginBottom: 20 },
+  warningText: { color: '#856404', backgroundColor: '#fff3cd', padding: 10, borderRadius: 5, marginBottom: 20, fontSize: 14 },
   
   saveBtn: { backgroundColor: '#007bff', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 40 },
   saveText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
