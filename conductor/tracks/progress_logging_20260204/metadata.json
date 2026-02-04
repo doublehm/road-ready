@@ -1,0 +1,8 @@
+{
+  "track_id": "progress_logging_20260204",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-02-04T12:00:00Z",
+  "updated_at": "2026-02-04T12:00:00Z",
+  "description": "Implement Integrated Student Progress Tracking and Diagnostic Ride Logging to bridge the gap between the web backend and mobile app."
+}
