@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0); // Notifications
   const [unreadMessageCount, setUnreadMessageCount] = useState(0); // Messages
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0); // Pending Bookings
 
   const fetchUser = async (token) => {
       try {
@@ -32,14 +33,17 @@ export const AuthProvider = ({ children }) => {
           setUnreadCount(unreadNotifs);
 
           // 2. Messages
-          // We need userInfo to know which messages are for me. 
-          // If userInfo is null (race condition), skip or rely on backend filtering if it existed.
-          // Since /messages/ returns both sent and received, we can't blindly count all unread.
-          // However, we can fetch user profile if missing, or just rely on the stored state.
           if (userInfo) {
               const resMsgs = await client.get('/messages/');
               const unreadMsgs = resMsgs.data.filter(m => m.recipient_id === userInfo.id && !m.is_read).length;
               setUnreadMessageCount(unreadMsgs);
+
+              // 3. Pending Bookings (Instructors only)
+              if (userRole === 'instructor') {
+                  const resBookings = await client.get('/bookings/');
+                  const pending = resBookings.data.filter(b => b.status === 'pending' || b.status === 'pending_payment').length;
+                  setPendingBookingsCount(pending);
+              }
           }
       } catch (e) {
           // ignore
@@ -49,10 +53,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
       if (userToken) {
           fetchUpdates();
-          const interval = setInterval(fetchUpdates, 10000); // Poll every 10s (faster for chat)
+          const interval = setInterval(fetchUpdates, 10000); // Poll every 10s
           return () => clearInterval(interval);
       }
-  }, [userToken, userInfo]); // Depend on userInfo so we fetch messages once user is loaded
+  }, [userToken, userInfo, userRole]);
 
   const login = async (email, password) => {
     setIsLoading(true);
@@ -126,6 +130,7 @@ export const AuthProvider = ({ children }) => {
         fetchUser, 
         unreadCount, 
         unreadMessageCount,
+        pendingBookingsCount,
         fetchUpdates 
     }}>
       {children}

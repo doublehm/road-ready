@@ -1,3 +1,4 @@
+
 import sys
 import os
 
@@ -42,6 +43,69 @@ def seed_large_quiz_data():
             "option_d": "The light will turn red in 5 seconds.",
             "correct_option": "B",
             "explanation": "You must stop if it is safe. If you are too close to stop safely, continue through."
+        },
+        {
+            "question_text": "A round green signal light means:",
+            "option_a": "Drivers facing the light may turn left, go straight, or turn right.",
+            "option_b": "Drivers must go straight.",
+            "option_c": "Drivers can only turn right.",
+            "option_d": "Stop and wait for a flashing green light.",
+            "correct_option": "A",
+            "explanation": "Green means go. You can turn left, go straight, or turn right, unless a sign prohibits it. Yield to pedestrians and oncoming traffic when turning left."
+        },
+        {
+            "question_text": "A flashing green light indicates:",
+            "option_a": "The light is about to turn red.",
+            "option_b": "A pedestrian-controlled light.",
+            "option_c": "You have the right of way to turn left.",
+            "option_d": "Stop and proceed when safe.",
+            "correct_option": "B",
+            "explanation": "In BC, a flashing green light at an intersection means it is pedestrian-controlled. It acts like a regular green light for drivers unless a pedestrian activates the crosswalk."
+        },
+        {
+            "question_text": "What does a 'Yield' sign mean?",
+            "option_a": "Stop immediately.",
+            "option_b": "Slow down and stop if necessary to let other traffic go.",
+            "option_c": "Maintain speed and merge.",
+            "option_d": "It applies only to trucks.",
+            "correct_option": "B",
+            "explanation": "Yield means you must let traffic on the through road go first. Stop if necessary."
+        },
+        {
+            "question_text": "A white rectangular sign with a black arrow curving left indicates:",
+            "option_a": "Left turn only lane.",
+            "option_b": "Curve ahead.",
+            "option_c": "Keep left.",
+            "option_d": "No left turn.",
+            "correct_option": "A",
+            "explanation": "Rectangular white signs with black markings are regulatory signs. An arrow indicates the allowed lane movement."
+        },
+        {
+            "question_text": "What does a sign with a red circle and a slash over a U-turn symbol mean?",
+            "option_a": "U-turns allowed.",
+            "option_b": "U-turn permitted after stopping.",
+            "option_c": "No U-turns allowed.",
+            "option_d": "U-turn route ahead.",
+            "correct_option": "C",
+            "explanation": "A red circle with a slash is a prohibition sign. It means the action shown is forbidden."
+        },
+        {
+            "question_text": "A pentagon-shaped sign (shaped like a school house) means:",
+            "option_a": "School zone or school crosswalk.",
+            "option_b": "Playground zone.",
+            "option_c": "Construction zone.",
+            "option_d": "Hospital zone.",
+            "correct_option": "A",
+            "explanation": "The pentagon shape is exclusively used for school zones and school crosswalks."
+        },
+        {
+            "question_text": "An orange diamond-shaped sign indicates:",
+            "option_a": "School zone.",
+            "option_b": "Construction or road maintenance ahead.",
+            "option_c": "Hazardous materials.",
+            "option_d": "Scenic route.",
+            "correct_option": "B",
+            "explanation": "Orange signs are used for temporary conditions like construction and road maintenance."
         },
         {
             "question_text": "A round green sign with a white circle around a bicycle means:",
@@ -102,6 +166,42 @@ def seed_large_quiz_data():
         
         # --- DRIVING RULES & REGULATIONS ---
         {
+            "question_text": "When a school bus displays flashing red lights and the stop arm is extended, you must:",
+            "option_a": "Slow down and pass with caution.",
+            "option_b": "Stop at least 5 meters away.",
+            "option_c": "Stop only if you are behind the bus.",
+            "option_d": "Stop regardless of your direction of travel.",
+            "correct_option": "D",
+            "explanation": "You must stop whether approaching from the front or rear, unless on a divided highway with a physical barrier."
+        },
+        {
+            "question_text": "Unless otherwise posted, the speed limit in a city or municipality is:",
+            "option_a": "30 km/h",
+            "option_b": "50 km/h",
+            "option_c": "60 km/h",
+            "option_d": "80 km/h",
+            "correct_option": "B",
+            "explanation": "The default speed limit in urban areas (cities, towns) is 50 km/h unless signs say otherwise."
+        },
+        {
+            "question_text": "Unless otherwise posted, the speed limit outside a city or municipality is:",
+            "option_a": "50 km/h",
+            "option_b": "60 km/h",
+            "option_c": "80 km/h",
+            "option_d": "100 km/h",
+            "correct_option": "C",
+            "explanation": "On rural roads and highways outside municipalities, the default limit is 80 km/h."
+        },
+        {
+            "question_text": "When are you allowed to make a U-turn?",
+            "option_a": "On a curve where you can be seen by other drivers.",
+            "option_b": "At any intersection with a traffic light.",
+            "option_c": "If safe and not prohibited by signs or local bylaws.",
+            "option_d": "On the crest of a hill.",
+            "correct_option": "C",
+            "explanation": "U-turns are generally permitted if they can be done safely and without interfering with traffic, and no signs prohibit them. They are illegal on curves, hill crests, and usually at signalized intersections."
+        },
+        {
             "question_text": "What is the speed limit in a school zone when children are present?",
             "option_a": "50 km/h",
             "option_b": "30 km/h",
@@ -118,6 +218,24 @@ def seed_large_quiz_data():
             "option_d": "0.02%",
             "correct_option": "C",
             "explanation": "GLP drivers (L and N) must have zero alcohol in their system."
+        },
+        {
+            "question_text": "When merging onto a highway, you should:",
+            "option_a": "Stop and wait for a gap.",
+            "option_b": "Slow down to 30 km/h.",
+            "option_c": "Accelerate to match the speed of highway traffic.",
+            "option_d": "Honk to let others know you are coming.",
+            "correct_option": "C",
+            "explanation": "Use the acceleration lane to match the speed of traffic before merging."
+        },
+        {
+            "question_text": "You are driving in the left lane of a highway. A faster car is approaching from behind. You should:",
+            "option_a": "Speed up to match their speed.",
+            "option_b": "Tap your brakes to warn them.",
+            "option_c": "Move to the right lane when safe.",
+            "option_d": "Stay in your lane; you are driving the speed limit.",
+            "correct_option": "C",
+            "explanation": "The left lane is for passing. If you are blocking traffic, move to the right."
         },
         {
             "question_text": "How far must you park from a fire hydrant?",
@@ -156,6 +274,15 @@ def seed_large_quiz_data():
             "option_d": "Turn the wheel sharply to the side of the road.",
             "correct_option": "B",
             "explanation": "Avoid braking. Keep a firm grip on the wheel to maintain control, then slow down gently."
+        },
+        {
+            "question_text": "If your vehicle begins to skid, you should:",
+            "option_a": "Brake hard.",
+            "option_b": "Accelerate.",
+            "option_c": "Steer in the direction you want the vehicle to go.",
+            "option_d": "Let go of the steering wheel.",
+            "correct_option": "C",
+            "explanation": "Ease off the gas and steer in the direction you want the front of the car to go. Do not slam on the brakes."
         },
         {
             "question_text": "When driving in fog, you should use:",

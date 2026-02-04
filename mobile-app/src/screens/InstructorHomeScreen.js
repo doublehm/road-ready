@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const InstructorHomeScreen = ({ navigation }) => {
-  const { logout, userInfo, unreadCount } = useContext(AuthContext);
+  const { logout, userInfo, unreadCount, pendingBookingsCount } = useContext(AuthContext);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -19,7 +19,14 @@ const InstructorHomeScreen = ({ navigation }) => {
           </View>
           <View style={styles.headerIcons}>
             <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconBtn}>
-              <Ionicons name="notifications-outline" size={24} color="#666" />
+              <View>
+                <Ionicons name="notifications-outline" size={24} color="#666" />
+                {unreadCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unreadCount}</Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} style={styles.iconBtn}>
               <Ionicons name="settings-outline" size={24} color="#666" />
@@ -56,6 +63,11 @@ const InstructorHomeScreen = ({ navigation }) => {
             <Text style={styles.actionTitle}>Booking Requests</Text>
             <Text style={styles.actionDesc}>Approve incoming lessons</Text>
           </View>
+          {pendingBookingsCount > 0 && (
+            <View style={styles.cardBadge}>
+              <Text style={styles.cardBadgeText}>{pendingBookingsCount}</Text>
+            </View>
+          )}
           <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
 
@@ -146,7 +158,17 @@ const styles = StyleSheet.create({
   iconBg: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   actionInfo: { flex: 1 },
   actionTitle: { fontSize: 16, fontWeight: 'bold', color: '#333' },
-  actionDesc: { fontSize: 14, color: '#888' }
+  actionDesc: { fontSize: 14, color: '#888' },
+  
+  badge: {
+    position: 'absolute', right: -6, top: -3, backgroundColor: 'red', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center'
+  },
+  badgeText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
+  
+  cardBadge: {
+    backgroundColor: '#dc3545', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, marginRight: 10
+  },
+  cardBadgeText: { color: 'white', fontSize: 12, fontWeight: 'bold' }
 });
 
 export default InstructorHomeScreen;
