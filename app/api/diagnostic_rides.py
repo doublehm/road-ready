@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List
+import json
 from datetime import datetime
 from app import models, schemas
 from app.api import deps
@@ -49,6 +50,7 @@ async def create_diagnostic_ride(
         student_id=current_user.id,
         ride_type=ride.ride_type,
         instructor_id=ride.instructor_id,
+        booking_id=ride.booking_id,
         start_time=ride.start_time,
         end_time=ride.end_time,
         duration_minutes=ride.duration_minutes,
@@ -204,6 +206,11 @@ async def evaluate_diagnostic_ride(
         ride.overall_score = evaluation_result['overall_score']
         ride.passed = evaluation_result['passed']
         ride.evaluation_result = evaluation_result['evaluation_result']
+        
+        # Extract criteria_results from evaluation_result for easier access
+        eval_dict = json.loads(ride.evaluation_result)
+        ride.criteria_results = json.dumps(eval_dict.get('overall', {}))
+        
         ride.status = "completed"
         ride.evaluated_at = datetime.now().isoformat()
 
