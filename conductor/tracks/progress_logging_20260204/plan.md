@@ -4,9 +4,9 @@ This plan follows the TDD workflow: Red (Write failing tests) -> Green (Implemen
 
 ## Phase 1: API Foundation & Data Model (Backend)
 
-- [ ] Task: Update Data Models for Diagnostic Rides and Progress Tracking
-    - [ ] Write Tests: Define models and relationship tests
-    - [ ] Implement Feature: Update `app/models.py` and run migrations
+- [x] Task: Update Data Models for Diagnostic Rides and Progress Tracking (bcd5c73)
+    - [x] Write Tests: Define models and relationship tests
+    - [x] Implement Feature: Update `app/models.py` and run migrations
 - [ ] Task: Create API Endpoints for Logging Diagnostic Rides
     - [ ] Write Tests: API tests for submitting ride results (success/failure cases)
     - [ ] Implement Feature: Add endpoints in `app/api/diagnostic_rides.py`
