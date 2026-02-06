@@ -246,6 +246,7 @@ class DiagnosticRide(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"))
+    booking_id = Column(Integer, ForeignKey("booking_requests.id"), nullable=True)
     ride_type = Column(String) # "parent_supervised", "instructor_supervised"
     instructor_id = Column(Integer, ForeignKey("instructor_profiles.id"), nullable=True)
 
@@ -266,6 +267,7 @@ class DiagnosticRide(Base):
     passed = Column(Boolean, nullable=True)
 
     evaluation_result = Column(Text, nullable=True) # JSON detailed feedback
+    criteria_results = Column(Text, nullable=True) # JSON pass/fail per criteria
     evaluator_notes = Column(Text, nullable=True) # instructor notes
     instructor_override = Column(Boolean, default=False)
 
@@ -275,6 +277,7 @@ class DiagnosticRide(Base):
 
     student = relationship("User", foreign_keys=[student_id])
     instructor = relationship("InstructorProfile", foreign_keys=[instructor_id])
+    booking = relationship("BookingRequest", foreign_keys=[booking_id])
 
 class DriveLog(Base):
     __tablename__ = "drive_logs"
@@ -291,4 +294,26 @@ class DriveLog(Base):
     user = relationship("User", back_populates="drive_logs")
 
 User.drive_logs = relationship("DriveLog", back_populates="user")
+
+class StudentProgress(Base):
+    __tablename__ = "student_progress"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), unique=True)
+    
+    overall_score = Column(Float, default=0.0)
+    total_lessons = Column(Integer, default=0)
+    quizzes_completed = Column(Integer, default=0)
+    diagnostic_ride_passed = Column(Boolean, default=False)
+    
+    # Comprehensive status
+    status = Column(String, default="new") # "new", "in_progress", "ready_for_test", "licensed"
+    
+    last_updated = Column(String) # ISO timestamp
+
+    student = relationship("User", foreign_keys=[student_id], back_populates="comprehensive_progress")
+
+# Update User model to include comprehensive_progress
+User.comprehensive_progress = relationship("StudentProgress", uselist=False, back_populates="student")
+
 

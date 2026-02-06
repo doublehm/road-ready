@@ -147,9 +147,23 @@ class StudentProfile(StudentProfileBase):
     class Config:
         from_attributes = True
 
+class StudentProgress(BaseModel):
+    id: int
+    student_id: int
+    overall_score: float
+    total_lessons: int
+    quizzes_completed: int
+    diagnostic_ride_passed: bool
+    status: str
+    last_updated: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class UserWithProfile(User):
     student_profile: Optional[StudentProfile] = None
     instructor_profile: Optional[InstructorProfile] = None
+    comprehensive_progress: Optional[StudentProgress] = None
 
     class Config:
         from_attributes = True
@@ -344,12 +358,14 @@ class DiagnosticRideBase(BaseModel):
 class DiagnosticRideCreate(DiagnosticRideBase):
     start_time: str
     end_time: Optional[str] = None
+    booking_id: Optional[int] = None
     duration_minutes: Optional[float] = None
     distance_km: Optional[float] = None
     route_coords: Optional[str] = None # JSON string
     acceleration_data: Optional[str] = None # JSON string
     rotation_data: Optional[str] = None # JSON string
     speed_data: Optional[str] = None # JSON string
+    criteria_results: Optional[str] = None # JSON string
 
 class DiagnosticRideEvaluation(BaseModel):
     braking_score: float
@@ -369,6 +385,7 @@ class InstructorReview(BaseModel):
 class DiagnosticRide(DiagnosticRideBase):
     id: int
     student_id: int
+    booking_id: Optional[int] = None
     start_time: str
     end_time: Optional[str] = None
     duration_minutes: Optional[float] = None
@@ -383,6 +400,7 @@ class DiagnosticRide(DiagnosticRideBase):
     overall_score: Optional[float] = None
     passed: Optional[bool] = None
     evaluation_result: Optional[str] = None
+    criteria_results: Optional[str] = None
     evaluator_notes: Optional[str] = None
     instructor_override: bool = False
     status: str
