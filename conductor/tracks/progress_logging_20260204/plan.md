@@ -7,9 +7,9 @@ This plan follows the TDD workflow: Red (Write failing tests) -> Green (Implemen
 - [x] Task: Update Data Models for Diagnostic Rides and Progress Tracking (bcd5c73)
     - [x] Write Tests: Define models and relationship tests
     - [x] Implement Feature: Update `app/models.py` and run migrations
-- [ ] Task: Create API Endpoints for Logging Diagnostic Rides
-    - [ ] Write Tests: API tests for submitting ride results (success/failure cases)
-    - [ ] Implement Feature: Add endpoints in `app/api/diagnostic_rides.py`
+- [x] Task: Create API Endpoints for Logging Diagnostic Rides (d88bb8c)
+    - [x] Write Tests: API tests for submitting ride results (success/failure cases)
+    - [x] Implement Feature: Add endpoints in `app/api/diagnostic_rides.py`
 - [ ] Task: Create Consolidated Progress API Endpoint
     - [ ] Write Tests: Test aggregation logic for various activities (quizzes, lessons, rides)
     - [ ] Implement Feature: Add endpoint in `app/api/users.py`
