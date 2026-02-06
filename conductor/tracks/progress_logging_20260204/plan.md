@@ -10,9 +10,9 @@ This plan follows the TDD workflow: Red (Write failing tests) -> Green (Implemen
 - [x] Task: Create API Endpoints for Logging Diagnostic Rides (d88bb8c)
     - [x] Write Tests: API tests for submitting ride results (success/failure cases)
     - [x] Implement Feature: Add endpoints in `app/api/diagnostic_rides.py`
-- [ ] Task: Create Consolidated Progress API Endpoint
-    - [ ] Write Tests: Test aggregation logic for various activities (quizzes, lessons, rides)
-    - [ ] Implement Feature: Add endpoint in `app/api/users.py`
+- [x] Task: Create Consolidated Progress API Endpoint (d85b460)
+    - [x] Write Tests: Test aggregation logic for various activities (quizzes, lessons, rides)
+    - [x] Implement Feature: Add endpoint in `app/api/users.py`
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: API Foundation & Data Model (Backend)' (Protocol in workflow.md)
 
 ## Phase 2: Web Portal Integration
