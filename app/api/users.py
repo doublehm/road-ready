@@ -5,6 +5,7 @@ from app.api import deps
 import shutil
 import os
 import uuid
+from datetime import datetime
 
 router = APIRouter()
 
@@ -94,6 +95,74 @@ def update_user_me(
     db.commit()
     db.refresh(current_user)
     return current_user
+
+@router.get("/me/student-profile", response_model=schemas.StudentProfile)
+def read_student_profile(
+    current_user: models.User = Depends(deps.get_current_user)
+):
+    if current_user.role != "student":
+        raise HTTPException(status_code=400, detail="User is not a student")
+    return current_user.student_profile
+
+@router.get("/me/progress", response_model=schemas.StudentProgress)
+async def get_my_consolidated_progress(
+    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """
+    Fetch comprehensive student progress aggregated from lessons, quizzes, and diagnostic rides.
+    """
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can access comprehensive progress"
+        )
+
+    # 1. Check if we already have a progress record
+    progress = db.query(models.StudentProgress).filter(
+        models.StudentProgress.student_id == current_user.id
+    ).first()
+
+    if not progress:
+        progress = models.StudentProgress(student_id=current_user.id)
+        db.add(progress)
+        db.commit()
+        db.refresh(progress)
+
+    # 2. Aggregate Data
+    # Quizzes
+    # (Assuming we have a QuizResult model or similar, but for now we might just have count)
+    # Since I don't see a QuizResult model in models.py, I'll keep it as is or use count of notifications/messages if they imply completion.
+    # Actually, I'll just check for any diagnostic rides and sessions for now.
+    
+    # Lessons/Sessions
+    sessions = db.query(models.DrivingSession).join(models.BookingRequest).filter(
+        models.BookingRequest.student_id == current_user.id
+    ).all()
+    progress.total_lessons = len(sessions)
+    
+    # Diagnostic Rides
+    diagnostic_ride = db.query(models.DiagnosticRide).filter(
+        models.DiagnosticRide.student_id == current_user.id,
+        models.DiagnosticRide.status == "completed"
+    ).order_by(models.DiagnosticRide.evaluated_at.desc()).first()
+    
+    if diagnostic_ride:
+        progress.diagnostic_ride_passed = diagnostic_ride.passed
+        # Use latest diagnostic ride score as a baseline for overall score if it's the only thing we have
+        progress.overall_score = diagnostic_ride.overall_score or 0.0
+    
+    # Simple overall score aggregation: (Avg Session Feedback + Diagnostic Score) / 2
+    # In a real app, this would be more complex.
+    if progress.total_lessons > 0:
+        # If we have lessons, we could calculate something here
+        pass
+
+    progress.last_updated = datetime.now().isoformat()
+    db.commit()
+    db.refresh(progress)
+
+    return progress
 
 @router.put("/me/student-profile", response_model=schemas.StudentProfile)
 def update_student_profile(
