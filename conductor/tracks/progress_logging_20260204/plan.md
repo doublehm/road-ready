@@ -2,7 +2,7 @@
 
 This plan follows the TDD workflow: Red (Write failing tests) -> Green (Implement) -> Refactor -> Verify.
 
-## Phase 1: API Foundation & Data Model (Backend)
+## Phase 1: API Foundation & Data Model (Backend) [checkpoint: 235fbe7]
 
 - [x] Task: Update Data Models for Diagnostic Rides and Progress Tracking (bcd5c73)
     - [x] Write Tests: Define models and relationship tests
