@@ -39,3 +39,16 @@ def client(db):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+@pytest.fixture(scope="function")
+def auth_headers():
+    from app.security import create_access_token
+    from datetime import timedelta
+    
+    def _auth_headers(email: str):
+        access_token = create_access_token(
+            data={"sub": email}, expires_delta=timedelta(minutes=15)
+        )
+        return {"Authorization": f"Bearer {access_token}"}
+    
+    return _auth_headers

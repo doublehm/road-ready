@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 // Update this to your machine's IP
-const SERVER_URL = 'http://192.168.1.235:8001';
+const SERVER_URL = 'http://192.168.1.235:8000';
 
 const EditProfileScreen = ({ navigation }) => {
   const { userInfo, fetchUser, userToken } = useContext(AuthContext);

@@ -8,7 +8,7 @@ const EducationBookScreen = ({ route }) => {
   
   // Pointing to the mobile-optimized web viewer we built
   // Using the local IP discovered earlier
-  const uri = `http://192.168.1.74:8000/education/${province}`;
+  const uri = `http://192.168.1.235:8000/education/${province}`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

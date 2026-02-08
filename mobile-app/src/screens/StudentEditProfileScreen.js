@@ -8,7 +8,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Update this to your machine's IP
-const SERVER_URL = 'http://192.168.1.188:8000';
+const SERVER_URL = 'http://192.168.1.235:8000';
 
 const StudentEditProfileScreen = ({ navigation }) => {
   const { userInfo, fetchUser, userToken } = useContext(AuthContext);
