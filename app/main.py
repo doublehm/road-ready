@@ -96,8 +96,13 @@ def linkify_chapter(text: str) -> str:
     pattern = r"\(See Chapter (\d+).*?\)"
     return re.sub(pattern, replace_match, text)
 
+def from_json(value):
+    return json.loads(value)
+
 templates.env.filters["expand_codes"] = expand_codes
 templates.env.filters["linkify_chapter"] = linkify_chapter
+templates.env.filters["from_json"] = from_json
+
 
 # Dependency
 def get_db():
@@ -950,6 +955,22 @@ async def submit_session_log(request: Request, booking_id: int, duration: int = 
 @app.get("/progress", response_class=HTMLResponse)
 async def student_progress(request: Request, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     if not user or user.role != "student": return RedirectResponse(url="/login")
+    
+    # Fetch Consolidated Progress
+    progress = db.query(models.StudentProgress).filter(models.StudentProgress.student_id == user.id).first()
+    if not progress:
+        progress = models.StudentProgress(student_id=user.id, last_updated=datetime.now().isoformat())
+        db.add(progress)
+        db.commit()
+        db.refresh(progress)
+
+
+
+    # Fetch Diagnostic Rides
+    diagnostic_rides = db.query(models.DiagnosticRide).filter(
+        models.DiagnosticRide.student_id == user.id
+    ).order_by(models.DiagnosticRide.created_at.desc()).all()
+
     bookings = db.query(models.BookingRequest).filter(models.BookingRequest.student_id == user.id).order_by(models.BookingRequest.date.desc(), models.BookingRequest.time.desc()).all()
     sessions = db.query(models.DrivingSession).join(models.BookingRequest).filter(models.BookingRequest.student_id == user.id).all()
     total_hours = round(sum(s.duration_minutes for s in sessions) / 60, 1)
@@ -965,7 +986,18 @@ async def student_progress(request: Request, db: Session = Depends(get_db), user
                 grouped_counts[cat][code] = grouped_counts[cat].get(code, 0) + 1
     grouped_faults = {cat: sorted([(code, FAULT_MAP.get(code, "Unknown"), count) for code, count in counts.items()], key=lambda x: x[2], reverse=True) for cat, counts in grouped_counts.items() if counts}
     category_totals = {k: sum(v.values()) for k, v in grouped_counts.items()}
-    return templates.TemplateResponse("student_progress.html", {"request": request, "user": user, "bookings": bookings, "stats": {"total_lessons": total_lessons, "total_hours": total_hours, "total_spent": total_spent}, "grouped_faults": grouped_faults, "category_totals": category_totals, "unread_count": get_unread_count(db, user)})
+    
+    return templates.TemplateResponse("student_progress.html", {
+        "request": request, 
+        "user": user, 
+        "progress": progress,
+        "diagnostic_rides": diagnostic_rides,
+        "bookings": bookings, 
+        "stats": {"total_lessons": total_lessons, "total_hours": total_hours, "total_spent": total_spent}, 
+        "grouped_faults": grouped_faults, 
+        "category_totals": category_totals, 
+        "unread_count": get_unread_count(db, user)
+    })
 
 @app.get("/instructor-progress", response_class=HTMLResponse)
 async def instructor_progress(request: Request, student_id: Optional[int] = None, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):

@@ -1,4 +1,6 @@
 import pytest
+from sqlalchemy.orm import Session
+from fastapi import Depends
 from app import models
 
 def test_get_consolidated_progress(client, db, auth_headers):
@@ -42,3 +44,49 @@ def test_get_consolidated_progress(client, db, auth_headers):
     assert data["total_lessons"] >= 1
     # Check overall_score aggregation (this logic needs to be implemented)
     assert data["overall_score"] > 0
+
+def test_student_progress_page_rendering(client, db):
+    # Create student
+    student = models.User(email="stud_page@example.com", full_name="Stud Page", role="student", hashed_password="hashed")
+    db.add(student)
+    db.commit()
+    
+    profile = models.StudentProfile(user_id=student.id, age=20, l_license_number="1234567")
+    db.add(profile)
+    db.commit()
+
+    
+    # Create a diagnostic ride
+    ride = models.DiagnosticRide(
+        student_id=student.id,
+        ride_type="parent_supervised",
+        status="completed",
+        passed=True,
+        overall_score=85.0,
+        criteria_results='{"criteria_met": ["Braking"], "criteria_failed": ["Speed"]}',
+        created_at="2024-01-01T10:00:00Z"
+    )
+    db.add(ride)
+    
+    progress = models.StudentProgress(student_id=student.id, overall_score=85.0, diagnostic_ride_passed=True)
+    db.add(progress)
+    db.commit()
+
+    
+    # Mock login
+    from app.main import app, get_current_user as get_web_user
+    from app.api.deps import get_db
+    def override_get_web_user(db: Session = Depends(get_db)):
+        return db.query(models.User).filter(models.User.email == "stud_page@example.com").first()
+    app.dependency_overrides[get_web_user] = override_get_web_user
+
+
+    response = client.get("/progress")
+    assert response.status_code == 200
+    assert "My Progress Report" in response.text
+    assert "Diagnostic Ride Results" in response.text
+    assert "85.0%" in response.text
+    assert "Braking" in response.text
+
+
+
