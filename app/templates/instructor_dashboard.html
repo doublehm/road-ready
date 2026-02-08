@@ -149,6 +149,82 @@
             </div>
         </div>
 
+        <div class="card mb-4">
+            <div class="card-header bg-info-subtle">
+                <h5 class="mb-0">Diagnostic Rides</h5>
+            </div>
+            <div class="card-body">
+                {% if diagnostic_rides %}
+                    <div class="list-group">
+                    {% for ride in diagnostic_rides %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ ride.student.full_name }}</h5>
+                                <small>{{ ride.start_time.split('T')[0] }}</small>
+                            </div>
+                            <p class="mb-1 small">Type: {{ ride.ride_type|replace('_', ' ')|title }}</p>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#diagModal{{ ride.id }}">
+                                    Log Results
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Diagnostic Modal -->
+                        <div class="modal fade" id="diagModal{{ ride.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h6 class="modal-title">Log Diagnostic Results: {{ ride.student.full_name }}</h6>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form action="/log-diagnostic-ride/{{ ride.id }}" method="post">
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label class="form-label">Overall Result</label>
+                                                <select name="passed" class="form-select" required>
+                                                    <option value="true">Pass</option>
+                                                    <option value="false">Fail</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Overall Score (0-100)</label>
+                                                <input type="number" name="overall_score" class="form-control" min="0" max="100" required>
+                                            </div>
+                                            <hr>
+                                            <h6>Criteria (Check if Met)</h6>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="criteria_braking" id="cb{{ ride.id }}">
+                                                <label class="form-check-label" for="cb{{ ride.id }}">Smooth Braking</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="criteria_speed" id="cs{{ ride.id }}">
+                                                <label class="form-check-label" for="cs{{ ride.id }}">Speed Compliance</label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="criteria_steering" id="ct{{ ride.id }}">
+                                                <label class="form-check-label" for="ct{{ ride.id }}">Steering/Cornering</label>
+                                            </div>
+                                            <div class="mb-3 mt-3">
+                                                <label class="form-label">Instructor Notes</label>
+                                                <textarea name="notes" class="form-control" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-primary">Save Results</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted py-3">No pending diagnostic rides.</p>
+                {% endif %}
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-header bg-success-subtle">
                 <h5 class="mb-0">Active Appointments</h5>

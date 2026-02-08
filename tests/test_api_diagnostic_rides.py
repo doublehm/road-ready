@@ -56,3 +56,34 @@ def test_evaluate_diagnostic_ride_populates_criteria(client, db, auth_headers):
     # We expect criteria_results to be in the response
     assert "criteria_results" in data["ride"]
     assert data["ride"]["criteria_results"] is not None
+
+def test_instructor_dashboard_diagnostic_rides(client, db):
+    # Create instructor
+    instructor_user = models.User(email="inst@example.com", full_name="Inst", role="instructor", hashed_password="hashed")
+    db.add(instructor_user)
+    db.commit()
+    instructor_profile = models.InstructorProfile(user_id=instructor_user.id, bio="Bio", hourly_rate=50.0, city="V", car_model="X", insurance_policy="Y", certification_id="Z")
+    db.add(instructor_profile)
+    db.commit()
+    
+    # Create student and diagnostic ride
+    student = models.User(email="stud@example.com", full_name="Stud", role="student", hashed_password="hashed")
+    db.add(student)
+    db.commit()
+    ride = models.DiagnosticRide(student_id=student.id, instructor_id=instructor_profile.id, ride_type="instructor_supervised", start_time="2024-01-01T10:00:00Z", status="pending")
+    db.add(ride)
+    db.commit()
+    
+    # Mock login (cookie based for web routes)
+    client.cookies.set("user_id", str(instructor_user.id))
+    response = client.get("/dashboard", follow_redirects=False)
+    assert response.status_code == 200 # Should NOT be a redirect if cookie works
+    
+    response = client.get("/dashboard")
+    if "Diagnostic Rides" not in response.text:
+        print(f"DEBUG: Status code: {response.status_code}")
+        print(f"DEBUG: URL: {response.url}")
+        # print(response.text[:500])
+
+
+

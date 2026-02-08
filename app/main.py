@@ -617,6 +617,13 @@ async def dashboard(request: Request, user: models.User = Depends(get_current_us
         all_bookings = db.query(models.BookingRequest).filter(models.BookingRequest.instructor_id == user.instructor_profile.id).order_by(models.BookingRequest.date.desc(), models.BookingRequest.time.desc()).all()
         incoming_requests = [b for b in all_bookings if b.status == 'pending']
         active_appointments = [b for b in all_bookings if b.status in ['accepted', 'cancellation_requested']]
+        
+        # Fetch Diagnostic Rides
+        diagnostic_rides = db.query(models.DiagnosticRide).filter(
+            models.DiagnosticRide.instructor_id == user.instructor_profile.id,
+            models.DiagnosticRide.status != 'completed'
+        ).all()
+        
         my_reviews = user.instructor_profile.reviews
         avg_rating = round(sum(r.rating for r in my_reviews) / len(my_reviews), 1) if my_reviews else "New"
         calendar_events = []
@@ -626,7 +633,18 @@ async def dashboard(request: Request, user: models.User = Depends(get_current_us
                 end_dt = start_dt + timedelta(hours=b.duration)
                 calendar_events.append({"title": f"Lesson with {b.student.full_name}", "start": start_dt.isoformat(), "end": end_dt.isoformat(), "color": "#198754"})
             except: pass
-        return templates.TemplateResponse("instructor_dashboard.html", {"request": request, "user": user, "incoming_requests": incoming_requests, "active_appointments": active_appointments, "bookings": all_bookings, "avg_rating": avg_rating, "review_count": len(my_reviews), "calendar_events": json.dumps(calendar_events), "unread_count": get_unread_count(db, user)})
+        return templates.TemplateResponse("instructor_dashboard.html", {
+            "request": request, 
+            "user": user, 
+            "incoming_requests": incoming_requests, 
+            "active_appointments": active_appointments, 
+            "diagnostic_rides": diagnostic_rides,
+            "bookings": all_bookings, 
+            "avg_rating": avg_rating, 
+            "review_count": len(my_reviews), 
+            "calendar_events": json.dumps(calendar_events), 
+            "unread_count": get_unread_count(db, user)
+        })
 
 @app.get("/review/{instructor_id}", response_class=HTMLResponse)
 async def review_form(request: Request, instructor_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
@@ -1086,6 +1104,69 @@ async def handle_booking(
         # Notify Student
         create_notification(db, booking.student_id, "Booking Declined", f"Your lesson with {booking.instructor.user.full_name} has been declined.")
         
+    db.commit()
+    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.post("/log-diagnostic-ride/{ride_id}")
+async def log_diagnostic_ride(
+    ride_id: int,
+    passed: str = Form(...),
+    overall_score: float = Form(...),
+    criteria_braking: Optional[bool] = Form(False),
+    criteria_speed: Optional[bool] = Form(False),
+    criteria_steering: Optional[bool] = Form(False),
+    notes: str = Form(""),
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    if not user or user.role != "instructor":
+        return RedirectResponse(url="/login")
+    
+    ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_id).first()
+    if not ride or ride.instructor_id != user.instructor_profile.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    ride.passed = (passed == "true")
+    ride.overall_score = overall_score
+    ride.evaluator_notes = notes
+    ride.status = "completed"
+    ride.evaluated_at = datetime.now().isoformat()
+    
+    criteria = {
+        "criteria_met": [],
+        "criteria_failed": []
+    }
+    
+    if criteria_braking: criteria["criteria_met"].append("Smooth Braking")
+    else: criteria["criteria_failed"].append("Smooth Braking")
+    
+    if criteria_speed: criteria["criteria_met"].append("Speed Compliance")
+    else: criteria["criteria_failed"].append("Speed Compliance")
+    
+    if criteria_steering: criteria["criteria_met"].append("Steering/Cornering")
+    else: criteria["criteria_failed"].append("Steering/Cornering")
+    
+    ride.criteria_results = json.dumps(criteria)
+    
+    # Update student profile if passed
+    if ride.passed:
+        student_profile = db.query(models.StudentProfile).filter(models.StudentProfile.user_id == ride.student_id).first()
+        if student_profile:
+            student_profile.diagnostic_completed = True
+            student_profile.diagnostic_ride_id = ride.id
+            student_profile.basics_skipped = True
+            
+            # Unlock Advanced module
+            advanced_module = db.query(models.LearningModule).filter(models.LearningModule.order == 2).first()
+            if advanced_module:
+                advanced_progress = db.query(models.StudentModuleProgress).filter(
+                    models.StudentModuleProgress.student_id == ride.student_id,
+                    models.StudentModuleProgress.module_id == advanced_module.id
+                ).first()
+                if advanced_progress:
+                    advanced_progress.status = "unlocked"
+                    advanced_progress.unlocked_at = datetime.now().isoformat()
+
     db.commit()
     return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
