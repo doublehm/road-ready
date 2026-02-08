@@ -15,7 +15,7 @@ This plan follows the TDD workflow: Red (Write failing tests) -> Green (Implemen
     - [x] Implement Feature: Add endpoint in `app/api/users.py`
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: API Foundation & Data Model (Backend)' (Protocol in workflow.md)
 
-## Phase 2: Web Portal Integration
+## Phase 2: Web Portal Integration [checkpoint: f1a679f]
 
 - [x] Task: Implement Diagnostic Ride Logging Form for Instructors (e1d80bd)
     - [x] Write Tests: UI tests/Frontend validation tests
