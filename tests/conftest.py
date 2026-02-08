@@ -5,7 +5,6 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base
 from app.main import app
-from app.api.deps import get_db
 
 # Use an in-memory SQLite database for testing
 SQLALCHEMY_DATABASE_URL = "sqlite://"
@@ -30,15 +29,22 @@ def db():
 @pytest.fixture(scope="function")
 def client(db):
     from fastapi.testclient import TestClient
+    from app.api.deps import get_db as deps_get_db
+    from app.main import get_db as main_get_db
+    
     def override_get_db():
         try:
             yield db
         finally:
             pass
-    app.dependency_overrides[get_db] = override_get_db
+            
+    app.dependency_overrides[deps_get_db] = override_get_db
+    app.dependency_overrides[main_get_db] = override_get_db
+    
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
 
 @pytest.fixture(scope="function")
 def auth_headers():
