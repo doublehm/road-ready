@@ -7,9 +7,9 @@ This plan enforces the "Hands-Free for Drivers" mandate.
 - [x] Task: Create Supervisor Hand-off Screen (115aaa6)
     - [x] Write Tests: Component tests for the hand-off interstitial
     - [x] Implement Feature: Create `SupervisorHandoffScreen.js` with mandatory disclaimer
-- [ ] Task: Update Diagnostic Setup Flow
-    - [ ] Write Tests: Verify navigation flow includes hand-off
-    - [ ] Implement Feature: Update `DiagnosticRideSetupScreen.js` to redirect to Hand-off
+- [x] Task: Update Diagnostic Setup Flow (045294f)
+    - [x] Write Tests: Verify navigation flow includes hand-off
+    - [x] Implement Feature: Update `DiagnosticRideSetupScreen.js` to redirect to Hand-off
 
 ## Phase 2: In-Ride Supervisor Controls & Safety Mode
 
