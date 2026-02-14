@@ -16,9 +16,9 @@ This plan established the core Stripe Connect integration using Test Mode.
 
 ## Phase 2: Payment Integration
 
-- [ ] Task: Update Booking Flow for Real-Time Payment Intents
-    - [ ] Write Tests: Verify PaymentIntent creation with fee split
-    - [ ] Implement Feature: Integrate Stripe Payment Intents into `submit_booking` in `app/main.py`
+- [x] Task: Update Booking Flow for Real-Time Payment Intents (2c3b66c)
+    - [x] Write Tests: Verify PaymentIntent creation with fee split
+    - [x] Implement Feature: Integrate Stripe Payment Intents into `submit_booking` in `app/main.py`
 - [ ] Task: Automated Payout Triggers
     - [ ] Write Tests: Verify transfer to connected account upon lesson completion
     - [ ] Implement Feature: Trigger Stripe transfers when booking status changes to 'completed'
