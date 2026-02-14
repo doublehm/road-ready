@@ -10,9 +10,9 @@ This plan established the core Stripe Connect integration using Test Mode.
 - [x] Task: Implement Stripe Account Creation API (3154599)
     - [x] Write Tests: Mock Stripe API calls for account creation
     - [x] Implement Feature: Create endpoint to initiate Connect onboarding in `app/api/instructors.py`
-- [ ] Task: Handle Stripe Onboarding Webhook/Callback
-    - [ ] Write Tests: Verify callback correctly updates instructor status
-    - [ ] Implement Feature: Create redirect handler in `app/main.py`
+- [x] Task: Handle Stripe Onboarding Webhook/Callback (2cffb1d)
+    - [x] Write Tests: Verify callback correctly updates instructor status
+    - [x] Implement Feature: Create redirect handler in `app/main.py`
 
 ## Phase 2: Payment Integration
 
