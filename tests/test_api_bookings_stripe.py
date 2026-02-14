@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
+from datetime import datetime, timedelta
 from app import models
 
 def test_checkout_page_creates_payment_intent(client, db):
@@ -69,3 +70,53 @@ def test_checkout_page_creates_payment_intent(client, db):
         assert booking.stripe_payment_intent_id == "pi_test_123"
         # We expect the client secret to be in the template context (checked via response text)
         assert "pi_test_123_secret_mock" in response.text
+
+def test_cancel_booking_triggers_refund(client, db):
+    # 1. Setup student, instructor, and booking (paid)
+    student = models.User(email="stud_ref@example.com", full_name="S", role="student", hashed_password="h")
+    db.add(student)
+    db.commit()
+    inst = models.InstructorProfile(user_id=student.id, bio="B", hourly_rate=100, city="V", car_model="X", insurance_policy="Y", certification_id="Z")
+    db.add(inst)
+    db.commit()
+    
+    # Early booking (far in future)
+    future_date = (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d")
+    booking = models.BookingRequest(
+        student_id=student.id, 
+        instructor_id=inst.id, 
+        date=future_date, 
+        time="10:00", 
+        duration=1,
+        total_amount=100.0,
+        platform_fee=15.0,
+        stripe_payment_intent_id="pi_test_refund",
+        payment_status="paid",
+        status="pending"
+    )
+    db.add(booking)
+    db.commit()
+    
+    client.cookies.set("user_id", str(student.id))
+    
+    # 2. Mock Stripe Refund
+    with patch("app.main.stripe.Refund.create") as mock_refund:
+        mock_refund.return_value = MagicMock(id="re_123")
+        
+        # 3. Cancel booking
+        response = client.post(f"/cancel-booking/{booking.id}", follow_redirects=False)
+        
+        assert response.status_code == 303
+
+        
+        # 4. Verify Stripe was called for 100% refund
+        mock_refund.assert_called_once()
+        args, kwargs = mock_refund.call_args
+        assert kwargs["payment_intent"] == "pi_test_refund"
+        # 100.00 * 100 = 10000
+        assert kwargs["amount"] == 10000
+        
+        db.refresh(booking)
+        assert booking.payment_status == "refunded"
+        assert booking.status == "cancelled"
+

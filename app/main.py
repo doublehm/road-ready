@@ -1095,19 +1095,35 @@ async def cancel_booking(request: Request, booking_id: int, db: Session = Depend
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
     if not booking or booking.student_id != user.id: raise HTTPException(status_code=403, detail="Not authorized")
     if booking.status == "completed": raise HTTPException(status_code=400, detail="Cannot cancel completed")
+    
     # Check 24h rule
     try:
         booking_dt = datetime.strptime(f"{booking.date} {booking.time}", "%Y-%m-%d %H:%M")
         time_diff = booking_dt - datetime.now()
         
+        refund_amount_cents = 0
         if time_diff < timedelta(hours=24):
             # Late cancellation: 25% penalty towards instructor
-            # Instructor gets 25% of total amount
+            # Student gets 75% back
             booking.instructor_payout = booking.total_amount * 0.25
+            refund_amount_cents = int(booking.total_amount * 0.75 * 100)
             print(f"PENALTY: Student {user.email} cancelled booking {booking_id} within 24h. 25% fee applies.")
         else:
-            # Early cancellation: Full refund, instructor gets 0
+            # Early cancellation: Full refund
             booking.instructor_payout = 0.0
+            refund_amount_cents = int(booking.total_amount * 100)
+            
+        # Perform Stripe Refund if payment was made
+        if booking.stripe_payment_intent_id and booking.payment_status == "paid":
+            try:
+                stripe.Refund.create(
+                    payment_intent=booking.stripe_payment_intent_id,
+                    amount=refund_amount_cents,
+                )
+                booking.payment_status = "refunded"
+            except Exception as e:
+                print(f"Stripe refund error: {str(e)}")
+                # In a real app, queue for manual review
             
         booking.status = "cancelled"
         db.commit()
