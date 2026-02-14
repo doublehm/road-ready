@@ -86,6 +86,8 @@ class InstructorProfileBase(BaseModel):
     certification_id: str
     certification_expiry: Optional[str] = None
     is_available: bool = True
+    stripe_account_id: Optional[str] = None
+    stripe_onboarding_completed: bool = False
 
     @validator('insurance_policy')
     def validate_insurance(cls, v):

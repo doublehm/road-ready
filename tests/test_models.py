@@ -34,3 +34,25 @@ def test_student_progress_model_exists(db: Session):
     db.refresh(progress)
     
     assert progress.overall_score == 85.5
+
+def test_instructor_profile_stripe_fields(db: Session):
+    # This test expects stripe fields to exist on InstructorProfile
+    # It should FAIL until we update app/models.py
+    profile = models.InstructorProfile(
+        user_id=1,
+        bio="Bio",
+        hourly_rate=50.0,
+        city="V",
+        car_model="X",
+        insurance_policy="Y",
+        certification_id="Z",
+        stripe_account_id="acct_123",
+        stripe_onboarding_completed=True
+    )
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    
+    assert profile.stripe_account_id == "acct_123"
+    assert profile.stripe_onboarding_completed is True
+

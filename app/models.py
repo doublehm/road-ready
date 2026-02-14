@@ -33,6 +33,10 @@ class InstructorProfile(Base):
     insurance_image = Column(String, nullable=True) # Filename of the uploaded insurance
     is_verified = Column(Boolean, default=False)
     is_available = Column(Boolean, default=True)
+    
+    # Stripe Connect fields
+    stripe_account_id = Column(String, nullable=True)
+    stripe_onboarding_completed = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="instructor_profile")
     booking_requests = relationship("BookingRequest", back_populates="instructor")
