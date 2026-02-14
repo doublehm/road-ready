@@ -28,11 +28,13 @@ const DiagnosticRideSetupScreen = ({ route, navigation }) => {
       return;
     }
 
-    // Navigate to active ride screen
-    navigation.navigate('DiagnosticRideActive', {
-      rideType,
-      parentName: rideType === 'parent' ? parentName : null,
-      instructorId: null, // TODO: Select instructor in future
+    // Redirect to Supervisor Hand-off instead of active ride directly
+    navigation.navigate('SupervisorHandoff', {
+      rideParams: {
+        rideType,
+        parentName: rideType === 'parent' ? parentName : null,
+        instructorId: null, // TODO: Select instructor in future
+      }
     });
   };
 
