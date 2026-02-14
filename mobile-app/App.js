@@ -33,6 +33,7 @@ import StudentEditProfileScreen from './src/screens/StudentEditProfileScreen';
 import SessionDetailScreen from './src/screens/SessionDetailScreen';
 import StudentDetailStatsScreen from './src/screens/StudentDetailStatsScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import SupervisorHandoffScreen from './src/screens/SupervisorHandoffScreen';
 import DiagnosticRideIntroScreen from './src/screens/DiagnosticRideIntroScreen';
 import DiagnosticRideSetupScreen from './src/screens/DiagnosticRideSetupScreen';
 import DiagnosticRideActiveScreen from './src/screens/DiagnosticRideActiveScreen';
@@ -163,6 +164,7 @@ const AppNav = () => {
             <Stack.Screen name="SessionDetail" component={SessionDetailScreen} />
             <Stack.Screen name="StudentDetailStats" component={StudentDetailStatsScreen} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} />
+            <Stack.Screen name="SupervisorHandoff" component={SupervisorHandoffScreen} />
             <Stack.Screen name="DiagnosticRideIntro" component={DiagnosticRideIntroScreen} />
             <Stack.Screen name="DiagnosticRideSetup" component={DiagnosticRideSetupScreen} />
             <Stack.Screen name="DiagnosticRideActive" component={DiagnosticRideActiveScreen} />
