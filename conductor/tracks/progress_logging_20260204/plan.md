@@ -25,7 +25,7 @@ This plan follows the TDD workflow: Red (Write failing tests) -> Green (Implemen
     - [x] Implement Feature: Update `app/templates/student_progress.html` with new visualization
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Web Portal Integration' (Protocol in workflow.md)
 
-## Phase 3: Mobile App Integration
+## Phase 3: Mobile App Integration [checkpoint: a2e9ed1]
 
 - [x] Task: Implement Diagnostic Ride Logging in Mobile App (c9dc1bb)
     - [x] Write Tests: Component tests for the new form
