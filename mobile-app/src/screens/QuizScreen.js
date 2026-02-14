@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Animated, Image } from 'react-native';
 import client from '../api/client';
 
 const QuizScreen = () => {
@@ -7,6 +7,10 @@ const QuizScreen = () => {
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
+
+  // Get the base server URL (without /api/v1) for static images
+  const serverUrl = client.defaults.baseURL.replace('/api/v1', '');
+
 
   useEffect(() => {
     fetchQuestion();
@@ -55,6 +59,13 @@ const QuizScreen = () => {
       </View>
 
       <View style={styles.card}>
+        {question.image_path && (
+          <Image 
+            source={{ uri: `${serverUrl}/static/${question.image_path}` }}
+            style={styles.questionImage}
+            resizeMode="contain"
+          />
+        )}
         <Text style={styles.questionText}>{question.question_text}</Text>
         
         <View style={styles.optionsContainer}>
@@ -93,6 +104,13 @@ const styles = StyleSheet.create({
     elevation: 10,
     minHeight: 400,
     justifyContent: 'center',
+  },
+  questionImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 20,
+    backgroundColor: '#fff',
   },
   questionText: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 30, color: '#333' },
   optionsContainer: { width: '100%' },
