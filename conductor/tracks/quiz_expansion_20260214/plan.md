@@ -7,9 +7,9 @@ This plan integrates visual situational logic into the educational core.
 - [x] Task: Update QuizQuestion Model for Visuals and Categories (82ea7e6)
     - [x] Write Tests: Verify `image_path` and `category` fields on model
     - [x] Implement Feature: Update `app/models.py` and run migrations
-- [ ] Task: Update Web Quiz UI for Images
-    - [ ] Write Tests: Verify image rendering in `quiz.html`
-    - [ ] Implement Feature: Update `app/templates/quiz.html` and `quiz_result.html`
+- [x] Task: Update Web Quiz UI for Images (b6a0c46)
+    - [x] Write Tests: Verify image rendering in `quiz.html`
+    - [x] Implement Feature: Update `app/templates/quiz.html` and `quiz_result.html`
 - [ ] Task: Update Mobile Quiz Screen for Images
     - [ ] Write Tests: Component test for image display in `QuizScreen.js`
     - [ ] Implement Feature: Update `mobile-app/src/screens/QuizScreen.js`
