@@ -14,7 +14,7 @@ const SupervisorHandoffScreen = ({ route, navigation }) => {
     }
     
     // Proceed to the active ride screen with the original parameters
-    navigation.replace('DiagnosticRideActiveScreen', rideParams);
+    navigation.replace('DiagnosticRideActive', rideParams);
   };
 
   return (
