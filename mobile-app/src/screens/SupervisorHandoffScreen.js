@@ -43,12 +43,9 @@ const SupervisorHandoffScreen = ({ route, navigation }) => {
         <View style={styles.disclaimerBox}>
           <Text style={styles.disclaimerTitle}>Terms of Supervision:</Text>
           <Text style={styles.disclaimerText}>
-            1. I am the designated supervisor/instructor for this driving session.{"
-"}
-            2. I accept full responsibility for monitoring the app and providing feedback.{"
-"}
-            3. I will ensure the student driver remains focused solely on the road.{"
-"}
+            1. I am the designated supervisor/instructor for this driving session.{"\n"}
+            2. I accept full responsibility for monitoring the app and providing feedback.{"\n"}
+            3. I will ensure the student driver remains focused solely on the road.{"\n"}
             4. I understand that real-time feedback is intended for my coaching use only.
           </Text>
           
