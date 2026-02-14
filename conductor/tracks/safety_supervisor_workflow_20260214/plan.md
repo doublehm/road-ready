@@ -13,9 +13,9 @@ This plan enforces the "Hands-Free for Drivers" mandate.
 
 ## Phase 2: In-Ride Supervisor Controls & Safety Mode
 
-- [ ] Task: Enhance Active Ride Screen for Supervisor Use
-    - [ ] Write Tests: Verify supervisor controls (Stop/Pause)
-    - [ ] Implement Feature: Update `DiagnosticRideActiveScreen.js` with "Driver Safety Mode" UI
+- [x] Task: Enhance Active Ride Screen for Supervisor Use (80ed49f)
+    - [x] Write Tests: Verify supervisor controls (Stop/Pause)
+    - [x] Implement Feature: Update `DiagnosticRideActiveScreen.js` with "Driver Safety Mode" UI
 - [ ] Task: Implement Voice Feedback System
     - [ ] Write Tests: Mock audio triggers for sensor events
     - [ ] Implement Feature: Add optional audio alerts for supervisors in `DiagnosticRideActiveScreen.js`
