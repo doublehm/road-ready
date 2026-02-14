@@ -789,7 +789,46 @@ async def checkout_page(request: Request, booking_id: int, db: Session = Depends
     if not user: return RedirectResponse(url="/login")
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
     if not booking or booking.student_id != user.id: raise HTTPException(status_code=403, detail="Not authorized")
-    return templates.TemplateResponse("checkout.html", {"request": request, "user": user, "booking": booking, "stripe_key": "pk_test_MOCK"})
+    
+    # Create Stripe Payment Intent if not already exists or if it needs update
+    client_secret = None
+    if booking.status == "pending_payment":
+        try:
+            # Stripe expects amounts in cents (int)
+            amount_cents = int(booking.total_amount * 100)
+            fee_cents = int(booking.platform_fee * 100)
+            
+            # Destination account (Instructor's Stripe account)
+            instructor = booking.instructor
+            
+            intent_params = {
+                "amount": amount_cents,
+                "currency": "cad",
+                "automatic_payment_methods": {"enabled": True},
+                "application_fee_amount": fee_cents,
+            }
+            
+            # If instructor has completed onboarding, route funds to them
+            if instructor.stripe_account_id and instructor.stripe_onboarding_completed:
+                intent_params["transfer_data"] = {"destination": instructor.stripe_account_id}
+            
+            intent = stripe.PaymentIntent.create(**intent_params)
+            
+            booking.stripe_payment_intent_id = intent.id
+            db.commit()
+            client_secret = intent.client_secret
+            
+        except Exception as e:
+            print(f"Stripe PaymentIntent error: {str(e)}")
+            # In a real app, handle this gracefully in UI
+    
+    return templates.TemplateResponse("checkout.html", {
+        "request": request, 
+        "user": user, 
+        "booking": booking, 
+        "stripe_key": os.getenv("STRIPE_PUBLISHABLE_KEY", "pk_test_MOCK"),
+        "client_secret": client_secret
+    })
 
 @app.post("/checkout/{booking_id}/process")
 async def process_payment(request: Request, booking_id: int, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):

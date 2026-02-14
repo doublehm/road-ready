@@ -27,55 +27,68 @@
                     <span>${{ "%.2f"|format(booking.total_amount) }}</span>
                 </div>
 
-                <!-- Mock Credit Card Form -->
-                <form action="/checkout/{{ booking.id }}/process" method="post" id="payment-form">
-                    <div class="mb-3">
-                        <label class="form-label">Cardholder Name</label>
-                        <input type="text" class="form-control" placeholder="John Doe" required>
+                {% if client_secret %}
+                <!-- Stripe Payment Form -->
+                <script src="https://js.stripe.com/v3/"></script>
+                <form id="payment-form">
+                    <div id="payment-element">
+                        <!-- Stripe.js injects the Payment Element here -->
                     </div>
+                    <div id="error-message" class="text-danger small mt-2"></div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">Card Information</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
-                            <input type="text" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-6 mb-3">
-                            <label class="form-label">Expiry</label>
-                            <input type="text" class="form-control" placeholder="MM/YY" maxlength="5" required>
-                        </div>
-                        <div class="col-6 mb-3">
-                            <label class="form-label">CVC</label>
-                            <input type="text" class="form-control" placeholder="123" maxlength="3" required>
-                        </div>
-                    </div>
-
-                    <div class="alert alert-info small">
-                        <i class="bi bi-info-circle-fill"></i> This is a secure payment simulation. No real money will be charged.
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-success btn-lg" id="payBtn">
-                            Pay ${{ "%.2f"|format(booking.total_amount) }}
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="btn btn-success btn-lg" id="submit">
+                            <span id="button-text">Pay ${{ "%.2f"|format(booking.total_amount) }}</span>
                         </button>
                         <a href="/dashboard" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </form>
+
+                <script>
+                    const stripe = Stripe('{{ stripe_key }}');
+                    const options = {
+                        clientSecret: '{{ client_secret }}',
+                        appearance: { theme: 'stripe' },
+                    };
+
+                    const elements = stripe.elements(options);
+                    const paymentElement = elements.create('payment');
+                    paymentElement.mount('#payment-element');
+
+                    const form = document.getElementById('payment-form');
+
+                    form.addEventListener('submit', async (event) => {
+                        event.preventDefault();
+                        const btn = document.getElementById('submit');
+                        btn.disabled = true;
+                        document.getElementById('button-text').innerText = 'Processing...';
+
+                        const {error} = await stripe.confirmPayment({
+                            elements,
+                            confirmParams: {
+                                // Return URL where the customer should be redirected after payment
+                                return_url: window.location.origin + '/payment/success?booking_id={{ booking.id }}',
+                            },
+                        });
+
+                        if (error) {
+                            const messageContainer = document.querySelector('#error-message');
+                            messageContainer.textContent = error.message;
+                            btn.disabled = false;
+                            document.getElementById('button-text').innerText = 'Pay ${{ "%.2f"|format(booking.total_amount) }}';
+                        }
+                    });
+                </script>
+                {% else %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Unable to initialize payment. Please try again later.
+                </div>
+                <div class="d-grid">
+                    <a href="/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    const form = document.getElementById('payment-form');
-    const btn = document.getElementById('payBtn');
-    
-    form.addEventListener('submit', function() {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
-    });
-</script>
 {% endblock %}
