@@ -24,6 +24,11 @@
         {% for result in results %}
         <div class="card mb-3 {% if result.is_correct %}border-success{% else %}border-danger{% endif %}">
             <div class="card-body">
+                {% if result.question.image_path %}
+                <div class="text-center mb-3">
+                    <img src="/static/{{ result.question.image_path }}" class="img-fluid rounded border" style="max-height: 200px;" alt="Situation Diagram">
+                </div>
+                {% endif %}
                 <h5 class="card-title">{{ loop.index }}. {{ result.question.question_text }}</h5>
                 
                 <div class="mt-3">
