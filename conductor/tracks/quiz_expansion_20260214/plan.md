@@ -10,9 +10,9 @@ This plan integrates visual situational logic into the educational core.
 - [x] Task: Update Web Quiz UI for Images (b6a0c46)
     - [x] Write Tests: Verify image rendering in `quiz.html`
     - [x] Implement Feature: Update `app/templates/quiz.html` and `quiz_result.html`
-- [ ] Task: Update Mobile Quiz Screen for Images
-    - [ ] Write Tests: Component test for image display in `QuizScreen.js`
-    - [ ] Implement Feature: Update `mobile-app/src/screens/QuizScreen.js`
+- [x] Task: Update Mobile Quiz Screen for Images (d4f2668)
+    - [x] Write Tests: Component test for image display in `QuizScreen.js`
+    - [x] Implement Feature: Update `mobile-app/src/screens/QuizScreen.js`
 
 ## Phase 2: Content Population
 
