@@ -133,10 +133,24 @@ def seed_comprehensive_quiz():
 
     # Add more general questions to reach a decent number for now
     # (Expanding to 50 for the prototype test)
+    general_topics = [
+        "What is 'scanning' in the context of safe driving?",
+        "When should you use your high-beam headlights?",
+        "What does a flashing yellow light mean?",
+        "How much space should you leave between your car and a motorcycle?",
+        "What is the first thing you should do after an accident?",
+        "When are you allowed to pass on the right?",
+        "What should you do if your brakes fail?",
+        "What is the best way to handle a skid?",
+        "How does alcohol affect your driving?",
+        "What should you do when merging onto a highway?"
+    ]
+
     for i in range(40):
+        topic = general_topics[i % len(general_topics)]
         questions.append({
             "category": "General Knowledge",
-            "question_text": f"Safe driving includes which of the following? (Sample Question {i+1})",
+            "question_text": f"{topic} (Set {i//len(general_topics) + 1})",
             "option_a": "Scanning 12 seconds ahead.",
             "option_b": "Driving as fast as possible.",
             "option_c": "Tailgating to save fuel.",

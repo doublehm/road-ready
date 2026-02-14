@@ -30,23 +30,55 @@ const QuizScreen = () => {
 
 
 
-  const fetchQuizSet = async () => {
+    const fetchQuizSet = async () => {
 
-    setLoading(true);
 
-    try {
 
-      const response = await client.get('/quiz/set?count=10');
+      setLoading(true);
 
-      setQuestions(response.data);
 
-      setCurrentIndex(0);
 
-      setScore(0);
+      try {
 
-      setFinished(false);
 
-    } catch (e) {
+
+        const response = await client.get('/quiz/set?count=10');
+
+
+
+        
+
+
+
+        // Ensure unique questions by ID just in case
+
+
+
+        const uniqueQuestions = Array.from(new Map(response.data.map(q => [q.id, q])).values());
+
+
+
+        
+
+
+
+        setQuestions(uniqueQuestions);
+
+
+
+        setCurrentIndex(0);
+
+
+
+        setScore(0);
+
+
+
+        setFinished(false);
+
+
+
+      } catch (e) {
 
       Alert.alert("Error", "Could not load quiz");
 
@@ -144,11 +176,31 @@ const QuizScreen = () => {
 
 
 
-  const question = questions[currentIndex];
+    const question = questions[currentIndex];
 
 
 
-  return (
+    const imageUrl = `${serverUrl}/static/${question.image_path}`;
+
+
+
+    if (question.image_path) {
+
+
+
+      console.log("Loading Quiz Image:", imageUrl);
+
+
+
+    }
+
+
+
+  
+
+
+
+    return (
 
     <View style={styles.container}>
 
@@ -162,21 +214,39 @@ const QuizScreen = () => {
 
 
 
-      <View style={styles.card}>
+            <View style={styles.card}>
 
-        {question.image_path && (
 
-          <Image 
 
-            source={{ uri: `${serverUrl}/static/${question.image_path}` }}
+              {question.image_path && (
 
-            style={styles.questionImage}
 
-            resizeMode="contain"
 
-          />
+                <Image 
 
-        )}
+
+
+                  key={question.image_path}
+
+
+
+                  source={{ uri: `${serverUrl}/static/${question.image_path}` }}
+
+
+
+                  style={styles.questionImage}
+
+
+
+                  resizeMode="contain"
+
+
+
+                />
+
+
+
+              )}
 
         <Text style={styles.questionText}>{question.question_text}</Text>
         
