@@ -3,69 +3,181 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Ani
 import client from '../api/client';
 
 const QuizScreen = () => {
-  const [question, setQuestion] = useState(null);
+
+  const [questions, setQuestions] = useState([]);
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
   const [loading, setLoading] = useState(true);
+
   const [score, setScore] = useState(0);
-  const [streak, setStreak] = useState(0);
+
+  const [finished, setFinished] = useState(false);
+
+
 
   // Get the base server URL (without /api/v1) for static images
+
   const serverUrl = client.defaults.baseURL.replace('/api/v1', '');
 
 
+
   useEffect(() => {
-    fetchQuestion();
+
+    fetchQuizSet();
+
   }, []);
 
-  const fetchQuestion = async () => {
+
+
+  const fetchQuizSet = async () => {
+
     setLoading(true);
+
     try {
-      const response = await client.get('/quiz/random');
-      setQuestion(response.data);
+
+      const response = await client.get('/quiz/set?count=10');
+
+      setQuestions(response.data);
+
+      setCurrentIndex(0);
+
+      setScore(0);
+
+      setFinished(false);
+
     } catch (e) {
-      Alert.alert("Error", "Could not load question");
+
+      Alert.alert("Error", "Could not load quiz");
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
+
+
   const handleAnswer = (selectedOption) => {
-    if (selectedOption === question.correct_option) {
+
+    const question = questions[currentIndex];
+
+    const isCorrect = selectedOption === question.correct_option;
+
+
+
+    if (isCorrect) {
+
+      setScore(score + 1);
+
       Alert.alert("Correct! 🎉", question.explanation, [
-        { text: "Next", onPress: () => {
-            setScore(score + 1);
-            setStreak(streak + 1);
-            fetchQuestion();
-        }}
+
+        { text: "Next", onPress: nextQuestion }
+
       ]);
+
     } else {
+
       Alert.alert("Wrong ❌", `The correct answer was ${question.correct_option}. \n\n${question.explanation}`, [
-         { text: "Next", onPress: () => {
-             setStreak(0);
-             fetchQuestion();
-         }}
+
+         { text: "Next", onPress: nextQuestion }
+
       ]);
+
     }
+
   };
+
+
+
+  const nextQuestion = () => {
+
+    if (currentIndex + 1 < questions.length) {
+
+      setCurrentIndex(currentIndex + 1);
+
+    } else {
+
+      setFinished(true);
+
+    }
+
+  };
+
+
 
   if (loading) return <ActivityIndicator style={styles.loader} size="large" color="#FF5864" />; 
 
-  if (!question) return <View style={styles.container}><Text>No questions available.</Text></View>;
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-         <Text style={styles.score}>Score: {score}</Text>
-         <Text style={styles.streak}>🔥 {streak}</Text>
+
+  if (finished) {
+
+    return (
+
+      <View style={styles.container}>
+
+        <View style={styles.card}>
+
+          <Text style={styles.finishTitle}>Quiz Complete!</Text>
+
+          <Text style={styles.finishScore}>You scored {score} out of {questions.length}</Text>
+
+          <TouchableOpacity style={styles.optionButton} onPress={fetchQuizSet}>
+
+            <Text style={[styles.optionText, {textAlign: 'center'}]}>Try Another Quiz</Text>
+
+          </TouchableOpacity>
+
+        </View>
+
       </View>
 
+    );
+
+  }
+
+
+
+  if (questions.length === 0) return <View style={styles.container}><Text>No questions available.</Text></View>;
+
+
+
+  const question = questions[currentIndex];
+
+
+
+  return (
+
+    <View style={styles.container}>
+
+      <View style={styles.header}>
+
+         <Text style={styles.score}>Question: {currentIndex + 1}/{questions.length}</Text>
+
+         <Text style={styles.streak}>Score: {score}</Text>
+
+      </View>
+
+
+
       <View style={styles.card}>
+
         {question.image_path && (
+
           <Image 
+
             source={{ uri: `${serverUrl}/static/${question.image_path}` }}
+
             style={styles.questionImage}
+
             resizeMode="contain"
+
           />
+
         )}
+
         <Text style={styles.questionText}>{question.question_text}</Text>
         
         <View style={styles.optionsContainer}>
@@ -93,6 +205,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, position: 'absolute', top: 50, left: 20, right: 20, zIndex: 1 },
   score: { fontSize: 20, fontWeight: 'bold', color: '#333' },
   streak: { fontSize: 20, fontWeight: 'bold', color: '#FF5864' },
+  finishTitle: { fontSize: 32, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 20 },
+  finishScore: { fontSize: 24, color: '#666', textAlign: 'center', marginBottom: 40 },
   card: {
     backgroundColor: 'white',
     borderRadius: 20,

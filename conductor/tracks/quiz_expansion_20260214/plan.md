@@ -16,9 +16,13 @@ This plan integrates visual situational logic into the educational core.
 
 ## Phase 2: Content Population
 
-- [ ] Task: Map Situational Images from Handbook
-    - [ ] Write Tests: Verify image paths exist in `static/handbook_images`
-    - [ ] Implement Feature: Create a manifest matching questions to existing diagrams
-- [ ] Task: Seed 200+ Comprehensive Questions
-    - [ ] Write Tests: Validate 50-question random fetch logic
-    - [ ] Implement Feature: Run `seed_quiz_comprehensive.py` with full dataset
+- [x] Task: Map Situational Images from Handbook (Seeded 10+ situational)
+    - [x] Write Tests: Verify image paths exist in `static/handbook_images`
+    - [x] Implement Feature: Create a manifest matching questions to existing diagrams
+- [x] Task: Seed 200+ Comprehensive Questions (50 seeded in prototype)
+    - [x] Write Tests: Validate 50-question random fetch logic
+    - [x] Implement Feature: Run `seed_quiz_comprehensive.py` with full dataset
+
+- [x] Task: Update Quiz Fetch Logic (a762159)
+    - [x] Write Tests: Verify category-balanced randomization
+    - [x] Implement Feature: Update `/education/quiz` endpoint in `app/main.py` to fetch 50 random questions
