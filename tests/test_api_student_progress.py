@@ -88,5 +88,45 @@ def test_student_progress_page_rendering(client, db):
     assert "85.0%" in response.text
     assert "Braking" in response.text
 
+def test_mobile_student_progress_fetch(client, db, auth_headers):
+    # Create student with unique email
+    student = models.User(email="stud_mob_unique@example.com", full_name="Stud Mob", role="student", hashed_password="hashed")
+    db.add(student)
+    db.commit()
+    
+    # Add progress record
+    progress = models.StudentProgress(student_id=student.id, overall_score=72.0)
+    db.add(progress)
+    
+    # Add diagnostic ride with all required fields
+    ride = models.DiagnosticRide(
+        student_id=student.id,
+        ride_type="parent_supervised",
+        status="completed",
+        passed=False,
+        overall_score=65.0,
+        start_time="2024-02-01T12:00:00Z", # Ensure start_time is set
+        created_at="2024-02-01T12:00:00Z"
+    )
+    db.add(ride)
+    db.commit()
+    
+    headers = auth_headers("stud_mob_unique@example.com")
+
+    
+    # 1. Test /users/me/progress
+    resp1 = client.get("/api/v1/users/me/progress", headers=headers)
+    assert resp1.status_code == 200
+    # Aggregation logic uses latest diagnostic ride score (65.0)
+    assert resp1.json()["overall_score"] == 65.0
+
+    
+    # 2. Test /diagnostic-rides/
+    resp2 = client.get("/api/v1/diagnostic-rides/", headers=headers)
+    assert resp2.status_code == 200
+    assert len(resp2.json()) >= 1
+    assert resp2.json()[0]["passed"] is False
+
+
 
 
