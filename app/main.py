@@ -841,6 +841,35 @@ async def payment_success(
         "unread_count": get_unread_count(db, user)
     })
 
+@app.get("/stripe-callback")
+async def stripe_callback(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    """
+    Callback handler for Stripe Connect onboarding.
+    Verifies if onboarding was completed and updates instructor profile.
+    """
+    if not user or user.role != "instructor":
+        return RedirectResponse(url="/login")
+    
+    instructor_profile = db.query(models.InstructorProfile).filter(
+        models.InstructorProfile.user_id == user.id
+    ).first()
+    
+    if instructor_profile and instructor_profile.stripe_account_id:
+        try:
+            # Check account status from Stripe
+            account = stripe.Account.retrieve(instructor_profile.stripe_account_id)
+            if account.details_submitted and account.charges_enabled:
+                instructor_profile.stripe_onboarding_completed = True
+                db.commit()
+        except Exception as e:
+            print(f"Stripe callback error: {str(e)}")
+            
+    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
 @app.post("/booking/{booking_id}/reject-license")
 async def reject_booking_license(
     request: Request,
