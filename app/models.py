@@ -191,6 +191,8 @@ class QuizQuestion(Base):
     option_d = Column(String)
     correct_option = Column(String) # "A", "B", "C", "D"
     explanation = Column(Text)
+    category = Column(String, nullable=True)
+    image_path = Column(String, nullable=True)
 
 class Notification(Base):
     __tablename__ = "notifications"

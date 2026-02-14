@@ -56,3 +56,24 @@ def test_instructor_profile_stripe_fields(db: Session):
     assert profile.stripe_account_id == "acct_123"
     assert profile.stripe_onboarding_completed is True
 
+def test_quiz_question_visual_fields(db: Session):
+    # This test expects visual and category fields to exist on QuizQuestion
+    # It should FAIL until we update app/models.py
+    question = models.QuizQuestion(
+        question_text="What does this sign mean?",
+        option_a="Stop",
+        option_b="Yield",
+        option_c="Go",
+        option_d="Slow",
+        correct_option="A",
+        category="Road Signs",
+        image_path="handbook_images/p100_img_1.png"
+    )
+    db.add(question)
+    db.commit()
+    db.refresh(question)
+    
+    assert question.category == "Road Signs"
+    assert question.image_path == "handbook_images/p100_img_1.png"
+
+

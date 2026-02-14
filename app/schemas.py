@@ -268,6 +268,8 @@ class QuizQuestionBase(BaseModel):
     option_d: str
     correct_option: str
     explanation: Optional[str] = None
+    category: Optional[str] = None
+    image_path: Optional[str] = None
 
 class QuizQuestion(QuizQuestionBase):
     id: int
