@@ -87,6 +87,20 @@ const InstructorHomeScreen = ({ navigation }) => {
 
         <TouchableOpacity 
           style={styles.actionCard}
+          onPress={() => navigation.navigate('GradeDiagnosticRide')}
+        >
+          <View style={[styles.iconBg, { backgroundColor: '#e3f2fd' }]}>
+            <Ionicons name="car-outline" size={24} color="#007bff" />
+          </View>
+          <View style={styles.actionInfo}>
+            <Text style={styles.actionTitle}>Grade Diagnostic Ride</Text>
+            <Text style={styles.actionDesc}>Submit diagnostic results</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.actionCard}
           onPress={() => navigation.navigate('Messages')}
         >
           <View style={[styles.iconBg, { backgroundColor: '#e3f2fd' }]}>

@@ -18,6 +18,7 @@ import InstructorEarningsScreen from './src/screens/InstructorEarningsScreen';
 import DriveLogScreen from './src/screens/DriveLogScreen';
 import FindInstructorScreen from './src/screens/FindInstructorScreen';
 import GradeStudentScreen from './src/screens/GradeStudentScreen';
+import GradeDiagnosticRideScreen from './src/screens/GradeDiagnosticRideScreen';
 import QuizScreen from './src/screens/QuizScreen';
 import ConversationsScreen from './src/screens/ConversationsScreen';
 import ChatScreen from './src/screens/ChatScreen';
@@ -153,6 +154,7 @@ const AppNav = () => {
             <Stack.Screen name="DriveLog" component={DriveLogScreen} />
             <Stack.Screen name="StudentProgress" component={StudentProgressScreen} />
             <Stack.Screen name="GradeStudent" component={GradeStudentScreen} />
+            <Stack.Screen name="GradeDiagnosticRide" component={GradeDiagnosticRideScreen} />
             <Stack.Screen name="InstructorProfile" component={InstructorProfileScreen} />
             <Stack.Screen name="BookingFlow" component={BookingFlowScreen} />
             <Stack.Screen name="BookingRequests" component={BookingRequestsScreen} />
