@@ -8,6 +8,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import MapView, { Polyline, Marker } from 'react-native-maps';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import useGPSTracking from '../hooks/useGPSTracking';
 import useDeviceMotion from '../hooks/useDeviceMotion';
 import { AuthContext } from '../context/AuthContext';
@@ -182,6 +183,12 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Safety Banner */}
+      <View style={styles.safetyBanner}>
+        <Ionicons name="hand-right" size={20} color="white" />
+        <Text style={styles.safetyText}>DRIVER SAFETY MODE — OPERATE BY SUPERVISOR ONLY</Text>
+      </View>
+
       <MapView
         style={styles.map}
         region={{
@@ -229,6 +236,17 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           </View>
         </View>
 
+        <TouchableOpacity 
+            style={styles.noteButton}
+            onPress={() => Alert.prompt("Add Coach Note", "Record an observation for the student.", (text) => {
+                // TODO: Save note to database
+                Alert.alert("Note Saved", "Observation recorded successfully.");
+            })}
+        >
+            <Ionicons name="chatbox-ellipses" size={24} color="#007bff" />
+            <Text style={styles.noteButtonText}>Add Coach Note</Text>
+        </TouchableOpacity>
+
         <View style={styles.sensorIndicators}>
           <View style={styles.indicator}>
             <Text style={styles.indicatorDot}>●</Text>
@@ -275,6 +293,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  safetyBanner: {
+    backgroundColor: '#d63031',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    gap: 10,
+  },
+  safetyText: {
+    color: 'white',
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
   map: {
     flex: 1,
   },
@@ -300,6 +332,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     margin: 16,
     gap: 8,
+  },
+  noteButton: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 12,
+    borderRadius: 12,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: '#eee',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  noteButtonText: {
+    color: '#007bff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   statBox: {
     flex: 1,
