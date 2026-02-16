@@ -51,7 +51,7 @@ def seed_comprehensive_quiz():
             "explanation": "Unless otherwise posted, the speed limit in school zones is 30 km/h when children are present."
         },
 
-        # --- CHAPTER 4: RULES OF THE ROAD (SITUATIONAL) ---
+        # --- CHAPTER 4: RULES OF THE ROAD ---
         {
             "category": "Rules of the Road",
             "question_text": "In this four-way stop situation, which vehicle should go first?",
@@ -76,88 +76,163 @@ def seed_comprehensive_quiz():
         },
         {
             "category": "Rules of the Road",
-            "question_text": "What is the correct way to enter this roundabout?",
-            "image_path": "handbook_images/p59_draw_131.png",
-            "option_a": "Speed up to merge quickly.",
-            "option_b": "Slow down and yield to traffic already in the circle.",
-            "option_c": "Stop and wait for a green light.",
-            "option_d": "Turn left into the circle.",
+            "question_text": "What does a flashing red light mean?",
+            "option_a": "Slow down and proceed with caution.",
+            "option_b": "The light is about to turn green.",
+            "option_c": "Stop completely and proceed only when safe (like a stop sign).",
+            "option_d": "Yield to oncoming traffic.",
+            "correct_option": "C",
+            "explanation": "A flashing red light means you must come to a complete stop and proceed only when it's safe."
+        },
+        {
+            "category": "Rules of the Road",
+            "question_text": "When can you make a right turn on a red light?",
+            "option_a": "Never.",
+            "option_b": "Only if there is no 'No Right Turn on Red' sign and you have come to a complete stop.",
+            "option_c": "Anytime, as long as you slow down.",
+            "option_d": "Only during daylight hours.",
             "correct_option": "B",
-            "explanation": "You must slow down and yield to traffic already inside the roundabout."
+            "explanation": "Unless a sign prohibits it, you may turn right on a red light after stopping and yielding to traffic and pedestrians."
         },
 
-        # --- LEGAL & STARTUP (FROM PODCAST) ---
+        # --- CHAPTER 5: SEEING, THINKING & DOING ---
         {
-            "category": "Business & Legal",
-            "question_text": "Why is incorporation as a B.C. Limited Company recommended for a driving school?",
-            "option_a": "To avoid paying any taxes.",
-            "option_b": "To provide limited liability protection for shareholders.",
-            "option_c": "Because it's required by ICBC.",
-            "option_d": "To make the cars drive faster.",
+            "category": "Safe Driving",
+            "question_text": "What is the recommended following distance behind another vehicle in good weather?",
+            "option_a": "One car length.",
+            "option_b": "At least two seconds.",
+            "option_c": "At least five seconds.",
+            "option_d": "10 meters.",
             "correct_option": "B",
-            "explanation": "Incorporation creates a separate legal entity, protecting the owner's personal assets from business liabilities."
+            "explanation": "The 'two-second rule' helps you maintain a safe following distance in ideal conditions."
         },
         {
-            "category": "Business & Legal",
-            "question_text": "When must a B.C. business register for a GST number?",
-            "option_a": "Immediately upon starting.",
-            "option_b": "Once annual revenue exceeds $30,000.",
-            "option_c": "Only if they have employees.",
-            "option_d": "Never, driving schools are exempt.",
-            "correct_option": "B",
-            "explanation": "Businesses in Canada must register for GST once their gross revenue exceeds $30,000 in a 12-month period."
-        },
-        {
-            "category": "Business & Legal",
-            "question_text": "Is WorkSafeBC coverage mandatory for a driving school with instructors?",
-            "option_a": "Yes, it is mandatory to ensure health and safety coverage.",
-            "option_b": "No, it's optional.",
-            "option_c": "Only if the instructors drive their own cars.",
-            "option_d": "Only for schools with more than 10 instructors.",
+            "category": "Safe Driving",
+            "question_text": "How far ahead should you scan in city driving?",
+            "option_a": "One block or about 12 seconds ahead.",
+            "option_b": "The car directly in front of you.",
+            "option_c": "30 seconds ahead.",
+            "option_d": "Only at intersections.",
             "correct_option": "A",
-            "explanation": "WorkSafeBC registration is mandatory for most B.C. businesses that hire workers or contractors."
+            "explanation": "Scanning 12 seconds ahead in the city helps you anticipate hazards like pedestrians and turning vehicles."
+        },
+        {
+            "category": "Safe Driving",
+            "question_text": "What is 'space margin'?",
+            "option_a": "The time it takes to reach your destination.",
+            "option_b": "The area around your vehicle that you keep clear of other objects.",
+            "option_c": "The width of your car.",
+            "option_d": "The gap between your car and the curb.",
+            "correct_option": "B",
+            "explanation": "A space margin is a 'safety cushion' that gives you time and space to react to hazards."
         },
 
-        # --- SAFETY (NEW MANDATE) ---
+        # --- CHAPTER 6: SHARING THE ROAD ---
         {
-            "category": "Safety",
-            "question_text": "When should a student driver operate the Road Ready app?",
-            "option_a": "While stopped at a red light.",
-            "option_b": "Never while driving; the supervisor should handle all app interactions.",
-            "option_c": "To check their speed during the diagnostic ride.",
-            "option_d": "Only when using a hands-free mount.",
+            "category": "Sharing the Road",
+            "question_text": "When a school bus is stopped with its red lights flashing and stop arm out, you must:",
+            "option_a": "Slow down and pass carefully.",
+            "option_b": "Stop, regardless of which direction you are traveling in (unless separated by a median).",
+            "option_c": "Only stop if you are behind the bus.",
+            "option_d": "Honk your horn and proceed.",
             "correct_option": "B",
-            "explanation": "Safety first! The student must focus on the road. All app interactions during a ride must be handled by the supervisor in the passenger seat."
+            "explanation": "You must stop for a school bus with flashing red lights to protect children boarding or exiting."
+        },
+        {
+            "category": "Sharing the Road",
+            "question_text": "What should you do when an emergency vehicle with sirens and lights is approaching?",
+            "option_a": "Speed up to get out of its way.",
+            "option_b": "Pull over to the right and stop.",
+            "option_c": "Stop exactly where you are.",
+            "option_d": "Follow it closely to get through traffic.",
+            "correct_option": "B",
+            "explanation": "You must clear a path for emergency vehicles by pulling over to the right and stopping."
+        },
+
+        # --- CHAPTER 8: EMERGENCY SITUATIONS ---
+        {
+            "category": "Safe Driving",
+            "question_text": "If your vehicle starts to skid, you should:",
+            "option_a": "Slam on the brakes.",
+            "option_b": "Steer in the direction you want the front of the vehicle to go.",
+            "option_c": "Accelerate to gain traction.",
+            "option_d": "Turn the wheel sharply in the opposite direction.",
+            "correct_option": "B",
+            "explanation": "To recover from a skid, look and steer where you want to go. Avoid sudden braking or acceleration."
+        },
+        {
+            "category": "Safe Driving",
+            "question_text": "What should you do if your brakes fail while driving?",
+            "option_a": "Turn off the ignition.",
+            "option_b": "Shift to a lower gear and pump the brake pedal.",
+            "option_c": "Jump out of the car.",
+            "option_d": "Only use the emergency brake at high speed.",
+            "correct_option": "B",
+            "explanation": "Downshifting and pumping the brakes can help slow the vehicle. Use the parking brake gently if needed."
+        },
+
+        # --- ADDITIONAL HANDBOOK CONTENT ---
+        {
+            "category": "Rules of the Road",
+            "question_text": "When turning left at an intersection, you must yield to:",
+            "option_a": "Traffic going straight and pedestrians in your path.",
+            "option_b": "Only vehicles coming from the right.",
+            "option_c": "Only vehicles coming from the left.",
+            "option_d": "No one, you have the right of way.",
+            "correct_option": "A",
+            "explanation": "Left-turning vehicles must yield to oncoming traffic and pedestrians crossing the street they are entering."
+        },
+        {
+            "category": "Rules of the Road",
+            "question_text": "A solid white line between lanes means:",
+            "option_a": "You are allowed to change lanes.",
+            "option_b": "Lane changing is discouraged or prohibited.",
+            "option_c": "It marks the edge of the road.",
+            "option_d": "You must stop before the line.",
+            "correct_option": "B",
+            "explanation": "Solid white lines indicate that lane changes are hazardous or not permitted in that area."
+        },
+        {
+            "category": "Rules of the Road",
+            "question_text": "A 'blind spot' is:",
+            "option_a": "An area you cannot see in your mirrors.",
+            "option_b": "The area directly in front of your car.",
+            "option_c": "A type of intersection.",
+            "option_d": "An area covered by your high beams.",
+            "correct_option": "A",
+            "explanation": "Blind spots are areas beside and behind your vehicle that mirrors don't cover. You must shoulder check."
+        },
+        {
+            "category": "Sharing the Road",
+            "question_text": "When passing a cyclist, what is the minimum distance you should maintain?",
+            "option_a": "0.5 meters.",
+            "option_b": "At least 1 meter.",
+            "option_c": "At least 3 meters.",
+            "option_d": "Cyclists must move for cars.",
+            "correct_option": "B",
+            "explanation": "Maintaining at least 1 meter of space helps ensure the safety of cyclists when you pass them."
+        },
+        {
+            "category": "Safe Driving",
+            "question_text": "If you are being tailgated, you should:",
+            "option_a": "Slam on your brakes to scare them.",
+            "option_b": "Speed up to create distance.",
+            "option_c": "Slow down gradually to encourage them to pass.",
+            "option_d": "Stay at the exact same speed and ignore them.",
+            "correct_option": "C",
+            "explanation": "Gradually slowing down increases your space margin in front and encourages the tailgater to pass."
+        },
+        {
+            "category": "Rules of the Road",
+            "question_text": "Who has the right of way at an uncontrolled intersection?",
+            "option_a": "The vehicle on the left.",
+            "option_b": "The vehicle on the right.",
+            "option_c": "The vehicle going faster.",
+            "option_d": "The vehicle on the main road.",
+            "correct_option": "B",
+            "explanation": "At an intersection without signs or signals, you must yield to the vehicle on your right."
         }
     ]
-
-    # Add more general questions to reach a decent number for now
-    # (Expanding to 50 for the prototype test)
-    general_topics = [
-        "What is 'scanning' in the context of safe driving?",
-        "When should you use your high-beam headlights?",
-        "What does a flashing yellow light mean?",
-        "How much space should you leave between your car and a motorcycle?",
-        "What is the first thing you should do after an accident?",
-        "When are you allowed to pass on the right?",
-        "What should you do if your brakes fail?",
-        "What is the best way to handle a skid?",
-        "How does alcohol affect your driving?",
-        "What should you do when merging onto a highway?"
-    ]
-
-    for i in range(40):
-        topic = general_topics[i % len(general_topics)]
-        questions.append({
-            "category": "General Knowledge",
-            "question_text": f"{topic} (Set {i//len(general_topics) + 1})",
-            "option_a": "Scanning 12 seconds ahead.",
-            "option_b": "Driving as fast as possible.",
-            "option_c": "Tailgating to save fuel.",
-            "option_d": "Using your phone while driving.",
-            "correct_option": "A",
-            "explanation": "Looking well ahead allows you to predict hazards and react in time."
-        })
 
     for q in questions:
         db_q = models.QuizQuestion(
@@ -174,7 +249,7 @@ def seed_comprehensive_quiz():
         db.add(db_q)
     
     db.commit()
-    print(f"Seeded {len(questions)} comprehensive questions.")
+    print(f"Seeded {len(questions)} handbook-only questions.")
 
 if __name__ == "__main__":
     seed_comprehensive_quiz()

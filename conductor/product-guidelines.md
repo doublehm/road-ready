@@ -12,6 +12,7 @@
 
 ## User Experience (UX) Principles
 *   **Mobile-First for Students:** Students will primarily use the app for quick checks and logging. Ensure the mobile experience is fast and responsive.
+*   **Safety & Supervisor Mandate:** The app must NEVER be operated by the student while driving. All in-ride features, including starting/stopping diagnostic sessions and logging real-time feedback, must be performed by the supervisor or instructor in the passenger seat.
 *   **Efficiency for Instructors:** Instructors are often on the move. Minimize data entry for logging sessions and diagnostic rides.
 *   **Clarity of Progress:** Progress should always be visible (e.g., progress bars, checklist completions) to motivate students and provide instructors with immediate context.
 *   **Reliability:** Offline support or graceful degradation for the mobile app is critical, as instructors may be in areas with poor connectivity during rides.
