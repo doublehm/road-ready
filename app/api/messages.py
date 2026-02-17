@@ -37,22 +37,22 @@ def create_message(
     if not recipient:
         raise HTTPException(status_code=404, detail="Recipient not found")
 
-    # Check for active booking between users
-    # Active statuses: pending, accepted, paid, pending_payment, cancellation_requested
-    active_statuses = ["pending", "accepted", "paid", "pending_payment", "cancellation_requested"]
+    # Check for active or previous booking between users
+    # Allowed statuses: pending, accepted, paid, pending_payment, cancellation_requested, completed, rejected
+    allowed_statuses = ["pending", "accepted", "paid", "pending_payment", "cancellation_requested", "completed", "rejected"]
     
     # Check if current_user is student and recipient is instructor
     booking_as_student = db.query(models.BookingRequest).join(models.InstructorProfile).filter(
         models.BookingRequest.student_id == current_user.id,
         models.InstructorProfile.user_id == message.recipient_id,
-        models.BookingRequest.status.in_(active_statuses)
+        models.BookingRequest.status.in_(allowed_statuses)
     ).first()
 
     # Check if current_user is instructor and recipient is student
     booking_as_instructor = db.query(models.BookingRequest).join(models.InstructorProfile).filter(
         models.InstructorProfile.user_id == current_user.id,
         models.BookingRequest.student_id == message.recipient_id,
-        models.BookingRequest.status.in_(active_statuses)
+        models.BookingRequest.status.in_(allowed_statuses)
     ).first()
 
     if not booking_as_student and not booking_as_instructor:
