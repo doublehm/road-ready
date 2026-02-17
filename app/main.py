@@ -497,12 +497,6 @@ async def setup_instructor_api(
             certification_image=filename_cert,
             is_verified=False
         )
-            insurance_policy=insurance_policy,
-            certification_id=certification_id,
-            license_image=filename_license,
-            insurance_image=filename_insurance,
-            is_verified=False
-        )
         db.add(profile)
     
     db.flush()
