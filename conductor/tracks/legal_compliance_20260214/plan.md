@@ -2,7 +2,7 @@
 
 ## Phase 1: Foundational Documents & Footers
 - [x] Task 1: Verify current `/terms` and `/privacy` template content against BC boilerplate standards. [1ebcf1b]
-- [ ] Task 2: Add a standard legal footer to the base web template (`app/templates/base.html`).
+- [x] Task 2: Add a standard legal footer to the base web template (`app/templates/base.html`). [7e67097]
 - [ ] Task 3: Add a "Legal" section to the mobile app settings/profile screen.
 
 ## Phase 2: Regulatory & Corporate Setup
