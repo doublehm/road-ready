@@ -53,12 +53,19 @@
                                     <div class="d-grid gap-1">
                                         {% if inst.license_image %}
                                         <a href="/static/uploads/{{ inst.license_image }}" target="_blank" class="btn btn-sm btn-outline-info py-0">View ID 📄</a>
-                                        {% else %}
-                                        <span class="text-muted small">No ID</span>
+                                        {% endif %}
+
+                                        {% if inst.certification_image %}
+                                        <a href="/static/uploads/{{ inst.certification_image }}" target="_blank" class="btn btn-sm btn-outline-primary py-0">View Cert 🎓</a>
+                                        {% endif %}
+
+                                        {% if inst.insurance_image %}
+                                        <a href="/static/uploads/{{ inst.insurance_image }}" target="_blank" class="btn btn-sm btn-outline-success py-0">View Insurance 🛡️</a>
                                         {% endif %}
                                         
-                                        <div class="small text-muted">Cert: {{ inst.certification_id }}</div>
-                                        <div class="small text-muted">Ins: {{ inst.insurance_policy }}</div>
+                                        <div class="small text-muted">Cert ID: {{ inst.certification_id }}</div>
+                                        <div class="small text-muted">Expires: {{ inst.certification_expiry }}</div>
+                                        <div class="small text-muted">Ins Policy: {{ inst.insurance_policy }}</div>
                                     </div>
                                 </td>
                                 <td>

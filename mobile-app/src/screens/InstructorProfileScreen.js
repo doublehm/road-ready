@@ -14,7 +14,17 @@ const InstructorProfileScreen = ({ route, navigation }) => {
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{instructor.user?.full_name?.[0] || 'I'}</Text>
           </View>
-          <Text style={styles.name}>{instructor.user?.full_name || 'Instructor'}</Text>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Text style={styles.name}>{instructor.user?.full_name || 'Instructor'}</Text>
+            {instructor.is_verified && (
+              <Ionicons name="checkmark-circle" size={24} color="#007bff" style={{marginLeft: 8}} />
+            )}
+          </View>
+          {instructor.is_verified && (
+            <Text style={{color: '#007bff', fontWeight: 'bold', fontSize: 12, marginTop: 4}}>
+              VERIFIED ACCOUNT
+            </Text>
+          )}
           <Text style={styles.city}><Ionicons name="location" size={16} /> {instructor.city}</Text>
         </View>
 

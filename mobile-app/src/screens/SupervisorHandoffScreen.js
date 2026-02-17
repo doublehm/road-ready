@@ -46,7 +46,8 @@ const SupervisorHandoffScreen = ({ route, navigation }) => {
             1. I am the designated supervisor/instructor for this driving session.{"\n"}
             2. I accept full responsibility for monitoring the app and providing feedback.{"\n"}
             3. I will ensure the student driver remains focused solely on the road.{"\n"}
-            4. I understand that real-time feedback is intended for my coaching use only.
+            4. I understand that Road Ready is a technology marketplace, and all lessons are provided by independent instructors/supervisors.{"\n"}
+            5. I accept full responsibility for on-road safety and insurance compliance.
           </Text>
           
           <TouchableOpacity 

@@ -39,7 +39,12 @@ const FindInstructorScreen = ({ navigation }) => {
           <Text style={styles.avatarText}>{item.user?.full_name?.[0]}</Text>
         </View>
         <View style={styles.cardInfo}>
-          <Text style={styles.name}>{item.user?.full_name}</Text>
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <Text style={styles.name}>{item.user?.full_name}</Text>
+            {item.is_verified && (
+              <Ionicons name="checkmark-circle" size={16} color="#007bff" style={{marginLeft: 5}} />
+            )}
+          </View>
           <Text style={styles.city}><Ionicons name="location-outline" /> {item.city}</Text>
         </View>
         <View style={styles.rating}>

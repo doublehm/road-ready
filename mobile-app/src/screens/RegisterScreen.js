@@ -11,11 +11,17 @@ const RegisterScreen = ({ navigation }) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student'); // 'student' or 'instructor'
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
     if (!fullName || !email || !phone || !password) {
       Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (!termsAccepted) {
+      Alert.alert('Legal Agreement', 'You must agree to the Terms of Service and Privacy Policy to continue.');
       return;
     }
 
@@ -103,6 +109,21 @@ const RegisterScreen = ({ navigation }) => {
         />
         <Text style={styles.hint}>Must have 8+ chars, 1 uppercase, 1 special char</Text>
 
+        <View style={styles.termsContainer}>
+          <TouchableOpacity 
+            style={[styles.checkbox, termsAccepted && styles.checkboxChecked]}
+            onPress={() => setTermsAccepted(!termsAccepted)}
+          >
+            {termsAccepted && <Ionicons name="checkmark" size={16} color="#fff" />}
+          </TouchableOpacity>
+          <Text style={styles.termsText}>
+            I agree to the{' '}
+            <Text style={styles.termsLink} onPress={() => navigation.navigate('Legal')}>Terms of Service</Text>
+            {' '}and{' '}
+            <Text style={styles.termsLink} onPress={() => navigation.navigate('Legal')}>Privacy Policy</Text>.
+          </Text>
+        </View>
+
         <TouchableOpacity 
           style={styles.button} 
           onPress={handleRegister}
@@ -137,6 +158,35 @@ const styles = StyleSheet.create({
     borderColor: '#eee',
   },
   hint: { fontSize: 12, color: '#666', marginBottom: 20, marginLeft: 5 },
+  termsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 25,
+    paddingHorizontal: 5,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#007bff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  checkboxChecked: {
+    backgroundColor: '#007bff',
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+  },
+  termsLink: {
+    color: '#007bff',
+    fontWeight: 'bold',
+  },
   button: {
     backgroundColor: '#007bff',
     padding: 15,

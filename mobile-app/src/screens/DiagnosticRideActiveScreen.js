@@ -21,10 +21,75 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const [startTime, setStartTime] = useState(null);
   const [duration, setDuration] = useState(0); // seconds
   const [isUploading, setIsUploading] = useState(false);
+  const [latestEvents, setLatestEvents] = useState([]);
+  const [alertMessage, setAlertMessage] = useState(null);
 
   // Hooks for sensor data collection
   const gpsTracking = useGPSTracking();
   const deviceMotion = useDeviceMotion(10); // 10 Hz sampling
+
+  // Real-time feedback loop
+  useEffect(() => {
+    if (!startTime || isUploading) return;
+
+    const feedbackInterval = setInterval(async () => {
+      // Get last 3 seconds of data
+      const motionData = deviceMotion.data.slice(-30); // 10Hz * 3s
+      const speedData = gpsTracking.speedData.slice(-3); // 1Hz * 3s
+
+      if (motionData.length < 10 || speedData.length < 1) return;
+
+      try {
+        const accelerationWindow = motionData.map(p => ({
+          timestamp: p.timestamp,
+          x: p.acceleration.x,
+          y: p.acceleration.y,
+          z: p.acceleration.z,
+          latitude: gpsTracking.location?.latitude,
+          longitude: gpsTracking.location?.longitude
+        }));
+
+        const speedWindow = speedData.map(p => ({
+          timestamp: p.timestamp,
+          speed: p.speed,
+          latitude: p.latitude,
+          longitude: p.longitude
+        }));
+
+        const response = await client.post('/diagnostic-rides/live-evaluate', {
+          acceleration_window: accelerationWindow,
+          speed_window: speedWindow,
+          rotation_window: [] // Skipping for simple demo
+        });
+
+        if (response.data.events && response.data.events.length > 0) {
+          const newEvents = response.data.events;
+          setLatestEvents(prev => [...newEvents, ...prev].slice(0, 5));
+          
+          // Show alert for the most recent high severity event
+          const highSev = newEvents.find(e => e.severity === 'high');
+          if (highSev) {
+            triggerAlert(highSev);
+          }
+        }
+      } catch (error) {
+        console.error('Live evaluation error:', error);
+      }
+    }, 2000); // Check every 2 seconds
+
+    return () => clearInterval(feedbackInterval);
+  }, [startTime, isUploading, deviceMotion.data, gpsTracking.speedData]);
+
+  const triggerAlert = (event) => {
+    let msg = '';
+    if (event.type === 'speeding') msg = '⚠️ SLOW DOWN! You are exceeding the speed limit.';
+    if (event.type === 'harsh_braking') msg = '⚠️ SMOOTH BRAKING! Avoid sudden stops.';
+    if (event.type === 'sharp_turn') msg = '⚠️ CAREFUL! Take turns more gradually.';
+    
+    setAlertMessage(msg);
+    // Auto-clear alert after 4 seconds
+    setTimeout(() => setAlertMessage(null), 4000);
+  };
 
   useEffect(() => {
     // Start tracking on mount
@@ -212,6 +277,13 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         />
       </MapView>
 
+      {/* Real-time Alerts */}
+      {alertMessage && (
+        <View style={styles.alertBanner}>
+          <Text style={styles.alertText}>{alertMessage}</Text>
+        </View>
+      )}
+
       <View style={styles.overlay}>
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
@@ -235,6 +307,25 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
             </Text>
           </View>
         </View>
+
+        {/* Mistake Log */}
+        {latestEvents.length > 0 && (
+          <View style={styles.eventLogContainer}>
+            <Text style={styles.eventLogTitle}>Recent Mistakes</Text>
+            {latestEvents.map((event, idx) => (
+              <View key={idx} style={styles.eventItem}>
+                <Ionicons 
+                  name={event.severity === 'high' ? "alert-circle" : "warning"} 
+                  size={16} 
+                  color={event.severity === 'high' ? "#d63031" : "#fdcb6e"} 
+                />
+                <Text style={styles.eventText}>
+                  {event.type.replace('_', ' ').toUpperCase()} detected
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         <TouchableOpacity 
             style={styles.noteButton}
@@ -310,6 +401,28 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
+  alertBanner: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(214, 48, 49, 0.9)',
+    padding: 15,
+    borderRadius: 10,
+    zIndex: 1000,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 10,
+  },
+  alertText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -332,6 +445,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     margin: 16,
     gap: 8,
+  },
+  eventLogContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  eventLogTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#636e72',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  eventItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  eventText: {
+    fontSize: 13,
+    color: '#2d3436',
+    fontWeight: '500',
   },
   noteButton: {
     backgroundColor: 'white',

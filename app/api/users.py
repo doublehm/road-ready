@@ -200,7 +200,11 @@ def update_instructor_profile(
     if not db_profile:
         raise HTTPException(status_code=404, detail="Profile not found")
         
-    sensitive_fields = ["license_image", "insurance_image", "insurance_policy", "certification_id"]
+    sensitive_fields = [
+        "license_image", "insurance_image", "certification_image", 
+        "insurance_policy", "certification_id", "business_registration_number",
+        "tax_id", "worksafe_bc_id", "legal_entity_name"
+    ]
     requires_reverification = False
     
     for key, value in profile.dict().items():

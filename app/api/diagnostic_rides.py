@@ -70,6 +70,49 @@ async def create_diagnostic_ride(
     return db_ride
 
 
+@router.post("/live-evaluate")
+async def live_evaluate(
+    request: schemas.LiveEvaluationRequest,
+    current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Evaluate a window of sensor data for real-time feedback.
+    Returns any detected events (mistakes) in the current window.
+    """
+    if current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students can access live evaluation"
+        )
+
+    evaluator = DiagnosticEvaluator()
+    
+    # Convert SensorDataPoints to dicts for evaluator
+    acceleration_data = [p.dict() for p in request.acceleration_window]
+    speed_data = [p.dict() for p in request.speed_window]
+    rotation_data = [p.dict() for p in request.rotation_window]
+
+    # Run sub-evaluations
+    _, braking_feedback = evaluator._evaluate_braking(acceleration_data, speed_data)
+    _, speed_feedback = evaluator._evaluate_speed(speed_data, 1) # dummy duration
+    _, cornering_feedback = evaluator._evaluate_cornering(acceleration_data, rotation_data)
+
+    # Collect all events detected in this window
+    events = []
+    events.extend(braking_feedback.get('events', []))
+    events.extend(speed_feedback.get('events', []))
+    events.extend(cornering_feedback.get('events', []))
+
+    # Remove duplicates if any (though unlikely in small windows)
+    # Sort by timestamp
+    events.sort(key=lambda x: x.get('timestamp') or 0)
+
+    return {
+        "events": events,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
 @router.get("/", response_model=List[schemas.DiagnosticRide])
 async def list_diagnostic_rides(
     current_user: models.User = Depends(deps.get_current_user),

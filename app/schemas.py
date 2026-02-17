@@ -88,6 +88,10 @@ class InstructorProfileBase(BaseModel):
     is_available: bool = True
     stripe_account_id: Optional[str] = None
     stripe_onboarding_completed: bool = False
+    business_registration_number: Optional[str] = None
+    tax_id: Optional[str] = None
+    worksafe_bc_id: Optional[str] = None
+    legal_entity_name: Optional[str] = None
 
     @validator('insurance_policy')
     def validate_insurance(cls, v):
@@ -106,6 +110,7 @@ class InstructorProfileBase(BaseModel):
 class InstructorProfileCreate(InstructorProfileBase):
     license_image: Optional[str] = None
     insurance_image: Optional[str] = None
+    certification_image: Optional[str] = None
     license_classes: List[InstructorLicenseClassCreate] = []
 
 class InstructorProfile(InstructorProfileBase):
@@ -117,6 +122,7 @@ class InstructorProfile(InstructorProfileBase):
     license_classes: List[InstructorLicenseClass] = []
     license_image: Optional[str] = None
     insurance_image: Optional[str] = None
+    certification_image: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -370,6 +376,11 @@ class DiagnosticRideCreate(DiagnosticRideBase):
     rotation_data: Optional[str] = None # JSON string
     speed_data: Optional[str] = None # JSON string
     criteria_results: Optional[str] = None # JSON string
+
+class LiveEvaluationRequest(BaseModel):
+    acceleration_window: List[SensorDataPoint]
+    speed_window: List[SensorDataPoint]
+    rotation_window: List[SensorDataPoint]
 
 class DiagnosticRideEvaluation(BaseModel):
     braking_score: float

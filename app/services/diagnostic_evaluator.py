@@ -87,12 +87,21 @@ class DiagnosticEvaluator:
             duration_minutes, distance_km
         )
 
+        # Aggregate all events
+        all_events = []
+        all_events.extend(braking_feedback.get('events', []))
+        all_events.extend(speed_feedback.get('events', []))
+        all_events.extend(cornering_feedback.get('events', []))
+        # Sort events by timestamp
+        all_events.sort(key=lambda x: x.get('timestamp') or 0)
+
         # Generate comprehensive feedback
         evaluation_result = {
             'braking': braking_feedback,
             'speed': speed_feedback,
             'cornering': cornering_feedback,
             'overall': pass_feedback,
+            'events': all_events,
             'summary': self._generate_summary(passed, overall_score, braking_score, speed_score, cornering_score)
         }
 
@@ -116,16 +125,18 @@ class DiagnosticEvaluator:
         harsh_braking_count = 0
         sudden_stop_count = 0
         smooth_braking_count = 0
+        events = []
 
         feedback = {
             'harsh_braking_events': 0,
             'sudden_stops': 0,
             'smooth_braking_events': 0,
-            'notes': []
+            'notes': [],
+            'events': []
         }
 
         if not acceleration_data:
-            return 50.0, {'notes': ['Insufficient acceleration data for evaluation']}
+            return 50.0, {'notes': ['Insufficient acceleration data for evaluation'], 'events': []}
 
         # Analyze acceleration data for harsh braking
         for i in range(len(acceleration_data)):
@@ -138,20 +149,38 @@ class DiagnosticEvaluator:
             if deceleration_g > self.HARSH_BRAKING_THRESHOLD:
                 harsh_braking_count += 1
                 score -= 10
+                events.append({
+                    'type': 'harsh_braking',
+                    'timestamp': point.get('timestamp'),
+                    'lat': point.get('latitude'),
+                    'lng': point.get('longitude'),
+                    'value': round(deceleration_g, 2),
+                    'severity': 'high' if deceleration_g > 0.6 else 'medium'
+                })
             elif self.SMOOTH_BRAKING_MIN <= deceleration_g <= self.SMOOTH_BRAKING_MAX:
                 smooth_braking_count += 1
 
         # Analyze speed data for sudden stops
         for i in range(1, len(speed_data)):
-            prev_speed = speed_data[i-1].get('speed', 0)
-            curr_speed = speed_data[i].get('speed', 0)
-            time_diff = speed_data[i].get('timestamp', 0) - speed_data[i-1].get('timestamp', 0)
+            point = speed_data[i]
+            prev_point = speed_data[i-1]
+            prev_speed = prev_point.get('speed', 0)
+            curr_speed = point.get('speed', 0)
+            time_diff = point.get('timestamp', 0) - prev_point.get('timestamp', 0)
 
             if time_diff > 0 and time_diff <= 1.5:  # Within 1.5 seconds
                 speed_drop = prev_speed - curr_speed
                 if speed_drop > self.SUDDEN_STOP_SPEED_DROP:
                     sudden_stop_count += 1
                     score -= 15
+                    events.append({
+                        'type': 'sudden_stop',
+                        'timestamp': point.get('timestamp'),
+                        'lat': point.get('latitude'),
+                        'lng': point.get('longitude'),
+                        'value': round(speed_drop, 2),
+                        'severity': 'high'
+                    })
 
         # Bonus for smooth braking
         smooth_bonus = min(20, smooth_braking_count * 2)
@@ -163,6 +192,7 @@ class DiagnosticEvaluator:
         feedback['harsh_braking_events'] = harsh_braking_count
         feedback['sudden_stops'] = sudden_stop_count
         feedback['smooth_braking_events'] = smooth_braking_count
+        feedback['events'] = events
 
         if harsh_braking_count > 5:
             feedback['notes'].append(f'Too many harsh braking events ({harsh_braking_count}). Practice gradual deceleration.')
@@ -193,11 +223,14 @@ class DiagnosticEvaluator:
             'speeding_percentage': 0,
             'under_speed_percentage': 0,
             'speed_variance': 0,
-            'notes': []
+            'notes': [],
+            'events': []
         }
 
         if not speed_data or len(speed_data) < 2:
-            return 50.0, {'notes': ['Insufficient speed data for evaluation']}
+            return 50.0, {'notes': ['Insufficient speed data for evaluation'], 'events': []}
+        
+        events = []
 
         # Detect road type based on average speed
         speeds = [point.get('speed', 0) for point in speed_data]
@@ -226,6 +259,17 @@ class DiagnosticEvaluator:
             # Check for speeding
             if speed > speed_limit:
                 speeding_time += time_duration
+                # Only record event if speeding significantly or at intervals
+                if speed > (speed_limit + 5):
+                    events.append({
+                        'type': 'speeding',
+                        'timestamp': point.get('timestamp'),
+                        'lat': point.get('latitude'),
+                        'lng': point.get('longitude'),
+                        'value': round(speed, 2),
+                        'limit': speed_limit,
+                        'severity': 'high' if speed > (speed_limit + 15) else 'medium'
+                    })
 
             # Check for under-speed (excluding stops)
             if speed > 5 and speed < (speed_limit - 10):
@@ -258,6 +302,7 @@ class DiagnosticEvaluator:
         feedback['under_speed_percentage'] = round(under_speed_pct, 2)
         feedback['detected_road_type'] = road_type
         feedback['assumed_limit'] = speed_limit
+        feedback['events'] = events
 
         if speeding_pct > 10:
             feedback['notes'].append(f'Significant speeding detected ({speeding_pct:.1f}% of time). Always observe posted limits.')
@@ -285,16 +330,18 @@ class DiagnosticEvaluator:
         sharp_turn_count = 0
         smooth_turn_count = 0
         jerky_steering_count = 0
+        events = []
 
         feedback = {
             'sharp_turns': 0,
             'smooth_turns': 0,
             'jerky_steering': 0,
-            'notes': []
+            'notes': [],
+            'events': []
         }
 
         if not acceleration_data:
-            return 50.0, {'notes': ['Insufficient acceleration data for evaluation']}
+            return 50.0, {'notes': ['Insufficient acceleration data for evaluation'], 'events': []}
 
         # Analyze lateral acceleration (X-axis)
         for i in range(len(acceleration_data)):
@@ -306,6 +353,14 @@ class DiagnosticEvaluator:
             if lateral_g > self.SHARP_TURN_LATERAL_THRESHOLD:
                 sharp_turn_count += 1
                 score -= 8
+                events.append({
+                    'type': 'sharp_turn',
+                    'timestamp': point.get('timestamp'),
+                    'lat': point.get('latitude'),
+                    'lng': point.get('longitude'),
+                    'value': round(lateral_g, 2),
+                    'severity': 'high' if lateral_g > 0.5 else 'medium'
+                })
             elif lateral_g < self.SMOOTH_TURN_THRESHOLD and lateral_g > 0.02:
                 smooth_turn_count += 1
 
@@ -332,6 +387,7 @@ class DiagnosticEvaluator:
         feedback['sharp_turns'] = sharp_turn_count
         feedback['smooth_turns'] = smooth_turn_count
         feedback['jerky_steering'] = jerky_steering_count
+        feedback['events'] = events
 
         if sharp_turn_count > 5:
             feedback['notes'].append(f'Too many sharp turns ({sharp_turn_count}). Slow down before corners.')

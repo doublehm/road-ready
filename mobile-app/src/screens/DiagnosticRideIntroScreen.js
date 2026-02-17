@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,24 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Modal,
 } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const DiagnosticRideIntroScreen = ({ navigation }) => {
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [selectedRideType, setSelectedRideType] = useState(null);
+
+  const handleStartRide = (rideType) => {
+    setSelectedRideType(rideType);
+    setShowDisclaimer(true);
+  };
+
+  const confirmDisclaimer = () => {
+    setShowDisclaimer(false);
+    navigation.navigate('DiagnosticRideSetup', { rideType: selectedRideType });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -116,9 +131,7 @@ const DiagnosticRideIntroScreen = ({ navigation }) => {
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={[styles.button, styles.parentButton]}
-            onPress={() =>
-              navigation.navigate('DiagnosticRideSetup', { rideType: 'parent' })
-            }
+            onPress={() => handleStartRide('parent')}
           >
             <Text style={styles.buttonTitle}>Ride with Parent</Text>
             <Text style={styles.buttonSubtext}>Free • Self-Supervised</Text>
@@ -126,11 +139,7 @@ const DiagnosticRideIntroScreen = ({ navigation }) => {
 
           <TouchableOpacity
             style={[styles.button, styles.instructorButton]}
-            onPress={() =>
-              navigation.navigate('DiagnosticRideSetup', {
-                rideType: 'instructor',
-              })
-            }
+            onPress={() => handleStartRide('instructor')}
           >
             <Text style={styles.buttonTitle}>Ride with Instructor</Text>
             <Text style={styles.buttonSubtext}>~$120 • Professional Review</Text>
@@ -144,6 +153,46 @@ const DiagnosticRideIntroScreen = ({ navigation }) => {
           <Text style={styles.cancelButtonText}>Maybe Later</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Safety Disclaimer Modal */}
+      <Modal
+        visible={showDisclaimer}
+        transparent={true}
+        animationType="slide"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Ionicons name="shield-checkmark" size={40} color="#d63031" />
+              <Text style={styles.modalTitle}>Safety & Legal Disclaimer</Text>
+            </View>
+            
+            <ScrollView style={styles.disclaimerScroll}>
+              <Text style={styles.disclaimerText}>
+                By starting this diagnostic ride, you acknowledge and agree to the following:{"\n\n"}
+                1. <Text style={styles.bold}>Supervision:</Text> You must be supervised by a qualified supervisor (parent or instructor) as required by your B.C. Learner's License.{"\n\n"}
+                2. <Text style={styles.bold}>Liability:</Text> Road Ready is a data-collection and analysis tool only. We are not responsible for any incidents, accidents, or traffic violations that occur during this session.{"\n\n"}
+                3. <Text style={styles.bold}>Attention:</Text> Do not interact with the mobile application while the vehicle is in motion. The phone should be securely mounted.{"\n\n"}
+                4. <Text style={styles.bold}>Compliance:</Text> You must obey all B.C. traffic laws and regulations.
+              </Text>
+            </ScrollView>
+
+            <TouchableOpacity 
+              style={styles.confirmButton}
+              onPress={confirmDisclaimer}
+            >
+              <Text style={styles.confirmButtonText}>I Accept & Understand</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.modalCancelButton}
+              onPress={() => setShowDisclaimer(false)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -288,6 +337,66 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 16,
     color: '#6c757d',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginTop: 12,
+  },
+  disclaimerScroll: {
+    marginBottom: 20,
+  },
+  disclaimerText: {
+    fontSize: 15,
+    color: '#2d3436',
+    lineHeight: 22,
+  },
+  bold: {
+    fontWeight: 'bold',
+  },
+  confirmButton: {
+    backgroundColor: '#28a745',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalCancelButton: {
+    padding: 12,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#6c757d',
+    fontSize: 16,
   },
 });
 

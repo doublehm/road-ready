@@ -109,8 +109,15 @@ def linkify_chapter(text: str) -> str:
 def from_json(value):
     return json.loads(value)
 
+def from_timestamp(value):
+    try:
+        return datetime.fromtimestamp(value).strftime("%H:%M:%S")
+    except (ValueError, TypeError):
+        return ""
+
 templates.env.filters["expand_codes"] = expand_codes
 templates.env.filters["linkify_chapter"] = linkify_chapter
+templates.env.filters["from_timestamp"] = from_timestamp
 templates.env.filters["from_json"] = from_json
 
 
@@ -360,8 +367,10 @@ async def setup_instructor(
     car_model: str = Form(...),
     insurance_policy: str = Form(...),
     certification_id: str = Form(...),
+    certification_expiry: str = Form(...),
     license_image: UploadFile = File(...),
     insurance_image: UploadFile = File(...),
+    certification_image: UploadFile = File(...),
     license_classes: str = Form("[]"), # JSON string: [{"license_class": "Class 5", "price": 50.0}]
     db: Session = Depends(get_db),
     user: models.User = Depends(get_current_user)
@@ -382,6 +391,12 @@ async def setup_instructor(
     file_path_insurance = os.path.join(upload_dir, filename_insurance)
     with open(file_path_insurance, "wb") as buffer:
         shutil.copyfileobj(insurance_image.file, buffer)
+
+    # Certification Image
+    filename_cert = f"{user.id}_cert_{certification_image.filename}"
+    file_path_cert = os.path.join(upload_dir, filename_cert)
+    with open(file_path_cert, "wb") as buffer:
+        shutil.copyfileobj(certification_image.file, buffer)
     
     profile = models.InstructorProfile(
         user_id=user.id,
@@ -391,8 +406,10 @@ async def setup_instructor(
         car_model=car_model,
         insurance_policy=insurance_policy,
         certification_id=certification_id,
+        certification_expiry=certification_expiry,
         license_image=filename_license,
         insurance_image=filename_insurance,
+        certification_image=filename_cert,
         is_verified=False # Pending admin approval
     )
     db.add(profile)
@@ -423,8 +440,10 @@ async def setup_instructor_api(
     car_model: str = Form(...),
     insurance_policy: str = Form(...),
     certification_id: str = Form(...),
+    certification_expiry: str = Form(...),
     license_image: UploadFile = File(...),
     insurance_image: UploadFile = File(...),
+    certification_image: UploadFile = File(...),
     license_classes: str = Form("[]"),
     db: Session = Depends(get_db),
     user: models.User = Depends(deps.get_current_user)
@@ -441,6 +460,10 @@ async def setup_instructor_api(
     filename_insurance = f"{user.id}_ins_{insurance_image.filename}"
     with open(os.path.join(upload_dir, filename_insurance), "wb") as buffer:
         shutil.copyfileobj(insurance_image.file, buffer)
+
+    filename_cert = f"{user.id}_cert_{certification_image.filename}"
+    with open(os.path.join(upload_dir, filename_cert), "wb") as buffer:
+        shutil.copyfileobj(certification_image.file, buffer)
     
     # Check for existing profile
     profile = db.query(models.InstructorProfile).filter(models.InstructorProfile.user_id == user.id).first()
@@ -453,10 +476,10 @@ async def setup_instructor_api(
         profile.car_model = car_model
         profile.insurance_policy = insurance_policy
         profile.certification_id = certification_id
+        profile.certification_expiry = certification_expiry
         profile.license_image = filename_license
         profile.insurance_image = filename_insurance
-        # is_verified stays as is or reset? Let's keep is_verified False on update for safety? 
-        # Or maybe True for prototype. Let's reset to False to require re-approval if docs change.
+        profile.certification_image = filename_cert
         profile.is_verified = False 
     else:
         # Create new
@@ -466,6 +489,14 @@ async def setup_instructor_api(
             hourly_rate=hourly_rate,
             city=city,
             car_model=car_model,
+            insurance_policy=insurance_policy,
+            certification_id=certification_id,
+            certification_expiry=certification_expiry,
+            license_image=filename_license,
+            insurance_image=filename_insurance,
+            certification_image=filename_cert,
+            is_verified=False
+        )
             insurance_policy=insurance_policy,
             certification_id=certification_id,
             license_image=filename_license,
@@ -1074,6 +1105,34 @@ async def student_progress(request: Request, db: Session = Depends(get_db), user
         "stats": {"total_lessons": total_lessons, "total_hours": total_hours, "total_spent": total_spent}, 
         "grouped_faults": grouped_faults, 
         "category_totals": category_totals, 
+        "unread_count": get_unread_count(db, user)
+    })
+
+@app.get("/diagnostic-ride/{ride_id}", response_class=HTMLResponse)
+async def diagnostic_ride_detail(
+    request: Request,
+    ride_id: int,
+    db: Session = Depends(get_db),
+    user: models.User = Depends(get_current_user)
+):
+    if not user:
+        return RedirectResponse(url="/login")
+    
+    ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_id).first()
+    
+    if not ride:
+        raise HTTPException(status_code=404, detail="Diagnostic ride not found")
+        
+    # Check permissions
+    if user.role == "student" and ride.student_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    elif user.role == "instructor" and ride.instructor_id != user.instructor_profile.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    return templates.TemplateResponse("diagnostic_ride_detail.html", {
+        "request": request,
+        "user": user,
+        "ride": ride,
         "unread_count": get_unread_count(db, user)
     })
 

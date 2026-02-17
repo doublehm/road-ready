@@ -79,7 +79,7 @@ const BookingRequestsScreen = ({ navigation }) => {
 
     const licenseImg = item.student?.student_profile?.license_image;
     // Construct full URL. Adjust IP if needed.
-    const imageUrl = licenseImg ? `http://192.168.1.235:8000/static/uploads/${licenseImg}` : null;
+    const imageUrl = licenseImg ? `http://10.32.100.57:8000/static/uploads/${licenseImg}` : null;
 
     return (
     <View style={styles.card}>

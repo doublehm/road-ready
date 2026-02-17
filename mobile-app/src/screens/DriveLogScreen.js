@@ -42,34 +42,41 @@ const DriveLogScreen = ({ navigation }) => {
   }, [isTracking]);
 
   const startDrive = async () => {
-    setIsTracking(true);
-    setStartTime(new Date());
-    setRouteCoordinates([]);
-    setDistance(0);
-    setDuration(0);
+    Alert.alert(
+      "Safety Disclaimer",
+      "By starting this session, you acknowledge that Road Ready is a technology marketplace, not a driving school. You are responsible for all on-road safety and insurance compliance. Road Ready is not liable for any incidents during this drive.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "I Agree & Start", 
+          onPress: async () => {
+            setIsTracking(true);
+            setStartTime(new Date());
+            setRouteCoordinates([]);
+            setDistance(0);
+            setDuration(0);
 
-    const sub = await Location.watchPositionAsync(
-      {
-        accuracy: Location.Accuracy.High,
-        timeInterval: 1000,
-        distanceInterval: 10,
-      },
-      (loc) => {
-        const { latitude, longitude } = loc.coords;
-        const newCoordinate = { latitude, longitude };
-        
-        setRouteCoordinates(prev => {
-          if (prev.length > 0) {
-             // Simple distance calc (haversine approx or just Euclidian for short distances)
-             // For simplicity in prototype, we rely on basic distance accumulation
-             // Real app would use `geolib`
+            const sub = await Location.watchPositionAsync(
+              {
+                accuracy: Location.Accuracy.High,
+                timeInterval: 1000,
+                distanceInterval: 10,
+              },
+              (loc) => {
+                const { latitude, longitude } = loc.coords;
+                const newCoordinate = { latitude, longitude };
+                
+                setRouteCoordinates(prev => {
+                  return [...prev, newCoordinate];
+                });
+                setLocation(loc.coords);
+              }
+            );
+            setSubscription(sub);
           }
-          return [...prev, newCoordinate];
-        });
-        setLocation(loc.coords);
-      }
+        }
+      ]
     );
-    setSubscription(sub);
   };
 
   const stopDrive = async () => {

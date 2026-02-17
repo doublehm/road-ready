@@ -86,8 +86,11 @@
                                     </td>
                                     <td>
                                         {% if ride.status == 'completed' %}
-                                            <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#rideDetail{{ ride.id }}">
-                                                View Feedback
+                                            <a href="/diagnostic-ride/{{ ride.id }}" class="btn btn-sm btn-primary">
+                                                View Full Report
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#rideDetail{{ ride.id }}">
+                                                Quick Summary
                                             </button>
                                         {% else %}
                                             <span class="text-muted small">Awaiting evaluation</span>

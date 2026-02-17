@@ -31,12 +31,19 @@ class InstructorProfile(Base):
     certification_expiry = Column(String, nullable=True) # YYYY-MM-DD
     license_image = Column(String, nullable=True) # Filename of the uploaded license
     insurance_image = Column(String, nullable=True) # Filename of the uploaded insurance
+    certification_image = Column(String, nullable=True) # Filename of the uploaded ICBC certificate
     is_verified = Column(Boolean, default=False)
     is_available = Column(Boolean, default=True)
     
     # Stripe Connect fields
     stripe_account_id = Column(String, nullable=True)
     stripe_onboarding_completed = Column(Boolean, default=False)
+
+    # Legal & Compliance fields
+    business_registration_number = Column(String, nullable=True)
+    tax_id = Column(String, nullable=True) # GST/PST registration
+    worksafe_bc_id = Column(String, nullable=True)
+    legal_entity_name = Column(String, nullable=True)
 
     user = relationship("User", back_populates="instructor_profile")
     booking_requests = relationship("BookingRequest", back_populates="instructor")
