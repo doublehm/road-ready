@@ -8,7 +8,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Update this to your machine's IP
-const SERVER_URL = 'http://192.168.1.235:8000';
+const SERVER_URL = "http://10.32.100.57:8000";
 
 const StudentEditProfileScreen = ({ navigation }) => {
   const { userInfo, fetchUser, userToken } = useContext(AuthContext);
@@ -173,6 +173,23 @@ const StudentEditProfileScreen = ({ navigation }) => {
           Note: Updating license info will require admin approval again.
         </Text>
 
+        <Text style={styles.sectionHeader}>Legal</Text>
+        <TouchableOpacity 
+          style={styles.legalBtn} 
+          onPress={() => navigation.navigate('Legal', { type: 'terms' })}
+        >
+          <Text style={styles.legalBtnText}>Terms of Service</Text>
+          <Ionicons name="chevron-forward" size={20} color="#666" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.legalBtn} 
+          onPress={() => navigation.navigate('Legal', { type: 'privacy' })}
+        >
+          <Text style={styles.legalBtnText}>Privacy Policy</Text>
+          <Ionicons name="chevron-forward" size={20} color="#666" />
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
           {loading ? <ActivityIndicator color="white" /> : <Text style={styles.saveText}>Save Changes</Text>}
         </TouchableOpacity>
@@ -206,6 +223,12 @@ const styles = StyleSheet.create({
   hint: { textAlign: 'center', color: '#999', marginBottom: 20 },
   warningText: { color: '#856404', backgroundColor: '#fff3cd', padding: 10, borderRadius: 5, marginBottom: 20, fontSize: 14 },
   
+  legalBtn: { 
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 10
+  },
+  legalBtnText: { fontSize: 16, color: '#333' },
+
   saveBtn: { backgroundColor: '#007bff', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 40 },
   saveText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
 });

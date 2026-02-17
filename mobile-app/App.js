@@ -39,6 +39,7 @@ import DiagnosticRideSetupScreen from './src/screens/DiagnosticRideSetupScreen';
 import DiagnosticRideActiveScreen from './src/screens/DiagnosticRideActiveScreen';
 import DiagnosticRideResultsScreen from './src/screens/DiagnosticRideResultsScreen';
 import ModulesScreen from './src/screens/ModulesScreen';
+import LegalScreen from './src/screens/LegalScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -170,6 +171,7 @@ const AppNav = () => {
             <Stack.Screen name="DiagnosticRideActive" component={DiagnosticRideActiveScreen} />
             <Stack.Screen name="DiagnosticRideResults" component={DiagnosticRideResultsScreen} />
             <Stack.Screen name="Modules" component={ModulesScreen} />
+            <Stack.Screen name="Legal" component={LegalScreen} />
           </>
         )}
       </Stack.Navigator>

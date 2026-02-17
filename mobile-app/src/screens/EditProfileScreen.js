@@ -7,7 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 // Update this to your machine's IP
-const SERVER_URL = 'http://192.168.1.235:8000';
+const SERVER_URL = "http://10.32.100.57:8000";
 
 const EditProfileScreen = ({ navigation }) => {
   const { userInfo, fetchUser, userToken } = useContext(AuthContext);
@@ -29,10 +29,12 @@ const EditProfileScreen = ({ navigation }) => {
   // Images
   const [licenseImage, setLicenseImage] = useState(null);
   const [insuranceImage, setInsuranceImage] = useState(null);
+  const [certificationImage, setCertificationImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const currentLicenseImage = profile.license_image ? `${SERVER_URL}/static/uploads/${profile.license_image}` : null;
   const currentInsuranceImage = profile.insurance_image ? `${SERVER_URL}/static/uploads/${profile.insurance_image}` : null;
+  const currentCertificationImage = profile.certification_image ? `${SERVER_URL}/static/uploads/${profile.certification_image}` : null;
 
   const pickImage = async (setter) => {
     Alert.alert("Upload Photo", "Choose an option", [
@@ -80,9 +82,11 @@ const EditProfileScreen = ({ navigation }) => {
       // 2. Upload Images
       let newLicenseImg = profile.license_image;
       let newInsuranceImg = profile.insurance_image;
+      let newCertImg = profile.certification_image;
 
       if (licenseImage) newLicenseImg = await uploadFile(licenseImage);
       if (insuranceImage) newInsuranceImg = await uploadFile(insuranceImage);
+      if (certificationImage) newCertImg = await uploadFile(certificationImage);
 
       // 3. Update Instructor Profile
       await client.put('/users/me/instructor-profile', {
@@ -93,7 +97,8 @@ const EditProfileScreen = ({ navigation }) => {
         insurance_policy: insurancePolicy,
         certification_id: certificationId,
         license_image: newLicenseImg,
-        insurance_image: newInsuranceImg
+        insurance_image: newInsuranceImg,
+        certification_image: newCertImg
       });
       
       await fetchUser(userToken);
@@ -153,17 +158,37 @@ const EditProfileScreen = ({ navigation }) => {
         <TextInput style={styles.input} placeholder="Certification ID" value={certificationId} onChangeText={setCertificationId} />
 
         <View style={styles.row}>
-            <View style={{flex: 1, marginRight: 10}}>
-                {renderImagePicker("Driver's License", licenseImage, setLicenseImage, currentLicenseImage)}
+            <View style={{flex: 1, marginRight: 5}}>
+                {renderImagePicker("License", licenseImage, setLicenseImage, currentLicenseImage)}
+            </View>
+            <View style={{flex: 1, marginRight: 5}}>
+                {renderImagePicker("Insurance", insuranceImage, setInsuranceImage, currentInsuranceImage)}
             </View>
             <View style={{flex: 1}}>
-                {renderImagePicker("Insurance Proof", insuranceImage, setInsuranceImage, currentInsuranceImage)}
+                {renderImagePicker("ICBC Cert", certificationImage, setCertificationImage, currentCertificationImage)}
             </View>
         </View>
 
         <Text style={styles.warningText}>
           Note: Updating documents will temporarily hide your profile until admin approval.
         </Text>
+
+        <Text style={styles.sectionHeader}>Legal</Text>
+        <TouchableOpacity 
+          style={styles.legalBtn} 
+          onPress={() => navigation.navigate('Legal', { type: 'terms' })}
+        >
+          <Text style={styles.legalBtnText}>Terms of Service</Text>
+          <Ionicons name="chevron-forward" size={18} color="#666" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.legalBtn} 
+          onPress={() => navigation.navigate('Legal', { type: 'privacy' })}
+        >
+          <Text style={styles.legalBtnText}>Privacy Policy</Text>
+          <Ionicons name="chevron-forward" size={18} color="#666" />
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
           {loading ? <ActivityIndicator color="white" /> : <Text style={styles.saveText}>Save Changes</Text>}
@@ -197,6 +222,12 @@ const styles = StyleSheet.create({
 
   warningText: { color: '#856404', backgroundColor: '#fff3cd', padding: 10, borderRadius: 5, marginBottom: 20, fontSize: 12 },
   
+  legalBtn: { 
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 8
+  },
+  legalBtnText: { fontSize: 15, color: '#333' },
+
   saveBtn: { backgroundColor: '#007bff', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 40 },
   saveText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
 });
