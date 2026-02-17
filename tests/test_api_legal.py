@@ -17,3 +17,10 @@ def test_privacy_page_content():
     assert "PIPA" in response.text
     assert "Personal Information Protection Act" in response.text
     assert "Privacy Officer" in response.text
+
+def test_home_page_footer():
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "independent driving instructors" in response.text
+    assert "ICBC compliance" in response.text
+    assert "Road Ready is not liable" in response.text
