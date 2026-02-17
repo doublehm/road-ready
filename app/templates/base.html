@@ -68,16 +68,36 @@
       {% block content %}{% endblock %}
     </div>
 
-    <footer class="text-center text-muted py-5 mt-5">
+    <footer class="bg-light border-top py-5 mt-5">
         <div class="container">
-            <div class="mb-4">
-                <img src="/static/logo.png" alt="Road Ready" height="30" style="opacity: 0.5; filter: grayscale(100%);">
+            <div class="row g-4">
+                <div class="col-md-4 text-center text-md-start">
+                    <img src="/static/logo.png" alt="Road Ready" height="30" class="mb-3 opacity-75 grayscale">
+                    <p class="small text-muted mb-0">Road Ready is a technology marketplace connecting students with independent driving instructors in British Columbia.</p>
+                </div>
+                <div class="col-md-4 text-center">
+                    <h6 class="text-uppercase fw-bold mb-3 small">Legal & Safety</h6>
+                    <p class="x-small text-muted mb-3" style="font-size: 0.75rem;">
+                        <strong>Disclaimer:</strong> Road Ready is not liable for on-road incidents. Lessons are provided by independent instructors who are solely responsible for insurance and ICBC compliance.
+                    </p>
+                </div>
+                <div class="col-md-4 text-center text-md-end">
+                    <h6 class="text-uppercase fw-bold mb-3 small">Quick Links</h6>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-1"><a href="/terms" class="text-decoration-none text-muted">Terms of Service</a></li>
+                        <li class="mb-1"><a href="/privacy" class="text-decoration-none text-muted">Privacy Policy</a></li>
+                        <li><a href="/contact" class="text-decoration-none text-muted">Contact Support</a></li>
+                    </ul>
+                </div>
             </div>
-            <p class="mb-3 small">&copy; 2025 Road Ready. All rights reserved.</p>
-            <div class="small">
-                <a href="/terms" class="text-decoration-none text-muted me-3">Terms</a>
-                <a href="/privacy" class="text-decoration-none text-muted me-3">Privacy</a>
-                <a href="/contact" class="text-decoration-none text-muted">Contact</a>
+            <hr class="my-4 opacity-25">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <p class="small text-muted mb-0">&copy; 2026 Road Ready. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <p class="small text-muted mb-0">Built for 🇨🇦 British Columbia</p>
+                </div>
             </div>
         </div>
     </footer>
