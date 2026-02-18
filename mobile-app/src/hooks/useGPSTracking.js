@@ -123,6 +123,7 @@ export default function useGPSTracking() {
             speed: speedKmh,
             latitude,
             longitude,
+            heading: loc.coords.heading || 0,
           };
           speedDataRef.current.push(speedPoint);
 

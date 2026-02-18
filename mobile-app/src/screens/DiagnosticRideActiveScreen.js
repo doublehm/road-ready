@@ -11,6 +11,7 @@ import MapView, { Polyline, Marker } from 'react-native-maps';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import useGPSTracking from '../hooks/useGPSTracking';
 import useDeviceMotion from '../hooks/useDeviceMotion';
+import useSpeedLimit from '../hooks/useSpeedLimit';
 import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
 
@@ -27,13 +28,22 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   // Hooks for sensor data collection
   const gpsTracking = useGPSTracking();
   const deviceMotion = useDeviceMotion(10); // 10 Hz sampling
+  const speedLimit = useSpeedLimit(gpsTracking.location, !!startTime);
+
+  // Speed comparison color
+  const getSpeedColor = () => {
+    if (!speedLimit.currentSpeedLimit || !gpsTracking.speed) return '#1a1a1a';
+    const excess = gpsTracking.speed - speedLimit.currentSpeedLimit;
+    if (excess > 10) return '#dc3545'; // red - significantly over
+    if (excess > 0) return '#ffc107'; // yellow - slightly over
+    return '#28a745'; // green - within limit
+  };
 
   // Real-time feedback loop
   useEffect(() => {
     if (!startTime || isUploading) return;
 
     const feedbackInterval = setInterval(async () => {
-      // Get last 3 seconds of data
       const motionData = deviceMotion.data.slice(-30); // 10Hz * 3s
       const speedData = gpsTracking.speedData.slice(-3); // 1Hz * 3s
 
@@ -53,20 +63,20 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           timestamp: p.timestamp,
           speed: p.speed,
           latitude: p.latitude,
-          longitude: p.longitude
+          longitude: p.longitude,
+          speed_limit: speedLimit.currentSpeedLimit || 0,
         }));
 
         const response = await client.post('/diagnostic-rides/live-evaluate', {
           acceleration_window: accelerationWindow,
           speed_window: speedWindow,
-          rotation_window: [] // Skipping for simple demo
+          rotation_window: []
         });
 
         if (response.data.events && response.data.events.length > 0) {
           const newEvents = response.data.events;
-          setLatestEvents(prev => [...newEvents, ...prev].slice(0, 5));
-          
-          // Show alert for the most recent high severity event
+          setLatestEvents(prev => [...newEvents, ...prev].slice(0, 8));
+
           const highSev = newEvents.find(e => e.severity === 'high');
           if (highSev) {
             triggerAlert(highSev);
@@ -75,24 +85,46 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       } catch (error) {
         console.error('Live evaluation error:', error);
       }
-    }, 2000); // Check every 2 seconds
+    }, 2000);
 
     return () => clearInterval(feedbackInterval);
-  }, [startTime, isUploading, deviceMotion.data, gpsTracking.speedData]);
+  }, [startTime, isUploading, deviceMotion.data, gpsTracking.speedData, speedLimit.currentSpeedLimit]);
 
   const triggerAlert = (event) => {
     let msg = '';
-    if (event.type === 'speeding') msg = '⚠️ SLOW DOWN! You are exceeding the speed limit.';
-    if (event.type === 'harsh_braking') msg = '⚠️ SMOOTH BRAKING! Avoid sudden stops.';
-    if (event.type === 'sharp_turn') msg = '⚠️ CAREFUL! Take turns more gradually.';
-    
-    setAlertMessage(msg);
-    // Auto-clear alert after 4 seconds
-    setTimeout(() => setAlertMessage(null), 4000);
+    let detail = '';
+    let icon = 'warning';
+
+    if (event.type === 'speeding') {
+      msg = 'Reduce Speed';
+      const limit = event.limit || speedLimit.currentSpeedLimit || '?';
+      const speed = Math.round(event.value || gpsTracking.speed);
+      const excess = Math.round(speed - limit);
+      detail = `${speed} km/h in a ${limit} km/h zone (+${excess} km/h over)`;
+      if (speedLimit.zoneType === 'school') {
+        msg = 'SCHOOL ZONE - Slow Down!';
+        detail = `Speed limit is ${limit} km/h in this school zone`;
+        icon = 'school';
+      }
+    } else if (event.type === 'harsh_braking') {
+      msg = 'Braking Too Hard';
+      detail = `${event.value}g force detected. Apply brake gradually.`;
+      icon = 'hand-left';
+    } else if (event.type === 'sharp_turn') {
+      msg = 'Turn More Smoothly';
+      detail = `${event.value}g lateral force. Reduce speed before turns.`;
+      icon = 'refresh';
+    } else if (event.type === 'sudden_stop') {
+      msg = 'Sudden Stop Detected';
+      detail = `${event.value} km/h speed drop. Maintain safe following distance.`;
+      icon = 'stop-circle';
+    }
+
+    setAlertMessage({ msg, detail, icon });
+    setTimeout(() => setAlertMessage(null), 5000);
   };
 
   useEffect(() => {
-    // Start tracking on mount
     const initTracking = async () => {
       const gpsSuccess = await gpsTracking.startTracking();
       const motionSuccess = await deviceMotion.startTracking();
@@ -112,14 +144,12 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     initTracking();
 
     return () => {
-      // Cleanup on unmount
       gpsTracking.stopTracking();
       deviceMotion.stopTracking();
     };
   }, []);
 
   useEffect(() => {
-    // Update duration every second
     let interval;
     if (startTime) {
       interval = setInterval(() => {
@@ -137,10 +167,35 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
+  const getEventIcon = (type) => {
+    switch (type) {
+      case 'speeding': return 'speedometer';
+      case 'harsh_braking': return 'hand-left';
+      case 'sharp_turn': return 'refresh';
+      case 'sudden_stop': return 'stop-circle';
+      default: return 'alert-circle';
+    }
+  };
+
+  const getEventDescription = (event) => {
+    if (event.description) return event.description;
+    switch (event.type) {
+      case 'speeding':
+        return `${Math.round(event.value)} km/h in ${event.limit} km/h zone`;
+      case 'harsh_braking':
+        return `Harsh braking: ${event.value}g force`;
+      case 'sharp_turn':
+        return `Sharp turn: ${event.value}g lateral force`;
+      case 'sudden_stop':
+        return `Sudden stop: ${event.value} km/h drop`;
+      default:
+        return event.type.replace('_', ' ').toUpperCase();
+    }
+  };
+
   const handleCompleteRide = async () => {
     const durationMinutes = duration / 60;
 
-    // Validate minimum requirements
     if (durationMinutes < 20) {
       Alert.alert(
         'Too Short',
@@ -173,13 +228,12 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     setIsUploading(true);
 
     try {
-      // Stop tracking and get final data
       const gpsData = gpsTracking.stopTracking();
       const motionData = deviceMotion.stopTracking();
+      const speedLimitData = speedLimit.getSpeedLimitData();
 
       const endTime = new Date();
 
-      // Prepare acceleration data
       const accelerationData = motionData.map((point) => ({
         timestamp: point.timestamp,
         x: point.acceleration.x,
@@ -187,7 +241,6 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         z: point.acceleration.z,
       }));
 
-      // Prepare rotation data
       const rotationData = motionData.map((point) => ({
         timestamp: point.timestamp,
         x: point.rotation.x,
@@ -195,7 +248,16 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         z: point.rotation.z,
       }));
 
-      // Create ride data
+      // Extract heading data from speed data points
+      const headingData = gpsData.speedData
+        .filter(p => p.heading !== undefined && p.heading !== null)
+        .map(p => ({
+          timestamp: p.timestamp,
+          heading: p.heading,
+          latitude: p.latitude,
+          longitude: p.longitude,
+        }));
+
       const rideData = {
         ride_type:
           rideType === 'parent'
@@ -210,12 +272,11 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         acceleration_data: JSON.stringify(accelerationData),
         rotation_data: JSON.stringify(rotationData),
         speed_data: JSON.stringify(gpsData.speedData),
+        speed_limit_data: JSON.stringify(speedLimitData),
+        heading_data: JSON.stringify(headingData),
       };
 
-      // Submit to API
       const response = await client.post('/diagnostic-rides/', rideData);
-
-      // Trigger evaluation
       const rideId = response.data.id;
       await client.post(`/diagnostic-rides/${rideId}/evaluate`);
 
@@ -277,14 +338,22 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         />
       </MapView>
 
-      {/* Real-time Alerts */}
+      {/* Real-time Alert Banner */}
       {alertMessage && (
-        <View style={styles.alertBanner}>
-          <Text style={styles.alertText}>{alertMessage}</Text>
+        <View style={[
+          styles.alertBanner,
+          speedLimit.zoneType === 'school' && styles.schoolAlertBanner
+        ]}>
+          <Ionicons name={alertMessage.icon || 'warning'} size={24} color="white" />
+          <View style={styles.alertContent}>
+            <Text style={styles.alertText}>{alertMessage.msg}</Text>
+            <Text style={styles.alertDetail}>{alertMessage.detail}</Text>
+          </View>
         </View>
       )}
 
       <View style={styles.overlay}>
+        {/* Stats Row */}
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Time</Text>
@@ -302,35 +371,51 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
 
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Speed</Text>
-            <Text style={styles.statValue}>
+            <Text style={[styles.statValue, { color: getSpeedColor() }]}>
               {gpsTracking.speed.toFixed(0)} km/h
             </Text>
+          </View>
+
+          <View style={[styles.statBox, styles.limitBox]}>
+            <Text style={styles.statLabel}>Limit</Text>
+            <Text style={styles.statValue}>
+              {speedLimit.currentSpeedLimit || '--'}
+            </Text>
+            {speedLimit.zoneType === 'school' && (
+              <View style={styles.schoolBadge}>
+                <Text style={styles.schoolBadgeText}>SCHOOL</Text>
+              </View>
+            )}
+            {speedLimit.zoneType !== 'school' && speedLimit.roadType && (
+              <Text style={styles.statTarget}>
+                {speedLimit.roadType}
+              </Text>
+            )}
           </View>
         </View>
 
         {/* Mistake Log */}
         {latestEvents.length > 0 && (
           <View style={styles.eventLogContainer}>
-            <Text style={styles.eventLogTitle}>Recent Mistakes</Text>
+            <Text style={styles.eventLogTitle}>Recent Events</Text>
             {latestEvents.map((event, idx) => (
               <View key={idx} style={styles.eventItem}>
-                <Ionicons 
-                  name={event.severity === 'high' ? "alert-circle" : "warning"} 
-                  size={16} 
-                  color={event.severity === 'high' ? "#d63031" : "#fdcb6e"} 
+                <Ionicons
+                  name={getEventIcon(event.type)}
+                  size={16}
+                  color={event.severity === 'high' ? "#dc3545" : "#ffc107"}
                 />
                 <Text style={styles.eventText}>
-                  {event.type.replace('_', ' ').toUpperCase()} detected
+                  {getEventDescription(event)}
                 </Text>
               </View>
             ))}
           </View>
         )}
 
-        <TouchableOpacity 
+        <TouchableOpacity
             style={styles.noteButton}
             onPress={() => Alert.prompt("Add Coach Note", "Record an observation for the student.", (text) => {
-                // TODO: Save note to database
                 Alert.alert("Note Saved", "Observation recorded successfully.");
             })}
         >
@@ -347,6 +432,16 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
             <Text style={styles.indicatorDot}>●</Text>
             <Text style={styles.indicatorText}>
               Motion: {deviceMotion.data.length} samples
+            </Text>
+          </View>
+          <View style={styles.indicator}>
+            <Text style={[
+              styles.indicatorDot,
+              { color: speedLimit.currentSpeedLimit ? '#28a745' : '#ffc107' }
+            ]}>●</Text>
+            <Text style={styles.indicatorText}>
+              {speedLimit.isLoading ? 'Fetching limit...' :
+               speedLimit.currentSpeedLimit ? 'Speed limit active' : 'No limit data'}
             </Text>
           </View>
         </View>
@@ -404,24 +499,38 @@ const styles = StyleSheet.create({
   alertBanner: {
     position: 'absolute',
     top: 60,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(214, 48, 49, 0.9)',
-    padding: 15,
-    borderRadius: 10,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(214, 48, 49, 0.95)',
+    padding: 16,
+    borderRadius: 12,
     zIndex: 1000,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 10,
+  },
+  schoolAlertBanner: {
+    backgroundColor: 'rgba(255, 165, 0, 0.95)',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  alertContent: {
+    flex: 1,
   },
   alertText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 18,
+  },
+  alertDetail: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    marginTop: 2,
   },
   loadingContainer: {
     flex: 1,
@@ -443,17 +552,61 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    margin: 16,
-    gap: 8,
+    margin: 12,
+    gap: 6,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  limitBox: {
+    borderWidth: 2,
+    borderColor: '#007bff',
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#6c757d',
+    marginBottom: 2,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+  },
+  statTarget: {
+    fontSize: 9,
+    color: '#6c757d',
+    marginTop: 2,
+  },
+  schoolBadge: {
+    backgroundColor: '#ff9800',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginTop: 2,
+  },
+  schoolBadgeText: {
+    color: 'white',
+    fontSize: 8,
+    fontWeight: 'bold',
   },
   eventLogContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    marginHorizontal: 16,
-    marginBottom: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    marginHorizontal: 12,
+    marginBottom: 8,
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
     borderColor: '#eee',
+    maxHeight: 180,
   },
   eventLogTitle: {
     fontSize: 12,
@@ -466,21 +619,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   eventText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#2d3436',
     fontWeight: '500',
+    flex: 1,
   },
   noteButton: {
     backgroundColor: 'white',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 12,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    padding: 10,
     borderRadius: 12,
     gap: 10,
     borderWidth: 1,
@@ -494,47 +648,21 @@ const styles = StyleSheet.create({
   noteButtonText: {
     color: '#007bff',
     fontWeight: 'bold',
-    fontSize: 16,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6c757d',
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 2,
-  },
-  statTarget: {
-    fontSize: 10,
-    color: '#6c757d',
+    fontSize: 14,
   },
   sensorIndicators: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 16,
-    marginHorizontal: 16,
+    gap: 8,
+    marginHorizontal: 12,
+    flexWrap: 'wrap',
   },
   indicator: {
     flexDirection: 'row',
     backgroundColor: '#fff',
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -545,10 +673,10 @@ const styles = StyleSheet.create({
   indicatorDot: {
     fontSize: 12,
     color: '#28a745',
-    marginRight: 6,
+    marginRight: 4,
   },
   indicatorText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#1a1a1a',
   },
   completeButton: {

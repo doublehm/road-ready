@@ -99,7 +99,21 @@ const InstructorHomeScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
+          style={styles.actionCard}
+          onPress={() => navigation.navigate('DiagnosticRideHistory')}
+        >
+          <View style={[styles.iconBg, { backgroundColor: '#d1ecf1' }]}>
+            <Ionicons name="analytics" size={24} color="#0c5460" />
+          </View>
+          <View style={styles.actionInfo}>
+            <Text style={styles.actionTitle}>Student Ride History</Text>
+            <Text style={styles.actionDesc}>View diagnostic ride records</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.actionCard}
           onPress={() => navigation.navigate('Messages')}
         >

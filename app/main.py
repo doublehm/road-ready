@@ -41,6 +41,24 @@ def get_password_hash(password):
 # Create tables
 models.Base.metadata.create_all(bind=database.engine)
 
+# Migrate: add new columns to diagnostic_rides if missing
+def _run_migrations():
+    from sqlalchemy import inspect, text
+    inspector = inspect(database.engine)
+    if "diagnostic_rides" in inspector.get_table_names():
+        existing = {col["name"] for col in inspector.get_columns("diagnostic_rides")}
+        new_columns = {
+            "speed_limit_data": "TEXT",
+            "heading_data": "TEXT",
+        }
+        with database.engine.connect() as conn:
+            for col_name, col_type in new_columns.items():
+                if col_name not in existing:
+                    conn.execute(text(f"ALTER TABLE diagnostic_rides ADD COLUMN {col_name} {col_type}"))
+            conn.commit()
+
+_run_migrations()
+
 app = FastAPI(title="Road Ready")
 
 # CORS Middleware

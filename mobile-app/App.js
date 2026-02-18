@@ -38,6 +38,8 @@ import DiagnosticRideIntroScreen from './src/screens/DiagnosticRideIntroScreen';
 import DiagnosticRideSetupScreen from './src/screens/DiagnosticRideSetupScreen';
 import DiagnosticRideActiveScreen from './src/screens/DiagnosticRideActiveScreen';
 import DiagnosticRideResultsScreen from './src/screens/DiagnosticRideResultsScreen';
+import DiagnosticRideHistoryScreen from './src/screens/DiagnosticRideHistoryScreen';
+import DiagnosticRideDetailScreen from './src/screens/DiagnosticRideDetailScreen';
 import ModulesScreen from './src/screens/ModulesScreen';
 import LegalScreen from './src/screens/LegalScreen';
 
@@ -170,6 +172,8 @@ const AppNav = () => {
             <Stack.Screen name="DiagnosticRideSetup" component={DiagnosticRideSetupScreen} />
             <Stack.Screen name="DiagnosticRideActive" component={DiagnosticRideActiveScreen} />
             <Stack.Screen name="DiagnosticRideResults" component={DiagnosticRideResultsScreen} />
+            <Stack.Screen name="DiagnosticRideHistory" component={DiagnosticRideHistoryScreen} />
+            <Stack.Screen name="DiagnosticRideDetail" component={DiagnosticRideDetailScreen} />
             <Stack.Screen name="Modules" component={ModulesScreen} />
             <Stack.Screen name="Legal" component={LegalScreen} />
           </>

@@ -140,6 +140,16 @@ const StudentHomeScreen = ({ navigation }) => {
             <Text style={styles.gridLabel}>Diagnostic Ride</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={styles.gridItem}
+            onPress={() => navigation.navigate('DiagnosticRideHistory')}
+          >
+            <View style={[styles.iconBg, { backgroundColor: '#d1ecf1' }]}>
+              <Ionicons name="analytics" size={28} color="#0c5460" />
+            </View>
+            <Text style={styles.gridLabel}>Ride History</Text>
+          </TouchableOpacity>
+
         </View>
 
         {/* Pending Requests */}

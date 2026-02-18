@@ -272,6 +272,8 @@ class DiagnosticRide(Base):
     acceleration_data = Column(Text, nullable=True) # JSON sensor data
     rotation_data = Column(Text, nullable=True) # JSON sensor data
     speed_data = Column(Text, nullable=True) # JSON GPS speed + coords
+    speed_limit_data = Column(Text, nullable=True) # JSON speed limit data per point
+    heading_data = Column(Text, nullable=True) # JSON heading/bearing data
 
     braking_score = Column(Float, nullable=True) # 0-100
     speed_score = Column(Float, nullable=True) # 0-100

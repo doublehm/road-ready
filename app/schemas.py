@@ -360,6 +360,8 @@ class SensorDataPoint(BaseModel):
     speed: Optional[float] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    speed_limit: Optional[float] = None
+    heading: Optional[float] = None
 
 class DiagnosticRideBase(BaseModel):
     ride_type: str # "parent_supervised", "instructor_supervised"
@@ -375,6 +377,8 @@ class DiagnosticRideCreate(DiagnosticRideBase):
     acceleration_data: Optional[str] = None # JSON string
     rotation_data: Optional[str] = None # JSON string
     speed_data: Optional[str] = None # JSON string
+    speed_limit_data: Optional[str] = None # JSON string
+    heading_data: Optional[str] = None # JSON string
     criteria_results: Optional[str] = None # JSON string
 
 class LiveEvaluationRequest(BaseModel):
@@ -409,6 +413,8 @@ class DiagnosticRide(DiagnosticRideBase):
     acceleration_data: Optional[str] = None
     rotation_data: Optional[str] = None
     speed_data: Optional[str] = None
+    speed_limit_data: Optional[str] = None
+    heading_data: Optional[str] = None
     braking_score: Optional[float] = None
     speed_score: Optional[float] = None
     cornering_score: Optional[float] = None
