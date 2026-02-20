@@ -19,6 +19,10 @@
                 <!-- Map Section -->
                 <div class="mb-4">
                     <label class="form-label fw-bold">Set Location</label>
+                    <div class="input-group mb-2">
+                        <input type="text" id="addressSearch" class="form-control" placeholder="Search for an address...">
+                        <button class="btn btn-outline-primary" type="button" id="searchBtn">Search</button>
+                    </div>
                     <p class="small text-muted mb-2">Drag the pins to set precise locations.</p>
                     <div id="map" style="height: 300px; width: 100%; border-radius: 8px; border: 1px solid #dee2e6;"></div>
                     <div class="form-check mt-2">
@@ -131,21 +135,51 @@
     // --- Map Init ---
     // Default to Vancouver/BC area or user's city if we had it. 
     // Ideally we'd use Geolocation API here.
-    const map = L.map('map').setView([49.2827, -123.1207], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
+    const map = RoadReadyMaps.init('map', [49.2827, -123.1207], 11);
 
     // --- Icons ---
-    const greenIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+    const greenIcon = RoadReadyMaps.icons.pickup;
+    const redIcon = RoadReadyMaps.icons.dropoff;
+
+    // --- Search Logic (Nominatim) ---
+    document.getElementById('searchBtn').addEventListener('click', function() {
+        const query = document.getElementById('addressSearch').value;
+        if (!query) return;
+
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const result = data[0];
+                    const latlng = [parseFloat(result.lat), parseFloat(result.lon)];
+                    
+                    pickupMarker.setLatLng(latlng);
+                    map.setView(latlng, 15);
+                    updateCoords();
+                } else {
+                    alert("Address not found. Please try a more specific search.");
+                }
+            })
+            .catch(err => {
+                console.error("Geocoding error:", err);
+                alert("An error occurred while searching. Please try again.");
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerText = 'Search';
+            });
     });
-    const redIcon = new L.Icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+
+    // Handle Enter key in search box
+    document.getElementById('addressSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('searchBtn').click();
+        }
     });
 
     // --- Markers ---
