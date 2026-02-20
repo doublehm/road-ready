@@ -1,11 +1,11 @@
 # Implementation Plan: Live Diagnostic Ride Enhancements
 
 ## Phase 1: Backend WebSocket Foundation
-- [ ] Task: Implement WebSocket endpoint in FastAPI for live ride streaming.
-- [ ] Task: Create a Connection Manager to handle broadcasting data from mobile to web clients based on `ride_id`.
-- [ ] Task: Define JSON schemas for WebSocket messages (telemetry, event, system).
-- [ ] Task: Write tests for WebSocket connection and message broadcasting.
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Backend WebSocket Foundation' (Protocol in workflow.md)
+- [x] Task: Implement WebSocket endpoint in FastAPI for live ride streaming. e1694e1
+- [x] Task: Create a Connection Manager to handle broadcasting data from mobile to web clients based on `ride_id`. 83f4c2e
+- [x] Task: Define JSON schemas for WebSocket messages (telemetry, event, system). 83f4c2e
+- [x] Task: Write tests for WebSocket connection and message broadcasting. 83f4c2e
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Backend WebSocket Foundation' (Protocol in workflow.md) 83f4c2e
 
 ## Phase 2: Mobile Live Streaming & Feedback
 - [ ] Task: Integrate WebSocket client into the mobile app using `socket.io-client` or native WebSockets.
