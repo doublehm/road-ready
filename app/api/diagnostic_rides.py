@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Dict
 import json
 from datetime import datetime
-from app import models, schemas
+from app import models, schemas, database
 from app.api import deps
 from app.services.diagnostic_evaluator import DiagnosticEvaluator
 from app.services.speed_limit_service import get_speed_limit
@@ -48,6 +48,50 @@ class ConnectionManager:
                 for connection in self.active_connections[ride_id]["mobile"]:
                     await connection.send_json(message)
 
+    def persist_data(self, ride_id: str, message: dict):
+        db = database.SessionLocal()
+        try:
+            # Attempt to find the ride. ride_id from WS is usually a string.
+            try:
+                ride_int_id = int(ride_id)
+            except ValueError:
+                return
+
+            ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_int_id).first()
+            if ride:
+                if message["type"] == "telemetry":
+                    data = message.get("data", {})
+                    # Append location to route_coords
+                    if "location" in data:
+                        coords = json.loads(ride.route_coords or "[]")
+                        coords.append(data["location"])
+                        ride.route_coords = json.dumps(coords)
+                    
+                    # Append acceleration
+                    if "acceleration" in data:
+                        accel = json.loads(ride.acceleration_data or "[]")
+                        accel.append(data["acceleration"])
+                        ride.acceleration_data = json.dumps(accel)
+                        
+                    # Append speed
+                    if "speed" in data:
+                        speeds = json.loads(ride.speed_data or "[]")
+                        # Add a default timestamp if missing
+                        ts = data.get("timestamp") or datetime.now().timestamp()
+                        speeds.append({"speed": data["speed"], "timestamp": ts})
+                        ride.speed_data = json.dumps(speeds)
+
+                elif message["type"] == "event":
+                    events = json.loads(ride.human_feedback or "[]")
+                    events.append(message["data"])
+                    ride.human_feedback = json.dumps(events)
+                
+                db.commit()
+        except Exception as e:
+            print(f"Error persisting live data: {e}")
+        finally:
+            db.close()
+
 manager = ConnectionManager()
 
 
@@ -62,6 +106,10 @@ async def websocket_endpoint(websocket: WebSocket, ride_id: str, client_type: st
             if data.get("type") == "ping":
                 await websocket.send_json({"type": "pong"})
                 continue
+
+            # Persist data from mobile
+            if client_type == "mobile" and data.get("type") in ["telemetry", "event"]:
+                manager.persist_data(ride_id, data)
 
             # Broadcast message to others in the same ride
             await manager.broadcast(data, ride_id, client_type)

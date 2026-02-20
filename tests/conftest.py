@@ -31,6 +31,7 @@ def client(db):
     from fastapi.testclient import TestClient
     from app.api.deps import get_db as deps_get_db
     from app.main import get_db as main_get_db
+    from app import database as db_module
     
     def override_get_db():
         try:
@@ -41,8 +42,14 @@ def client(db):
     app.dependency_overrides[deps_get_db] = override_get_db
     app.dependency_overrides[main_get_db] = override_get_db
     
+    # Also override SessionLocal for WebSocket persistence
+    original_session_local = db_module.SessionLocal
+    db_module.SessionLocal = TestingSessionLocal
+    
     with TestClient(app) as c:
         yield c
+    
+    db_module.SessionLocal = original_session_local
     app.dependency_overrides.clear()
 
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, validator
-from typing import Optional, List
+from typing import Optional, List, Dict
 import re
 
 # --- Shared Schemas ---
@@ -436,3 +436,21 @@ class DiagnosticRide(DiagnosticRideBase):
 
     class Config:
         from_attributes = True
+
+class LiveTelemetry(BaseModel):
+    acceleration: Optional[Dict[str, float]] = None
+    speed: Optional[float] = None
+    location: Optional[Dict[str, float]] = None
+    heading: Optional[float] = None
+    timestamp: float
+
+class LiveEvent(BaseModel):
+    event_type: str # "harsh_braking", "sharp_cornering", "speeding"
+    severity: str # "low", "medium", "high"
+    timestamp: float
+    location: Optional[Dict[str, float]] = None
+    value: Optional[float] = None # e.g. G-force or speed
+
+class LiveWebSocketMessage(BaseModel):
+    type: str # "telemetry", "event", "ping", "pong", "system"
+    data: Optional[Dict] = None
