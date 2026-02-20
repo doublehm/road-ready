@@ -1,0 +1,8 @@
+{
+  "track_id": "osm_migration_20260220",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-02-20T10:00:00Z",
+  "updated_at": "2026-02-20T10:00:00Z",
+  "description": "replace google map that shows nothing with opensource map"
+}
