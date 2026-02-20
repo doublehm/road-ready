@@ -15,7 +15,7 @@
 - [x] Task: Write unit tests for on-device event detection logic. ca2db42
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Mobile Live Streaming & Feedback' (Protocol in workflow.md) ca2db42
 
-## Phase 3: Web Dashboard Live Visualization [checkpoint: 97013fb]
+## Phase 3: Web Dashboard Live Visualization [checkpoint: 031ff93] [checkpoint: 97013fb]
 - [x] Task: Update Diagnostic Ride detail page to support WebSocket connections. 97013fb
 - [x] Task: Implement Live Event Feed component. 97013fb
 - [x] Task: Integrate real-time charts (e.g., Chart.js or Recharts) for acceleration data. 97013fb
