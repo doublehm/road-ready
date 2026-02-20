@@ -37,6 +37,26 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const [feedbackPanelVisible, setFeedbackPanelVisible] = useState(false);
   const feedbackCountsRef = useRef({}); // {code: {code, label, category, count, timestamps}}
   const [feedbackBadgeCount, setFeedbackBadgeCount] = useState(0);
+  const [rideId, setRideId] = useState(null);
+  const ws = useRef(null);
+  const messageBuffer = useRef([]);
+
+  const sendMessage = useCallback((msg) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      // Flush buffer first
+      while (messageBuffer.current.length > 0) {
+        const bufferedMsg = messageBuffer.current.shift();
+        ws.current.send(JSON.stringify(bufferedMsg));
+      }
+      ws.current.send(JSON.stringify(msg));
+    } else {
+      // Buffer the message
+      messageBuffer.current.push(msg);
+      if (messageBuffer.current.length > 500) {
+        messageBuffer.current.shift();
+      }
+    }
+  }, []);
 
   // Hooks for sensor data collection
   const gpsTracking = useGPSTracking();
@@ -144,6 +164,21 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           if (alertEvent) {
             triggerAlert(alertEvent);
           }
+
+          // Stream events to backend for live dashboard
+          newEvents.forEach(event => {
+            sendMessage({
+              type: 'event',
+              data: {
+                ...event,
+                timestamp: Date.now() / 1000,
+                location: gpsTracking.location ? {
+                  latitude: gpsTracking.location.latitude,
+                  longitude: gpsTracking.location.longitude,
+                } : null
+              }
+            });
+          });
         }
       } catch (error) {
         console.error('Live evaluation error:', error);
@@ -201,7 +236,22 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         return;
       }
 
-      setStartTime(new Date());
+      // Create ride record on backend to get rideId for live streaming
+      try {
+        const rideData = {
+          ride_type: rideType === 'parent' ? 'parent_supervised' : 'instructor_supervised',
+          instructor_id: instructorId,
+          booking_id: bookingId || null,
+          start_time: new Date().toISOString(),
+        };
+        const response = await client.post('/diagnostic-rides/', rideData);
+        setRideId(response.data.id);
+        setStartTime(new Date(response.data.start_time));
+      } catch (error) {
+        console.error('Error starting ride record:', error);
+        Alert.alert('Live Sync Offline', 'Could not connect to live streaming. Ride will be saved locally and uploaded at the end.');
+        setStartTime(new Date());
+      }
     };
 
     initTracking();
@@ -211,6 +261,67 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       deviceMotion.stopTracking();
     };
   }, []);
+
+  // WebSocket Connection Effect
+  useEffect(() => {
+    if (!rideId) return;
+
+    const wsBase = client.defaults.baseURL.replace('http', 'ws');
+    const wsUrl = `${wsBase}/diagnostic-rides/ws/${rideId}?client_type=mobile`;
+    
+    console.log('Connecting to WebSocket:', wsUrl);
+    ws.current = new WebSocket(wsUrl);
+
+    ws.current.onopen = () => {
+      console.log('WebSocket connected');
+      ws.current.send(JSON.stringify({ type: 'ping' }));
+      
+      // Flush buffered messages
+      while (messageBuffer.current.length > 0) {
+        const bufferedMsg = messageBuffer.current.shift();
+        ws.current.send(JSON.stringify(bufferedMsg));
+      }
+    };
+
+    ws.current.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'pong') console.log('WS Pong');
+      } catch (err) {
+        console.error('WS Message Parse Error:', err);
+      }
+    };
+
+    ws.current.onerror = (e) => console.error('WebSocket error:', e.message);
+    ws.current.onclose = (e) => console.log('WebSocket closed:', e.code, e.reason);
+
+    return () => {
+      if (ws.current) ws.current.close();
+    };
+  }, [rideId]);
+
+  // Telemetry Streaming Effect
+  useEffect(() => {
+    if (!rideId || !gpsTracking.location) return;
+
+    const streamInterval = setInterval(() => {
+      sendMessage({
+        type: 'telemetry',
+        data: {
+          acceleration: deviceMotion.acceleration,
+          speed: gpsTracking.speed,
+          location: {
+            latitude: gpsTracking.location.latitude,
+            longitude: gpsTracking.location.longitude,
+          },
+          heading: gpsTracking.location.heading,
+          timestamp: Date.now() / 1000,
+        }
+      });
+    }, 2000);
+
+    return () => clearInterval(streamInterval);
+  }, [rideId, deviceMotion.acceleration, gpsTracking.speed, gpsTracking.location, sendMessage]);
 
   useEffect(() => {
     let interval;
@@ -355,9 +466,15 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         ),
       };
 
-      const response = await client.post('/diagnostic-rides/', rideData);
-      const rideId = response.data.id;
-      await client.post(`/diagnostic-rides/${rideId}/evaluate`);
+      let finalRideId = rideId;
+      if (rideId) {
+        await client.put(`/diagnostic-rides/${rideId}`, rideData);
+      } else {
+        const response = await client.post('/diagnostic-rides/', rideData);
+        finalRideId = response.data.id;
+      }
+
+      await client.post(`/diagnostic-rides/${finalRideId}/evaluate`);
 
       // Auto-complete the booking if this ride was linked to one
       if (bookingId) {
@@ -371,7 +488,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       Alert.alert('Success', 'Ride submitted! Evaluating your performance...', [
         {
           text: 'View Results',
-          onPress: () => navigation.replace('DiagnosticRideResults', { rideId }),
+          onPress: () => navigation.replace('DiagnosticRideResults', { rideId: finalRideId }),
         },
       ]);
     } catch (error) {

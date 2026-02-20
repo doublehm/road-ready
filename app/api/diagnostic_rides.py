@@ -233,6 +233,38 @@ async def create_diagnostic_ride(
     return db_ride
 
 
+@router.put("/{ride_id}", response_model=schemas.DiagnosticRide)
+async def update_diagnostic_ride(
+    ride_id: int,
+    ride_update: schemas.DiagnosticRideCreate,
+    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """
+    Update an existing diagnostic ride with final data.
+    """
+    db_ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_id).first()
+    if not db_ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+    if current_user.role == "student" and db_ride.student_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    elif current_user.role == "instructor":
+        instructor_profile = db.query(models.InstructorProfile).filter(
+            models.InstructorProfile.user_id == current_user.id
+        ).first()
+        if not instructor_profile or db_ride.instructor_id != instructor_profile.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+    update_data = ride_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_ride, key, value)
+
+    db.commit()
+    db.refresh(db_ride)
+    return db_ride
+
+
 class HumanFeedbackRequest(BaseModel):
     feedback: str  # JSON string: [{code, label, category, count, timestamps}]
 
