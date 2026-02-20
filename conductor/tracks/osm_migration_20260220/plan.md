@@ -1,12 +1,12 @@
 # Implementation Plan: Open Source Map Migration
 
-## Phase 1: Preparation & Dependency Cleanup
+## Phase 1: Preparation & Dependency Cleanup [checkpoint: 3ae1c62]
 Goal: Remove all Google Maps dependencies and prepare the environment for open-source alternatives.
 
 - [x] Task: Remove Google Maps scripts and API keys from `app/templates/base.html` and other templates. 89b36ed
 - [x] Task: Remove Google Maps related packages from `mobile-app/package.json` if applicable. 89b36ed
 - [x] Task: Install Leaflet.js and related CSS in the web frontend. 89b36ed
-- [ ] Task: Conductor - User Manual Verification 'Preparation & Dependency Cleanup' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Preparation & Dependency Cleanup' (Protocol in workflow.md) 3ae1c62
 
 ## Phase 2: Web Implementation (Leaflet.js)
 Goal: Replace web-based maps with Leaflet.js and integrate an open-source geocoder.
