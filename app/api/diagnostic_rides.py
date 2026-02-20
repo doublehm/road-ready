@@ -101,8 +101,15 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@router.websocket("/ws/{ride_id}")
-async def websocket_endpoint(websocket: WebSocket, ride_id: str, client_type: str = "web"):
+async def websocket_endpoint(websocket: WebSocket):
+    ride_id = websocket.query_params.get("ride_id")
+    client_type = websocket.query_params.get("client_type", "web")
+    
+    if not ride_id:
+        await websocket.accept()
+        await websocket.close(code=1008)
+        return
+
     await manager.connect(websocket, ride_id, client_type)
     try:
         while True:

@@ -307,7 +307,7 @@
         // WebSocket for Live Updates
         if (isLive) {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/api/v1/diagnostic-rides/ws/{{ ride.id }}?client_type=web`;
+            const wsUrl = `${protocol}//${window.location.host}/api/v1/live-ride-stream?ride_id={{ ride.id }}&client_type=web`;
             console.log('Connecting to Live WebSocket:', wsUrl);
             const socket = new WebSocket(wsUrl);
 

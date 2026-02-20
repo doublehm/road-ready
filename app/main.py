@@ -71,6 +71,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Direct WebSocket route to avoid router prefix issues
+from app.api.diagnostic_rides import websocket_endpoint
+app.add_api_websocket_route("/api/v1/live-ride-stream", websocket_endpoint)
+
 from app.api.router import api_router
 app.include_router(api_router, prefix="/api/v1")
 
