@@ -20,7 +20,9 @@
                 <h2 class="mb-0">Ride Report: {{ ride.created_at.split('T')[0] }}</h2>
             </div>
             <div>
-                {% if ride.passed %}
+                {% if ride.status == 'pending' %}
+                    <span class="badge bg-primary fs-5" id="liveBadge">LIVE MODE <span class="spinner-grow spinner-grow-sm" role="status"></span></span>
+                {% elif ride.passed %}
                     <span class="badge bg-success fs-5">Passed ✓</span>
                 {% else %}
                     <span class="badge bg-danger fs-5">Failed ✗</span>
@@ -163,59 +165,84 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Data from backend
-        const routeCoords = {{ ride.route_coords|safe if ride.route_coords else '[]' }};
+        let routeCoords = {{ ride.route_coords|safe if ride.route_coords else '[]' }};
         const evalData = {{ ride.evaluation_result|safe if ride.evaluation_result else '{}' }};
-        const events = evalData.events || [];
-        const speedData = {{ ride.speed_data|safe if ride.speed_data else '[]' }};
-        const accelData = {{ ride.acceleration_data|safe if ride.acceleration_data else '[]' }};
+        const initialEvents = evalData.events || [];
+        let speedData = {{ ride.speed_data|safe if ride.speed_data else '[]' }};
+        let accelData = {{ ride.acceleration_data|safe if ride.acceleration_data else '[]' }};
+        const isLive = "{{ ride.status }}" === "pending";
+
+        let map, pathPolyline, currentMarker;
+        let speedChart, accelChart;
 
         // Initialize Map
-        if (routeCoords.length > 0) {
-            const firstPoint = routeCoords[0];
-            const map = L.map('rideMap').setView([firstPoint.latitude, firstPoint.longitude], 15);
+        const initMap = (startPoint) => {
+            const lat = startPoint ? startPoint.latitude : 49.2827; // Default to Vancouver
+            const lng = startPoint ? startPoint.longitude : -123.1207;
             
+            map = L.map('rideMap').setView([lat, lng], 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
             const path = routeCoords.map(p => [p.latitude, p.longitude]);
-            L.polyline(path, {color: 'blue', weight: 4, opacity: 0.6}).addTo(map);
+            pathPolyline = L.polyline(path, {color: 'blue', weight: 4, opacity: 0.6}).addTo(map);
 
-            // Start/End Markers
-            L.marker(path[0], {icon: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                iconSize: [25, 41], iconAnchor: [12, 41]
-            })}).addTo(map).bindPopup("Start");
-            
-            L.marker(path[path.length-1], {icon: L.icon({
-                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                iconSize: [25, 41], iconAnchor: [12, 41]
-            })}).addTo(map).bindPopup("End");
-
-            // Event Markers
-            events.forEach(event => {
-                if (event.lat && event.lng) {
-                    const color = event.severity === 'high' ? 'red' : 'orange';
-                    const marker = L.circleMarker([event.lat, event.lng], {
-                        radius: 8,
-                        fillColor: color,
-                        color: "#000",
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    }).addTo(map);
-                    
-                    marker.bindPopup(`<strong>${event.type.replace('_', ' ').toUpperCase()}</strong><br>Severity: ${event.severity}`);
+            if (routeCoords.length > 0) {
+                L.marker(path[0], {icon: L.icon({
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                    iconSize: [25, 41], iconAnchor: [12, 41]
+                })}).addTo(map).bindPopup("Start");
+                
+                if (!isLive) {
+                    L.marker(path[path.length-1], {icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41]
+                    })}).addTo(map).bindPopup("End");
+                } else {
+                    currentMarker = L.marker(path[path.length-1]).addTo(map).bindPopup("Live Position");
                 }
-            });
+                
+                if (path.length > 0) map.fitBounds(pathPolyline.getBounds());
+            }
+        };
 
-            map.fitBounds(L.polyline(path).getBounds());
+        initMap(routeCoords[0]);
+
+        // Add Initial Events
+        initialEvents.forEach(event => addEventMarker(event));
+
+        function addEventMarker(event) {
+            if (event.location && event.location.latitude) {
+                const color = event.severity === 'high' ? 'red' : 'orange';
+                const marker = L.circleMarker([event.location.latitude, event.location.longitude], {
+                    radius: 8,
+                    fillColor: color,
+                    color: "#000",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+                marker.bindPopup(`<strong>${event.type.replace('_', ' ').toUpperCase()}</strong><br>Severity: ${event.severity}`);
+            } else if (event.lat && event.lng) {
+                // Fallback for historical events using old format
+                const color = event.severity === 'high' ? 'red' : 'orange';
+                const marker = L.circleMarker([event.lat, event.lng], {
+                    radius: 8,
+                    fillColor: color,
+                    color: "#000",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+                marker.bindPopup(`<strong>${event.type.replace('_', ' ').toUpperCase()}</strong><br>Severity: ${event.severity}`);
+            }
         }
 
         // Initialize Speed Chart
         const speedCtx = document.getElementById('speedChart');
-        if (speedCtx && speedData.length > 0) {
-            new Chart(speedCtx, {
+        if (speedCtx) {
+            speedChart = new Chart(speedCtx, {
                 type: 'line',
                 data: {
                     labels: speedData.map((_, i) => i + 's'),
@@ -231,17 +258,15 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         }
 
         // Initialize Accel Chart
         const accelCtx = document.getElementById('accelChart');
-        if (accelCtx && accelData.length > 0) {
-            new Chart(accelCtx, {
+        if (accelCtx) {
+            accelChart = new Chart(accelCtx, {
                 type: 'line',
                 data: {
                     labels: accelData.map((_, i) => i),
@@ -267,9 +292,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' }
-                    },
+                    plugins: { legend: { position: 'top' } },
                     scales: {
                         y: { 
                             title: { display: true, text: 'G-Force' },
@@ -279,6 +302,112 @@
                     }
                 }
             });
+        }
+
+        // WebSocket for Live Updates
+        if (isLive) {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/api/v1/diagnostic-rides/ws/{{ ride.id }}?client_type=web`;
+            console.log('Connecting to Live WebSocket:', wsUrl);
+            const socket = new WebSocket(wsUrl);
+
+            socket.onmessage = function(event) {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === 'telemetry') {
+                        updateLiveTelemetry(msg.data);
+                    } else if (msg.type === 'event') {
+                        addLiveEvent(msg.data);
+                    } else if (msg.type === 'system' && msg.data.event === 'ride_completed') {
+                        console.log('Ride completed system message received');
+                        // Show toast and refresh
+                        alert("Diagnostic ride completed! Refreshing page to show final report.");
+                        window.location.reload();
+                    }
+                } catch (err) {
+                    console.error('Error parsing WS message:', err);
+                }
+            };
+
+            socket.onopen = () => console.log('Live Dashboard Connected');
+            socket.onclose = () => console.log('Live Dashboard Disconnected');
+
+            function updateLiveTelemetry(data) {
+                // Update Map
+                if (data.location) {
+                    const newPoint = [data.location.latitude, data.location.longitude];
+                    routeCoords.push(data.location);
+                    pathPolyline.addLatLng(newPoint);
+                    
+                    if (!currentMarker) {
+                        currentMarker = L.marker(newPoint).addTo(map).bindPopup("Live Position");
+                    } else {
+                        currentMarker.setLatLng(newPoint);
+                    }
+                    map.panTo(newPoint);
+                }
+
+                // Update Charts
+                if (speedChart && data.speed !== undefined) {
+                    speedChart.data.labels.push(speedData.length + 's');
+                    speedChart.data.datasets[0].data.push(data.speed);
+                    if (speedChart.data.labels.length > 60) {
+                        speedChart.data.labels.shift();
+                        speedChart.data.datasets[0].data.shift();
+                    }
+                    speedChart.update('none');
+                    speedData.push(data);
+                }
+
+                if (accelChart && data.acceleration) {
+                    accelChart.data.labels.push(accelData.length);
+                    accelChart.data.datasets[0].data.push(data.acceleration.x / 9.81);
+                    accelChart.data.datasets[1].data.push(data.acceleration.z / 9.81);
+                    if (accelChart.data.labels.length > 100) {
+                        accelChart.data.labels.shift();
+                        accelChart.data.datasets[0].data.shift();
+                        accelChart.data.datasets[1].data.shift();
+                    }
+                    accelChart.update('none');
+                    accelData.push(data.acceleration);
+                }
+            }
+
+            function addLiveEvent(event) {
+                addEventMarker(event);
+                
+                // Add to Mistake Log UI
+                const logContainer = document.querySelector('.list-group-flush');
+                if (logContainer) {
+                    // Remove placeholder if it exists
+                    const placeholder = logContainer.querySelector('.text-center.text-muted');
+                    if (placeholder) placeholder.remove();
+
+                    const item = document.createElement('div');
+                    item.className = 'list-group-item list-group-item-warning animate__animated animate__fadeInDown';
+                    
+                    const time = new Date(event.timestamp * 1000).toLocaleTimeString();
+                    const typeLabel = event.type.replace('_', ' ');
+                    
+                    let details = '';
+                    if (event.type === 'speeding') details = `Speeded: ${Math.round(event.value)} km/h (Limit: ${event.limit} km/h)`;
+                    else if (event.type === 'harsh_braking') details = `Harsh Deceleration: ${event.value}g`;
+                    else if (event.type === 'sharp_turn') details = `Sharp Turn: ${event.value}g lateral`;
+                    else if (event.type === 'sudden_stop') details = `Sudden Stop: -${event.value} km/h drop`;
+
+                    item.innerHTML = `
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 text-capitalize text-danger fw-bold">NEW: ${typeLabel}</h6>
+                            <small class="text-muted">${time}</small>
+                        </div>
+                        <p class="mb-1 small">${details}</p>
+                        <span class="badge ${event.severity === 'high' ? 'bg-danger' : 'bg-warning text-dark'} rounded-pill" style="font-size: 0.7rem;">
+                            ${event.severity.toUpperCase()} Severity
+                        </span>
+                    `;
+                    logContainer.prepend(item);
+                }
+            }
         }
     });
 </script>

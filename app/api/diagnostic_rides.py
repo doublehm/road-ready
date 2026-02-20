@@ -48,6 +48,12 @@ class ConnectionManager:
                 for connection in self.active_connections[ride_id]["mobile"]:
                     await connection.send_json(message)
 
+    async def broadcast_to_all(self, message: dict, ride_id: str):
+        if ride_id in self.active_connections:
+            for client_type in ["mobile", "web"]:
+                for connection in self.active_connections[ride_id][client_type]:
+                    await connection.send_json(message)
+
     def persist_data(self, ride_id: str, message: dict):
         db = database.SessionLocal()
         try:
@@ -629,6 +635,9 @@ async def evaluate_diagnostic_ride(
 
         db.commit()
         db.refresh(ride)
+
+        # Broadcast completion to web dashboard
+        await manager.broadcast_to_all({"type": "system", "data": {"event": "ride_completed"}}, str(ride_id))
 
         # If passed, unlock Advanced module and mark Basics as skipped
         if ride.passed:
