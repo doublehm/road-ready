@@ -8,14 +8,14 @@ Goal: Remove all Google Maps dependencies and prepare the environment for open-s
 - [x] Task: Install Leaflet.js and related CSS in the web frontend. 89b36ed
 - [x] Task: Conductor - User Manual Verification 'Preparation & Dependency Cleanup' (Protocol in workflow.md) 3ae1c62
 
-## Phase 2: Web Implementation (Leaflet.js)
+## Phase 2: Web Implementation (Leaflet.js) [checkpoint: b6491f4]
 Goal: Replace web-based maps with Leaflet.js and integrate an open-source geocoder.
 
 - [x] Task: Implement a reusable Leaflet map component in `app/static/custom.css` and a common JavaScript helper. 4563917
 - [x] Task: Update `app/templates/diagnostic_ride_detail.html` to use Leaflet for route visualization. b0ff011
 - [x] Task: Update `app/templates/booking_form.html` with Leaflet and Nominatim geocoding for address selection. f888616
 - [x] Task: Update `app/templates/home.html` (or wherever Live Monitoring is) to support real-time Leaflet updates. 1de48a3
-- [ ] Task: Conductor - User Manual Verification 'Web Implementation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Web Implementation' (Protocol in workflow.md) b6491f4
 
 ## Phase 3: Mobile Implementation (React Native)
 Goal: Update the Expo application to use OpenStreetMap tiles with react-native-maps.
