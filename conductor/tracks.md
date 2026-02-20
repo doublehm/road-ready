@@ -3,7 +3,7 @@
 This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
 
 ## Active Tracks
-- [ ] **Track: Open Source Map Migration**
+- [~] **Track: Open Source Map Migration**
 *Link: [./tracks/osm_migration_20260220/](./tracks/osm_migration_20260220/)*
 
 ## Archived Tracks

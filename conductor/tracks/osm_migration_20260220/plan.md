@@ -3,7 +3,7 @@
 ## Phase 1: Preparation & Dependency Cleanup
 Goal: Remove all Google Maps dependencies and prepare the environment for open-source alternatives.
 
-- [ ] Task: Remove Google Maps scripts and API keys from `app/templates/base.html` and other templates.
+- [~] Task: Remove Google Maps scripts and API keys from `app/templates/base.html` and other templates.
 - [ ] Task: Remove Google Maps related packages from `mobile-app/package.json` if applicable.
 - [ ] Task: Install Leaflet.js and related CSS in the web frontend.
 - [ ] Task: Conductor - User Manual Verification 'Preparation & Dependency Cleanup' (Protocol in workflow.md)
