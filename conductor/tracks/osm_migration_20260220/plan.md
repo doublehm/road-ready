@@ -11,10 +11,10 @@ Goal: Remove all Google Maps dependencies and prepare the environment for open-s
 ## Phase 2: Web Implementation (Leaflet.js)
 Goal: Replace web-based maps with Leaflet.js and integrate an open-source geocoder.
 
-- [ ] Task: Implement a reusable Leaflet map component in `app/static/custom.css` and a common JavaScript helper.
-- [ ] Task: Update `app/templates/diagnostic_ride_detail.html` to use Leaflet for route visualization.
-- [ ] Task: Update `app/templates/booking_form.html` with Leaflet and Nominatim geocoding for address selection.
-- [ ] Task: Update `app/templates/home.html` (or wherever Live Monitoring is) to support real-time Leaflet updates.
+- [x] Task: Implement a reusable Leaflet map component in `app/static/custom.css` and a common JavaScript helper. 4563917
+- [x] Task: Update `app/templates/diagnostic_ride_detail.html` to use Leaflet for route visualization. b0ff011
+- [x] Task: Update `app/templates/booking_form.html` with Leaflet and Nominatim geocoding for address selection. f888616
+- [x] Task: Update `app/templates/home.html` (or wherever Live Monitoring is) to support real-time Leaflet updates. 1de48a3
 - [ ] Task: Conductor - User Manual Verification 'Web Implementation' (Protocol in workflow.md)
 
 ## Phase 3: Mobile Implementation (React Native)
