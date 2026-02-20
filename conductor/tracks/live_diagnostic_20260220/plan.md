@@ -7,7 +7,7 @@
 - [x] Task: Write tests for WebSocket connection and message broadcasting. 83f4c2e
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Backend WebSocket Foundation' (Protocol in workflow.md) 83f4c2e
 
-## Phase 2: Mobile Live Streaming & Feedback [checkpoint: ca2db42]
+## Phase 2: Mobile Live Streaming & Feedback [checkpoint: d676d1a] [checkpoint: ca2db42]
 - [x] Task: Integrate WebSocket client into the mobile app using `socket.io-client` or native WebSockets. ca2db42
 - [x] Task: Update sensor logic to detect events (braking/cornering) in real-time on-device. ca2db42
 - [x] Task: Add live visual/audio feedback components for students in the mobile UI. ca2db42
