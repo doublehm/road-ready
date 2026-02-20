@@ -120,8 +120,8 @@ const RouteReplayMap = ({ routeSegments = [], events = [], routeCoords = [], hei
         mapType="none"
       >
         <UrlTile
-          urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maximumZ={19}
+          urlTemplate="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          maximumZ={20}
           flipY={false}
           shouldReplaceMapContent={true}
           zIndex={-1}
