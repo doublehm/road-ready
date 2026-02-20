@@ -62,6 +62,27 @@ def extract_data():
                     f.write(f"- {item}\n")
             else:
                 f.write("- None\n")
+
+            # Include Coach Notes
+            notes = row['evaluator_notes']
+            if notes:
+                f.write("### Coach Notes:\n")
+                f.write(f"```\n{notes}\n```\n")
+
+            # Include Human Feedback
+            human_str = row['human_feedback']
+            if human_str:
+                human_data = json.loads(human_str)
+                f.write("### Supervisor Feedback:\n")
+                for item in human_data:
+                    f.write(f"- **{item.get('label')} ({item.get('code')})**: {item.get('count')} times\n")
+                    if item.get('timestamps'):
+                        times = []
+                        for t in item['timestamps']:
+                            m = int(t['elapsed'] // 60)
+                            s = int(t['elapsed'] % 60)
+                            times.append(f"{m}:{s:02d}")
+                        f.write(f"  *Timestamps:* {', '.join(times)}\n")
             
             f.write("\n---\n\n")
             

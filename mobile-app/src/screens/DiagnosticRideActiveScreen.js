@@ -1,29 +1,42 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Alert,
-  SafeAreaView,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
-import MapView, { Polyline, Marker } from 'react-native-maps';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import MapView, { Polyline, Marker, UrlTile } from 'react-native-maps';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import useGPSTracking from '../hooks/useGPSTracking';
 import useDeviceMotion from '../hooks/useDeviceMotion';
 import useSpeedLimit from '../hooks/useSpeedLimit';
 import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
+import FeedbackPanel from '../components/FeedbackPanel';
+import { DEVICE_EVENT_TO_CODE } from '../data/faults';
 
 const DiagnosticRideActiveScreen = ({ route, navigation }) => {
-  const { rideType, parentName, instructorId } = route.params;
+  const { rideType, parentName, instructorId, bookingId, studentId } = route.params;
   const { userToken } = useContext(AuthContext);
+  const insets = useSafeAreaInsets();
 
   const [startTime, setStartTime] = useState(null);
   const [duration, setDuration] = useState(0); // seconds
   const [isUploading, setIsUploading] = useState(false);
   const [latestEvents, setLatestEvents] = useState([]);
   const [alertMessage, setAlertMessage] = useState(null);
+  const [noteModalVisible, setNoteModalVisible] = useState(false);
+  const [noteText, setNoteText] = useState('');
+  const coachNotesRef = useRef([]);
+  const [feedbackPanelVisible, setFeedbackPanelVisible] = useState(false);
+  const feedbackCountsRef = useRef({}); // {code: {code, label, category, count, timestamps}}
+  const [feedbackBadgeCount, setFeedbackBadgeCount] = useState(0);
 
   // Hooks for sensor data collection
   const gpsTracking = useGPSTracking();
@@ -38,6 +51,35 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     if (excess > 0) return '#ffc107'; // yellow - slightly over
     return '#28a745'; // green - within limit
   };
+
+  // Feedback criteria handler
+  const handleFeedbackUpdate = useCallback((code, delta, metadata) => {
+    const current = feedbackCountsRef.current[code] || {
+      code: metadata?.code || code,
+      label: metadata?.label || code,
+      category: metadata?.category || '?',
+      count: 0,
+      timestamps: [],
+    };
+
+    const newCount = Math.max(0, current.count + delta);
+
+    if (newCount === 0) {
+      delete feedbackCountsRef.current[code];
+    } else {
+      feedbackCountsRef.current[code] = {
+        ...current,
+        count: newCount,
+        timestamps: delta > 0 && metadata?.timestamp
+          ? [...current.timestamps, { ts: metadata.timestamp, elapsed: metadata.elapsed_seconds }]
+          : current.timestamps,
+      };
+    }
+
+    const total = Object.values(feedbackCountsRef.current)
+      .reduce((sum, entry) => sum + entry.count, 0);
+    setFeedbackBadgeCount(total);
+  }, []);
 
   // Real-time feedback loop
   useEffect(() => {
@@ -67,19 +109,40 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           speed_limit: speedLimit.currentSpeedLimit || 0,
         }));
 
+        const rotationWindow = motionData.map(p => ({
+          timestamp: p.timestamp,
+          x: p.rotation.x,
+          y: p.rotation.y,
+          z: p.rotation.z,
+        }));
+
         const response = await client.post('/diagnostic-rides/live-evaluate', {
           acceleration_window: accelerationWindow,
           speed_window: speedWindow,
-          rotation_window: []
+          rotation_window: rotationWindow,
         });
 
         if (response.data.events && response.data.events.length > 0) {
           const newEvents = response.data.events;
           setLatestEvents(prev => [...newEvents, ...prev].slice(0, 8));
 
-          const highSev = newEvents.find(e => e.severity === 'high');
-          if (highSev) {
-            triggerAlert(highSev);
+          // Auto-map sensor events to feedback criteria (F-codes)
+          newEvents.forEach(event => {
+            const mapping = DEVICE_EVENT_TO_CODE[event.type];
+            if (mapping) {
+              handleFeedbackUpdate(mapping.code, 1, {
+                ...mapping,
+                timestamp: Date.now(),
+                elapsed_seconds: duration,
+              });
+            }
+          });
+
+          // Trigger alert for any detected event (high or medium severity)
+          const alertEvent = newEvents.find(e => e.severity === 'high') ||
+                             newEvents.find(e => e.severity === 'medium');
+          if (alertEvent) {
+            triggerAlert(alertEvent);
           }
         }
       } catch (error) {
@@ -258,12 +321,24 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           longitude: p.longitude,
         }));
 
+      // Format coach notes if any
+      const notes = coachNotesRef.current;
+      let evaluatorNotes = null;
+      if (notes.length > 0) {
+        evaluatorNotes = notes.map(n => {
+          const mins = Math.floor(n.elapsed_seconds / 60);
+          const secs = n.elapsed_seconds % 60;
+          return `[${mins}:${secs < 10 ? '0' : ''}${secs}] ${n.text}`;
+        }).join('\n');
+      }
+
       const rideData = {
         ride_type:
           rideType === 'parent'
             ? 'parent_supervised'
             : 'instructor_supervised',
         instructor_id: instructorId,
+        booking_id: bookingId || null,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
         duration_minutes: duration / 60,
@@ -274,11 +349,24 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         speed_data: JSON.stringify(gpsData.speedData),
         speed_limit_data: JSON.stringify(speedLimitData),
         heading_data: JSON.stringify(headingData),
+        evaluator_notes: evaluatorNotes,
+        human_feedback: JSON.stringify(
+          Object.values(feedbackCountsRef.current).filter(item => item.count > 0)
+        ),
       };
 
       const response = await client.post('/diagnostic-rides/', rideData);
       const rideId = response.data.id;
       await client.post(`/diagnostic-rides/${rideId}/evaluate`);
+
+      // Auto-complete the booking if this ride was linked to one
+      if (bookingId) {
+        try {
+          await client.post(`/bookings/${bookingId}/complete`);
+        } catch (e) {
+          console.log('Could not auto-complete booking:', e);
+        }
+      }
 
       Alert.alert('Success', 'Ride submitted! Evaluating your performance...', [
         {
@@ -308,7 +396,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const canComplete = duration >= 60 * 20 && gpsTracking.distance >= 5;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Safety Banner */}
       <View style={styles.safetyBanner}>
         <Ionicons name="hand-right" size={20} color="white" />
@@ -323,7 +411,15 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         }}
+        mapType="none"
       >
+        <UrlTile
+          urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maximumZ={19}
+          flipY={false}
+          shouldReplaceMapContent={true}
+          zIndex={-1}
+        />
         <Marker
           coordinate={{
             latitude: gpsTracking.location.latitude,
@@ -338,21 +434,26 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         />
       </MapView>
 
-      {/* Real-time Alert Banner */}
-      {alertMessage && (
-        <View style={[
-          styles.alertBanner,
-          speedLimit.zoneType === 'school' && styles.schoolAlertBanner
-        ]}>
-          <Ionicons name={alertMessage.icon || 'warning'} size={24} color="white" />
-          <View style={styles.alertContent}>
-            <Text style={styles.alertText}>{alertMessage.msg}</Text>
-            <Text style={styles.alertDetail}>{alertMessage.detail}</Text>
-          </View>
-        </View>
-      )}
+      {/* Debug Indicator */}
+      <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: 4, zIndex: 9999 }}>
+        <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>OSM MAP ACTIVE v2</Text>
+      </View>
 
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { top: 80 }]}>
+        {/* Real-time Alert Banner */}
+        {alertMessage && (
+          <View style={[
+            styles.alertBanner,
+            speedLimit.currentSpeedLimit && speedLimit.zoneType === 'school' && styles.schoolAlertBanner
+          ]}>
+            <Ionicons name={alertMessage.icon || 'warning'} size={20} color="white" />
+            <View style={styles.alertContent}>
+              <Text style={styles.alertText}>{alertMessage.msg}</Text>
+              <Text style={styles.alertDetail}>{alertMessage.detail}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Stats Row */}
         <View style={styles.statsContainer}>
           <View style={styles.statBox}>
@@ -413,15 +514,33 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           </View>
         )}
 
-        <TouchableOpacity
-            style={styles.noteButton}
-            onPress={() => Alert.prompt("Add Coach Note", "Record an observation for the student.", (text) => {
-                Alert.alert("Note Saved", "Observation recorded successfully.");
-            })}
-        >
-            <Ionicons name="chatbox-ellipses" size={24} color="#007bff" />
-            <Text style={styles.noteButtonText}>Add Coach Note</Text>
-        </TouchableOpacity>
+        {/* Supervisor Actions */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+              style={[styles.actionButton, styles.feedbackButton]}
+              onPress={() => setFeedbackPanelVisible(true)}
+          >
+              <Ionicons name="flag" size={20} color="#e17055" />
+              <Text style={styles.feedbackButtonText}>
+                Flag{feedbackBadgeCount > 0 ? ` (${feedbackBadgeCount})` : ''}
+              </Text>
+              {feedbackBadgeCount > 0 && (
+                <View style={styles.feedbackBadge}>
+                  <Text style={styles.feedbackBadgeText}>{feedbackBadgeCount}</Text>
+                </View>
+              )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+              style={[styles.actionButton, styles.noteButton]}
+              onPress={() => setNoteModalVisible(true)}
+          >
+              <Ionicons name="chatbox-ellipses" size={20} color="#007bff" />
+              <Text style={styles.noteButtonText}>
+                Note{coachNotesRef.current.length > 0 ? ` (${coachNotesRef.current.length})` : ''}
+              </Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.sensorIndicators}>
           <View style={styles.indicator}>
@@ -471,6 +590,67 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           )}
         </TouchableOpacity>
       </View>
+      {/* Feedback Panel */}
+      <FeedbackPanel
+        visible={feedbackPanelVisible}
+        onClose={() => setFeedbackPanelVisible(false)}
+        feedbackCounts={feedbackCountsRef.current}
+        onUpdateCount={handleFeedbackUpdate}
+        elapsedSeconds={duration}
+      />
+
+      {/* Coach Note Modal */}
+      <Modal
+        visible={noteModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setNoteModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Coach Note</Text>
+            <Text style={styles.modalSubtitle}>Record an observation for the student</Text>
+            <TextInput
+              style={styles.noteInput}
+              placeholder="e.g. Needs to check mirrors more often..."
+              placeholderTextColor="#adb5bd"
+              multiline
+              autoFocus
+              value={noteText}
+              onChangeText={setNoteText}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => {
+                  setNoteText('');
+                  setNoteModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, !noteText.trim() && styles.modalSaveBtnDisabled]}
+                disabled={!noteText.trim()}
+                onPress={() => {
+                  coachNotesRef.current.push({
+                    text: noteText.trim(),
+                    timestamp: Date.now(),
+                    elapsed_seconds: duration,
+                  });
+                  setNoteText('');
+                  setNoteModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalSaveText}>Save Note</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -484,12 +664,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    gap: 10,
+    paddingVertical: 6,
+    gap: 8,
   },
   safetyText: {
     color: 'white',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },
@@ -497,22 +677,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   alertBanner: {
-    position: 'absolute',
-    top: 60,
-    left: 16,
-    right: 16,
     backgroundColor: 'rgba(214, 48, 49, 0.95)',
-    padding: 16,
-    borderRadius: 12,
-    zIndex: 1000,
+    marginHorizontal: 12,
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   schoolAlertBanner: {
     backgroundColor: 'rgba(255, 165, 0, 0.95)',
@@ -525,12 +702,12 @@ const styles = StyleSheet.create({
   alertText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 16,
   },
   alertDetail: {
     color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 12,
+    marginTop: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -552,14 +729,14 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     flexDirection: 'row',
-    margin: 12,
-    gap: 6,
+    margin: 8,
+    gap: 4,
   },
   statBox: {
     flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: 10,
+    padding: 8,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -572,97 +749,127 @@ const styles = StyleSheet.create({
     borderColor: '#007bff',
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#6c757d',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#1a1a1a',
   },
   statTarget: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#6c757d',
-    marginTop: 2,
+    marginTop: 1,
   },
   schoolBadge: {
     backgroundColor: '#ff9800',
     borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginTop: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    marginTop: 1,
   },
   schoolBadgeText: {
     color: 'white',
-    fontSize: 8,
+    fontSize: 7,
     fontWeight: 'bold',
   },
   eventLogContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    marginHorizontal: 12,
-    marginBottom: 8,
-    borderRadius: 12,
-    padding: 12,
+    marginHorizontal: 8,
+    marginBottom: 6,
+    borderRadius: 10,
+    padding: 10,
     borderWidth: 1,
     borderColor: '#eee',
-    maxHeight: 180,
+    maxHeight: 120,
   },
   eventLogTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
     color: '#636e72',
-    marginBottom: 8,
+    marginBottom: 6,
     textTransform: 'uppercase',
   },
   eventItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
+    gap: 6,
+    marginBottom: 4,
   },
   eventText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#2d3436',
     fontWeight: '500',
     flex: 1,
   },
-  noteButton: {
+  actionRow: {
+    flexDirection: 'row',
+    marginHorizontal: 8,
+    marginBottom: 6,
+    gap: 8,
+  },
+  actionButton: {
+    flex: 1,
     backgroundColor: 'white',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 12,
-    marginBottom: 8,
-    padding: 10,
-    borderRadius: 12,
-    gap: 10,
+    padding: 8,
+    borderRadius: 10,
+    gap: 6,
     borderWidth: 1,
-    borderColor: '#eee',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
+  feedbackButton: {
+    borderColor: '#e17055',
+  },
+  feedbackButtonText: {
+    color: '#e17055',
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  feedbackBadge: {
+    backgroundColor: '#e17055',
+    borderRadius: 8,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  feedbackBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  noteButton: {
+    borderColor: '#eee',
+  },
   noteButtonText: {
     color: '#007bff',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 13,
   },
   sensorIndicators: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 8,
-    marginHorizontal: 12,
+    gap: 6,
+    marginHorizontal: 8,
+    marginBottom: 4,
     flexWrap: 'wrap',
   },
   indicator: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    borderRadius: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -671,17 +878,17 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   indicatorDot: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#28a745',
-    marginRight: 4,
+    marginRight: 3,
   },
   indicatorText: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#1a1a1a',
   },
   completeButton: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 24,
     left: 16,
     right: 16,
     backgroundColor: '#28a745',
@@ -707,6 +914,70 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginTop: 4,
     opacity: 0.9,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    paddingBottom: 32,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 13,
+    color: '#6c757d',
+    marginBottom: 16,
+  },
+  noteInput: {
+    borderWidth: 1,
+    borderColor: '#dee2e6',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    color: '#1a1a1a',
+    minHeight: 100,
+    textAlignVertical: 'top',
+    backgroundColor: '#f8f9fa',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 16,
+  },
+  modalCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  modalCancelText: {
+    color: '#6c757d',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalSaveBtn: {
+    backgroundColor: '#007bff',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  modalSaveBtnDisabled: {
+    backgroundColor: '#adb5bd',
+  },
+  modalSaveText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
 });
 

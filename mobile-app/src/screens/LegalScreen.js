@@ -13,7 +13,7 @@ const LegalScreen = ({ route, navigation }) => {
   const url = `${BASE_DOMAIN}/${type}`;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#333" />

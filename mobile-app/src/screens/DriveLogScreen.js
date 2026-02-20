@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import MapView, { Polyline, Marker } from 'react-native-maps';
+import MapView, { Polyline, Marker, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
@@ -140,9 +140,17 @@ const DriveLogScreen = ({ navigation }) => {
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
         }}
+        mapType="none"
       >
+        <UrlTile
+          urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maximumZ={19}
+          flipY={false}
+          shouldReplaceMapContent={true}
+          zIndex={-1}
+        />
         <Marker coordinate={{ latitude: location.latitude, longitude: location.longitude }} title="You" />
-        <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor="blue" />
+        <Polyline coordinates={routeCoordinates} strokeWidth={5} strokeColor="#007bff" />
       </MapView>
 
       <View style={styles.controls}>

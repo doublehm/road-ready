@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import client from '../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { AuthContext } from '../context/AuthContext';
 
 const InstructorScheduleScreen = ({ navigation }) => {
+  const { userInfo } = useContext(AuthContext);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' or 'history'
@@ -70,7 +72,12 @@ const InstructorScheduleScreen = ({ navigation }) => {
         <Text style={styles.info} numberOfLines={1}>{item.pickup_address}</Text>
       </View>
 
-      {item.notes ? (
+      {item.notes && item.notes.includes('Diagnostic Ride') ? (
+        <View style={[styles.noteBox, { backgroundColor: '#e0d9f7' }]}>
+          <Ionicons name="speedometer" size={14} color="#6610f2" />
+          <Text style={[styles.noteText, { color: '#6610f2', fontStyle: 'normal', fontWeight: 'bold', marginLeft: 5 }]}>Diagnostic Ride Session</Text>
+        </View>
+      ) : item.notes ? (
         <View style={styles.noteBox}>
           <Text style={styles.noteText}>"{item.notes}"</Text>
         </View>
@@ -78,15 +85,34 @@ const InstructorScheduleScreen = ({ navigation }) => {
 
       {/* Message Button */}
       {activeTab === 'upcoming' && (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.messageBtn}
-          onPress={() => navigation.navigate('Chat', { 
-            recipientId: item.student_id, 
-            name: item.student?.full_name || 'Student' 
+          onPress={() => navigation.navigate('Chat', {
+            recipientId: item.student_id,
+            name: item.student?.full_name || 'Student'
           })}
         >
           <Ionicons name="chatbubble-outline" size={16} color="#007bff" style={{marginRight: 5}} />
           <Text style={styles.messageBtnText}>Message Student</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Start Diagnostic Ride Button — only for accepted diagnostic ride bookings */}
+      {activeTab === 'upcoming' && item.status === 'accepted' && item.notes && item.notes.includes('Diagnostic Ride') && (
+        <TouchableOpacity
+          style={styles.startRideBtn}
+          onPress={() => navigation.navigate('SupervisorHandoff', {
+            rideParams: {
+              rideType: 'instructor',
+              parentName: null,
+              instructorId: userInfo?.instructor_profile?.id,
+              bookingId: item.id,
+              studentId: item.student_id,
+            }
+          })}
+        >
+          <Ionicons name="speedometer" size={18} color="#fff" style={{marginRight: 8}} />
+          <Text style={styles.startRideBtnText}>Start Diagnostic Ride</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -173,7 +199,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   info: { fontSize: 15, color: '#555', marginLeft: 8 },
   
-  noteBox: { marginTop: 10, backgroundColor: '#fff3cd', padding: 8, borderRadius: 6 },
+  noteBox: { flexDirection: 'row', alignItems: 'center', marginTop: 10, backgroundColor: '#fff3cd', padding: 8, borderRadius: 6 },
   noteText: { fontStyle: 'italic', color: '#856404', fontSize: 13 },
 
   messageBtn: {
@@ -188,6 +214,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff'
   },
   messageBtnText: { color: '#007bff', fontWeight: 'bold', fontSize: 14 },
+
+  startRideBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    marginTop: 10,
+    borderRadius: 8,
+    backgroundColor: '#6610f2',
+  },
+  startRideBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 
   emptyContainer: { alignItems: 'center', marginTop: 50 },
   emptyText: { marginTop: 10, fontSize: 16, color: '#999' }

@@ -23,12 +23,24 @@ const EVENT_CONFIG = {
     label: 'Sudden Stop',
     color: '#d63031',
   },
+  human_flag: {
+    icon: 'flag',
+    label: 'Supervisor Flag',
+    color: '#e17055',
+  },
+  coach_note: {
+    icon: 'chatbox-ellipses',
+    label: 'Coach Note',
+    color: '#007bff',
+  },
 };
 
 const SEVERITY_COLORS = {
   high: '#dc3545',
   medium: '#ffc107',
   low: '#28a745',
+  human: '#e17055',
+  note: '#007bff',
 };
 
 /**
@@ -36,10 +48,13 @@ const SEVERITY_COLORS = {
  *
  * @param {Array} events - Array of {type, timestamp, severity, value, description, lat, lng, limit, zone_type}
  * @param {number} startTime - Ride start timestamp (for calculating elapsed time)
+ * @param {Array} humanFeedback - Optional aggregated human feedback for the header summary
  * @param {number} maxEvents - Maximum events to display (default 50)
  */
-const EventTimeline = ({ events = [], startTime = 0, maxEvents = 50 }) => {
-  if (events.length === 0) {
+const EventTimeline = ({ events = [], startTime = 0, humanFeedback = [], maxEvents = 50 }) => {
+  const totalFlags = humanFeedback?.reduce((sum, item) => sum + (item.count || 0), 0) || 0;
+
+  if (events.length === 0 && totalFlags === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Ionicons name="checkmark-circle" size={32} color="#28a745" />
@@ -49,11 +64,14 @@ const EventTimeline = ({ events = [], startTime = 0, maxEvents = 50 }) => {
     );
   }
 
-  const displayEvents = events.slice(0, maxEvents);
+  const displayEvents = [...events]
+    .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+    .slice(0, maxEvents);
 
   const formatElapsedTime = (timestamp) => {
     if (!startTime || !timestamp) return '';
     const elapsed = Math.round((timestamp - startTime) / 1000);
+    if (elapsed < 0) return '0:00';
     const mins = Math.floor(elapsed / 60);
     const secs = elapsed % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -72,6 +90,10 @@ const EventTimeline = ({ events = [], startTime = 0, maxEvents = 50 }) => {
         return `Lateral force: ${event.value || '?'}g`;
       case 'sudden_stop':
         return `Speed drop: ${event.value || '?'} km/h`;
+      case 'human_flag':
+        return event.label || 'Criterion flagged';
+      case 'coach_note':
+        return event.text || 'Observation recorded';
       default:
         return event.type.replace(/_/g, ' ');
     }
@@ -79,8 +101,29 @@ const EventTimeline = ({ events = [], startTime = 0, maxEvents = 50 }) => {
 
   return (
     <View style={styles.container}>
+      {/* Aggregated Feedback Header */}
+      {totalFlags > 0 && (
+        <View style={styles.aggregateHeader}>
+          <View style={styles.aggregateTitleRow}>
+            <Ionicons name="flag" size={16} color="#e17055" />
+            <Text style={styles.aggregateTitle}>Supervisor Summary</Text>
+            <View style={styles.totalFlagsBadge}>
+              <Text style={styles.totalFlagsText}>{totalFlags} total flags</Text>
+            </View>
+          </View>
+          <View style={styles.aggregateGrid}>
+            {humanFeedback.map((item, i) => (
+              <View key={i} style={styles.aggregateItem}>
+                <Text style={styles.aggregateCount}>{item.count}x</Text>
+                <Text style={styles.aggregateLabel} numberOfLines={1}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
       <Text style={styles.header}>
-        {events.length} Event{events.length !== 1 ? 's' : ''} Detected
+        Chronological Timeline
       </Text>
 
       {displayEvents.map((event, index) => {
@@ -113,9 +156,14 @@ const EventTimeline = ({ events = [], startTime = 0, maxEvents = 50 }) => {
                     <Text style={styles.highBadgeText}>HIGH</Text>
                   </View>
                 )}
-                {event.zone_type === 'school' && (
-                  <View style={styles.schoolBadge}>
-                    <Text style={styles.schoolBadgeText}>SCHOOL ZONE</Text>
+                {event.type === 'human_flag' && (
+                  <View style={styles.manualBadge}>
+                    <Text style={styles.manualBadgeText}>MANUAL FLAG</Text>
+                  </View>
+                )}
+                {event.type === 'coach_note' && (
+                  <View style={styles.noteBadge}>
+                    <Text style={styles.noteBadgeText}>COACH NOTE</Text>
                   </View>
                 )}
               </View>
@@ -150,8 +198,66 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#6c757d',
     marginBottom: 16,
+    textTransform: 'uppercase',
+  },
+  aggregateHeader: {
+    backgroundColor: '#fff9e6',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+  },
+  aggregateTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  aggregateTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#856404',
+    flex: 1,
+  },
+  totalFlagsBadge: {
+    backgroundColor: '#e17055',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  totalFlagsText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  aggregateGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  aggregateItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+  },
+  aggregateCount: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#e17055',
+    marginRight: 6,
+  },
+  aggregateLabel: {
+    fontSize: 11,
+    color: '#495057',
+    maxWidth: 100,
   },
   emptyContainer: {
     backgroundColor: '#fff',
@@ -226,6 +332,28 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
   },
   schoolBadgeText: {
+    color: 'white',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  manualBadge: {
+    backgroundColor: '#e17055',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  manualBadgeText: {
+    color: 'white',
+    fontSize: 9,
+    fontWeight: 'bold',
+  },
+  noteBadge: {
+    backgroundColor: '#007bff',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  noteBadgeText: {
     color: 'white',
     fontSize: 9,
     fontWeight: 'bold',

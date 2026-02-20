@@ -9,7 +9,7 @@ const EducationHomeScreen = ({ navigation }) => {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.header}>Study Guides 📚</Text>
         <Text style={styles.subtitle}>Choose your province to start reading.</Text>

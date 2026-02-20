@@ -4,6 +4,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 // Screens
@@ -42,6 +44,7 @@ import DiagnosticRideHistoryScreen from './src/screens/DiagnosticRideHistoryScre
 import DiagnosticRideDetailScreen from './src/screens/DiagnosticRideDetailScreen';
 import ModulesScreen from './src/screens/ModulesScreen';
 import LegalScreen from './src/screens/LegalScreen';
+import CheckoutScreen from './src/screens/CheckoutScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -176,6 +179,7 @@ const AppNav = () => {
             <Stack.Screen name="DiagnosticRideDetail" component={DiagnosticRideDetailScreen} />
             <Stack.Screen name="Modules" component={ModulesScreen} />
             <Stack.Screen name="Legal" component={LegalScreen} />
+            <Stack.Screen name="Checkout" component={CheckoutScreen} />
           </>
         )}
       </Stack.Navigator>
@@ -185,8 +189,11 @@ const AppNav = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppNav />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <StatusBar style="auto" />
+      <AuthProvider>
+        <AppNav />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

@@ -74,6 +74,7 @@ class DiagnosticEvaluator:
         speed_data = json.loads(ride_data.get('speed_data', '[]'))
         speed_limit_data = json.loads(ride_data.get('speed_limit_data', '[]'))
         heading_data = json.loads(ride_data.get('heading_data', '[]'))
+        human_feedback = json.loads(ride_data.get('human_feedback', '[]'))
 
         duration_minutes = ride_data.get('duration_minutes', 0)
         distance_km = ride_data.get('distance_km', 0)
@@ -101,6 +102,20 @@ class DiagnosticEvaluator:
         all_events.extend(braking_feedback.get('events', []))
         all_events.extend(speed_feedback.get('events', []))
         all_events.extend(cornering_feedback.get('events', []))
+
+        # Integrate human feedback into events list
+        for flag in human_feedback:
+            if 'timestamps' in flag:
+                for t in flag['timestamps']:
+                    all_events.append({
+                        'type': 'human_flag',
+                        'timestamp': t.get('ts'),
+                        'label': flag.get('label'),
+                        'code': flag.get('code'),
+                        'severity': 'human',
+                        'description': f"Supervisor flagged: {flag.get('label')} ({flag.get('code')})"
+                    })
+
         all_events.sort(key=lambda x: x.get('timestamp') or 0)
 
         # Build route segments for map replay
@@ -114,6 +129,7 @@ class DiagnosticEvaluator:
             'overall': pass_feedback,
             'events': all_events,
             'route_segments': route_segments,
+            'human_feedback': human_feedback,
             'summary': self._generate_summary(
                 passed, overall_score, braking_score, speed_score, cornering_score,
                 speed_feedback
@@ -150,11 +166,18 @@ class DiagnosticEvaluator:
             return 50.0, {'notes': ['Insufficient acceleration data for evaluation'], 'events': [], 'tips': []}
 
         # Analyze acceleration data for harsh braking
+        # Phone orientation in car varies, so check both Y and Z axes for deceleration.
+        # In portrait mount: Y = forward/backward, Z = perpendicular to screen
+        # In landscape mount: Z = forward/backward, Y = up/down
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
+            y_accel = point.get('y', 0)
             z_accel = point.get('z', 0)
 
-            deceleration_g = abs(z_accel) / self.GRAVITY if z_accel < 0 else 0
+            # Use the strongest deceleration from either axis
+            y_decel_g = abs(y_accel) / self.GRAVITY if y_accel < 0 else 0
+            z_decel_g = abs(z_accel) / self.GRAVITY if z_accel < 0 else 0
+            deceleration_g = max(y_decel_g, z_decel_g)
 
             if deceleration_g > self.HARSH_BRAKING_THRESHOLD:
                 harsh_braking_count += 1
@@ -168,7 +191,7 @@ class DiagnosticEvaluator:
                     'severity': 'high' if deceleration_g > 0.6 else 'medium',
                     'description': f'Harsh braking at {round(deceleration_g, 2)}g force'
                 })
-            elif self.SMOOTH_BRAKING_MIN <= deceleration_g <= self.SMOOTH_BRAKING_MAX:
+            elif deceleration_g >= self.SMOOTH_BRAKING_MIN and deceleration_g <= self.SMOOTH_BRAKING_MAX:
                 smooth_braking_count += 1
 
         # Analyze speed data for sudden stops
@@ -485,11 +508,19 @@ class DiagnosticEvaluator:
         if not acceleration_data:
             return 50.0, {'notes': ['Insufficient acceleration data for evaluation'], 'events': [], 'tips': []}
 
-        # Analyze lateral acceleration (X-axis)
+        # Analyze lateral acceleration
+        # In portrait mount: X = lateral (turns). In landscape: Y could be lateral.
+        # Use X axis as primary lateral indicator (most common phone orientation).
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
             x_accel = point.get('x', 0)
             lateral_g = abs(x_accel) / self.GRAVITY
+            # Also check if Y axis shows stronger lateral force (landscape mount)
+            y_accel = point.get('y', 0)
+            y_lateral_g = abs(y_accel) / self.GRAVITY
+            # Use the larger value but only if X is low (suggests different orientation)
+            if y_lateral_g > lateral_g and lateral_g < 0.05:
+                lateral_g = y_lateral_g
 
             if lateral_g > self.SHARP_TURN_LATERAL_THRESHOLD:
                 sharp_turn_count += 1

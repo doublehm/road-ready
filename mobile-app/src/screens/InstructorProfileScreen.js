@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const InstructorProfileScreen = ({ route, navigation }) => {
-  const { instructor } = route.params;
+  const { instructor, forDiagnosticRide } = route.params;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -66,7 +66,7 @@ const InstructorProfileScreen = ({ route, navigation }) => {
         </View>
         <TouchableOpacity 
           style={styles.bookButton}
-          onPress={() => navigation.navigate('BookingFlow', { instructor })}
+          onPress={() => navigation.navigate('BookingFlow', { instructor, forDiagnosticRide })}
         >
           <Text style={styles.bookButtonText}>Book Session</Text>
         </TouchableOpacity>

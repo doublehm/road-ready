@@ -72,5 +72,34 @@ export const FAULT_CATEGORIES = [
       { code: 'E3', label: 'Cancel' },
       { code: 'E4', label: 'Other' },
     ]
+  },
+  {
+    id: 'F',
+    title: 'Device Detected',
+    color: '#e0e0e0', // Light Grey
+    items: [
+      { code: 'F1', label: 'Harsh Braking' },
+      { code: 'F2', label: 'Speeding' },
+      { code: 'F3', label: 'Sharp Turn' },
+      { code: 'F4', label: 'Sudden Stop' },
+    ]
   }
 ];
+
+// Flat array of all criteria with category metadata (for search/autocomplete)
+export const ALL_CRITERIA = FAULT_CATEGORIES.flatMap(cat =>
+  cat.items.map(item => ({
+    ...item,
+    categoryId: cat.id,
+    categoryTitle: cat.title,
+    categoryColor: cat.color,
+  }))
+);
+
+// Map device event types to F-codes for unified tracking
+export const DEVICE_EVENT_TO_CODE = {
+  harsh_braking: { code: 'F1', label: 'Harsh Braking', category: 'F' },
+  speeding: { code: 'F2', label: 'Speeding', category: 'F' },
+  sharp_turn: { code: 'F3', label: 'Sharp Turn', category: 'F' },
+  sudden_stop: { code: 'F4', label: 'Sudden Stop', category: 'F' },
+};

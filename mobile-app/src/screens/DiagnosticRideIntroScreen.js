@@ -5,9 +5,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Modal,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const DiagnosticRideIntroScreen = ({ navigation }) => {
@@ -21,23 +21,24 @@ const DiagnosticRideIntroScreen = ({ navigation }) => {
 
   const confirmDisclaimer = () => {
     setShowDisclaimer(false);
-    navigation.navigate('DiagnosticRideSetup', { rideType: selectedRideType });
+    if (selectedRideType === 'instructor') {
+      // Route to booking flow — student books an instructor for a diagnostic ride
+      navigation.navigate('StudentMain', {
+        screen: 'Find Instructor',
+        params: { forDiagnosticRide: true },
+      });
+    } else {
+      navigation.navigate('DiagnosticRideSetup', { rideType: 'parent' });
+    }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Diagnostic Ride</Text>
           <Text style={styles.headerSubtitle}>
-            Prove your skills and save money
-          </Text>
-        </View>
-
-        <View style={styles.savingsCard}>
-          <Text style={styles.savingsAmount}>Save up to $800</Text>
-          <Text style={styles.savingsText}>
-            Pass the diagnostic ride and skip the Basics module!
+            Assess your driving skills
           </Text>
         </View>
 
@@ -76,9 +77,9 @@ const DiagnosticRideIntroScreen = ({ navigation }) => {
           <View style={styles.step}>
             <Text style={styles.stepNumber}>4</Text>
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Skip Basics if You Pass</Text>
+              <Text style={styles.stepTitle}>Advance Faster</Text>
               <Text style={styles.stepText}>
-                Go straight to Advanced/Test Prep and save $800+
+                Demonstrate your skills to progress to advanced training
               </Text>
             </View>
           </View>
@@ -220,24 +221,6 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: '#6c757d',
-  },
-  savingsCard: {
-    backgroundColor: '#28a745',
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  savingsAmount: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  savingsText: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
   },
   section: {
     marginBottom: 24,

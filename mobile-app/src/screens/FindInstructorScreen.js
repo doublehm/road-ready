@@ -4,7 +4,8 @@ import client from '../api/client';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const FindInstructorScreen = ({ navigation }) => {
+const FindInstructorScreen = ({ navigation, route }) => {
+  const forDiagnosticRide = route.params?.forDiagnosticRide;
   const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -32,7 +33,7 @@ const FindInstructorScreen = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <TouchableOpacity 
       style={styles.card}
-      onPress={() => navigation.navigate('InstructorProfile', { instructor: item })}
+      onPress={() => navigation.navigate('InstructorProfile', { instructor: item, forDiagnosticRide })}
     >
       <View style={styles.cardHeader}>
         <View style={styles.avatar}>

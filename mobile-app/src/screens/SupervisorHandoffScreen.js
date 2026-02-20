@@ -18,7 +18,7 @@ const SupervisorHandoffScreen = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.iconContainer}>
           <Ionicons name="hand-right-outline" size={80} color="#007bff" />

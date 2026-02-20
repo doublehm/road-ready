@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import MapView, { Polyline, Marker } from 'react-native-maps';
+import MapView, { Polyline, Marker, UrlTile } from 'react-native-maps';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const SEGMENT_COLORS = {
@@ -112,7 +112,20 @@ const RouteReplayMap = ({ routeSegments = [], events = [], routeCoords = [], hei
 
   return (
     <View style={[styles.container, { height }]}>
-      <MapView style={styles.map} region={region} scrollEnabled={true} zoomEnabled={true}>
+      <MapView 
+        style={styles.map} 
+        region={region} 
+        scrollEnabled={true} 
+        zoomEnabled={true}
+        mapType="none"
+      >
+        <UrlTile
+          urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maximumZ={19}
+          flipY={false}
+          shouldReplaceMapContent={true}
+          zIndex={-1}
+        />
         {/* Color-coded route polylines */}
         {polylines.map((line, i) => (
           <Polyline

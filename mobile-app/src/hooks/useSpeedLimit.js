@@ -20,10 +20,13 @@ function calculateDistance(coord1, coord2) {
 
 const QUERY_DISTANCE_THRESHOLD = 100; // meters
 const QUERY_TIME_THRESHOLD = 30000; // 30 seconds
+const DRAMATIC_CHANGE_THRESHOLD = 30; // km/h - changes larger than this need confirmation
+const SMOOTHING_HISTORY_SIZE = 3; // number of recent readings to consider
 
 /**
  * Custom hook for querying speed limits based on GPS location.
  * Throttled: only queries when moved 100m or 30s elapsed.
+ * Includes smoothing to prevent GPS drift from causing wild speed limit jumps.
  * Maintains a history of speed limit data for submission.
  *
  * @param {Object|null} location - Current GPS location {latitude, longitude}
@@ -40,6 +43,9 @@ export default function useSpeedLimit(location, isActive = false) {
   const speedLimitDataRef = useRef([]);
   const lastQueryRef = useRef({ latitude: null, longitude: null, time: 0 });
   const cacheRef = useRef(new Map());
+  // Smoothing: track recent raw readings and pending unconfirmed changes
+  const recentLimitsRef = useRef([]); // last N raw speed limit readings
+  const confirmedLimitRef = useRef(null); // last confirmed (applied) speed limit
 
   const roundCoord = (val) => Math.round(val * 1000) / 1000;
 
@@ -70,17 +76,42 @@ export default function useSpeedLimit(location, isActive = false) {
   }, []);
 
   const applyResult = useCallback((result, lat, lon) => {
-    setCurrentSpeedLimit(result.speed_limit_kmh);
+    const newLimit = result.speed_limit_kmh;
+    const confirmed = confirmedLimitRef.current;
+
+    // Add to recent readings history
+    recentLimitsRef.current.push(newLimit);
+    if (recentLimitsRef.current.length > SMOOTHING_HISTORY_SIZE) {
+      recentLimitsRef.current.shift();
+    }
+
+    let limitToApply = newLimit;
+
+    // Smoothing: if the new limit is a dramatic change from the confirmed limit,
+    // only accept it if multiple recent readings agree (GPS drift protection)
+    if (confirmed !== null && Math.abs(newLimit - confirmed) > DRAMATIC_CHANGE_THRESHOLD) {
+      const recent = recentLimitsRef.current;
+      // Count how many recent readings are close to the new limit (within 15 km/h)
+      const agreeing = recent.filter(l => Math.abs(l - newLimit) <= 15).length;
+      // Need at least 2 consecutive similar readings to confirm a dramatic change
+      if (agreeing < 2) {
+        // Reject the dramatic change - keep the confirmed limit
+        limitToApply = confirmed;
+      }
+    }
+
+    confirmedLimitRef.current = limitToApply;
+    setCurrentSpeedLimit(limitToApply);
     setRoadName(result.road_name);
     setRoadType(result.road_type);
     setZoneType(result.zone_type || 'regular');
 
-    // Store in history
+    // Store in history (with the smoothed limit, not the raw one)
     speedLimitDataRef.current.push({
       timestamp: Date.now(),
       latitude: lat,
       longitude: lon,
-      speed_limit: result.speed_limit_kmh,
+      speed_limit: limitToApply,
       road_type: result.road_type,
       road_name: result.road_name,
       zone_type: result.zone_type || 'regular',
@@ -130,6 +161,8 @@ export default function useSpeedLimit(location, isActive = false) {
   const clearData = useCallback(() => {
     speedLimitDataRef.current = [];
     cacheRef.current.clear();
+    recentLimitsRef.current = [];
+    confirmedLimitRef.current = null;
     setCurrentSpeedLimit(null);
     setRoadName(null);
     setRoadType(null);

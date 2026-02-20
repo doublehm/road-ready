@@ -26,6 +26,15 @@ const InstructorEarningsScreen = ({ navigation }) => {
       const paidBookings = allBookings.filter(b => b.status === 'completed' || b.status === 'paid' || b.status === 'accepted');
       
       // Calculate Total
+      // Fetch diagnostic rides
+      let diagnosticRides = [];
+      try {
+        const ridesRes = await client.get('/diagnostic-rides/');
+        diagnosticRides = (ridesRes.data || []).filter(r => r.status === 'completed');
+      } catch (e) {
+        console.log('No diagnostic rides:', e);
+      }
+
       const totalEarned = paidBookings.reduce((sum, b) => sum + (b.instructor_payout || 0), 0);
       const totalHours = paidBookings.reduce((sum, b) => sum + (b.duration || 0), 0);
       
@@ -57,9 +66,31 @@ const InstructorEarningsScreen = ({ navigation }) => {
       // Unique Students
       const uniqueStudents = new Set(paidBookings.map(b => b.student_id)).size;
 
+      // Normalize diagnostic rides as transaction items
+      const rideTransactions = diagnosticRides.map(r => ({
+        id: `ride-${r.id}`,
+        _type: 'diagnostic_ride',
+        _rideId: r.id,
+        date: r.created_at ? r.created_at.split('T')[0] : '',
+        student: r.student || null,
+        overall_score: r.overall_score,
+        passed: r.passed,
+        duration_minutes: r.duration_minutes,
+      }));
+
+      // Normalize bookings as transaction items
+      const bookingTransactions = paidBookings.map(b => ({
+        ...b,
+        _type: 'booking',
+      }));
+
+      // Merge and sort by date descending
+      const allTransactions = [...bookingTransactions, ...rideTransactions]
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
       setEarnings({
         total: totalEarned,
-        history: paidBookings.sort((a,b) => new Date(b.date) - new Date(a.date)),
+        history: allTransactions,
         monthly: monthlyData,
         stats: {
             students: uniqueStudents,
@@ -75,32 +106,56 @@ const InstructorEarningsScreen = ({ navigation }) => {
     }
   };
 
-  const renderHistoryItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.transactionRow}
-      onPress={() => {
-        if (item.driving_session) {
-          navigation.navigate('SessionDetail', { session: item.driving_session });
-        } else {
-          // If no session logged yet (just paid?), maybe show alert or nothing
-          // Usually paid means completed, so session should exist.
-        }
-      }}
-      disabled={!item.driving_session}
-    >
-      <View style={styles.iconBox}>
-        <Ionicons name="car-sport" size={20} color="#007bff" />
-      </View>
-      <View style={styles.transInfo}>
-        <Text style={styles.transTitle}>Lesson with {item.student?.full_name || 'Student'}</Text>
-        <Text style={styles.transDate}>{item.date}</Text>
-      </View>
-      <View style={{alignItems: 'flex-end'}}>
-        <Text style={styles.transAmount}>+${(item.instructor_payout || 0).toFixed(2)}</Text>
-        {item.driving_session && <Text style={{fontSize:10, color:'#007bff'}}>View Report</Text>}
-      </View>
-    </TouchableOpacity>
-  );
+  const renderHistoryItem = ({ item }) => {
+    if (item._type === 'diagnostic_ride') {
+      const scoreColor = (item.overall_score || 0) >= 80 ? '#28a745' :
+                         (item.overall_score || 0) >= 60 ? '#ffc107' : '#dc3545';
+      return (
+        <TouchableOpacity
+          style={styles.transactionRow}
+          onPress={() => navigation.navigate('DiagnosticRideDetail', { rideId: item._rideId })}
+        >
+          <View style={[styles.iconBox, { backgroundColor: '#e8f5e9' }]}>
+            <Ionicons name="speedometer" size={20} color="#28a745" />
+          </View>
+          <View style={styles.transInfo}>
+            <Text style={styles.transTitle}>Diagnostic: {item.student?.full_name || 'Student'}</Text>
+            <Text style={styles.transDate}>{item.date}</Text>
+          </View>
+          <View style={{alignItems: 'flex-end'}}>
+            <View style={[styles.transScoreBadge, { backgroundColor: scoreColor }]}>
+              <Text style={styles.transScoreText}>{Math.round(item.overall_score || 0)}</Text>
+            </View>
+            <Text style={{fontSize:10, color:'#007bff', marginTop: 2}}>View Report</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        style={styles.transactionRow}
+        onPress={() => {
+          if (item.driving_session) {
+            navigation.navigate('SessionDetail', { session: item.driving_session });
+          }
+        }}
+        disabled={!item.driving_session}
+      >
+        <View style={styles.iconBox}>
+          <Ionicons name="car-sport" size={20} color="#007bff" />
+        </View>
+        <View style={styles.transInfo}>
+          <Text style={styles.transTitle}>Lesson with {item.student?.full_name || 'Student'}</Text>
+          <Text style={styles.transDate}>{item.date}</Text>
+        </View>
+        <View style={{alignItems: 'flex-end'}}>
+          <Text style={styles.transAmount}>+${(item.instructor_payout || 0).toFixed(2)}</Text>
+          {item.driving_session && <Text style={{fontSize:10, color:'#007bff'}}>View Report</Text>}
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
 
@@ -147,9 +202,14 @@ const InstructorEarningsScreen = ({ navigation }) => {
         {/* My Students */}
         <Text style={styles.sectionTitle}>My Students</Text>
         <View style={{marginBottom: 20}}>
-            {Array.from(new Set(earnings.history.map(b => JSON.stringify(b.student)))).map(s => {
-                const student = JSON.parse(s);
-                return (
+            {(() => {
+                const studentMap = new Map();
+                earnings.history.forEach(item => {
+                    if (item.student && item.student.id && item.student.full_name) {
+                        studentMap.set(item.student.id, item.student);
+                    }
+                });
+                return Array.from(studentMap.values()).map(student => (
                     <TouchableOpacity 
                         key={student.id} 
                         style={styles.studentCard}
@@ -161,8 +221,8 @@ const InstructorEarningsScreen = ({ navigation }) => {
                         <Text style={styles.studentName}>{student.full_name}</Text>
                         <Ionicons name="chevron-forward" size={20} color="#ccc" />
                     </TouchableOpacity>
-                );
-            })}
+                ));
+            })()}
         </View>
 
         {/* Recent Transactions */}
@@ -234,7 +294,13 @@ const styles = StyleSheet.create({
       justifyContent: 'center', alignItems: 'center', marginRight: 15
   },
   studentInitials: { color: 'white', fontWeight: 'bold' },
-  studentName: { flex: 1, fontSize: 16, fontWeight: '500', color: '#333' }
+  studentName: { flex: 1, fontSize: 16, fontWeight: '500', color: '#333' },
+
+  transScoreBadge: {
+      width: 32, height: 32, borderRadius: 16,
+      justifyContent: 'center', alignItems: 'center'
+  },
+  transScoreText: { color: '#fff', fontSize: 13, fontWeight: 'bold' },
 });
 
 export default InstructorEarningsScreen;

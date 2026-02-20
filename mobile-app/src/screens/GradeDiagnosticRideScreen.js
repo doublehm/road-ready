@@ -101,7 +101,7 @@ const GradeDiagnosticRideScreen = ({ navigation }) => {
 
   if (!selectedRide) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.headerContainer}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={24} color="#333" />

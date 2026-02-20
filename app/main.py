@@ -50,6 +50,7 @@ def _run_migrations():
         new_columns = {
             "speed_limit_data": "TEXT",
             "heading_data": "TEXT",
+            "human_feedback": "TEXT",
         }
         with database.engine.connect() as conn:
             for col_name, col_type in new_columns.items():

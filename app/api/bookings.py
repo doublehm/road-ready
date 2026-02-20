@@ -23,24 +23,29 @@ async def create_booking(
     platform_fee = total_amount * 0.10
     instructor_payout = total_amount - platform_fee
 
+    # Diagnostic ride bookings go through payment first
+    is_diagnostic = booking.notes and "Diagnostic Ride" in booking.notes
+
     db_booking = models.BookingRequest(
-        **booking.dict(), 
+        **booking.dict(),
         student_id=current_user.id,
         total_amount=total_amount,
         platform_fee=platform_fee,
         instructor_payout=instructor_payout,
-        status="pending"
+        status="pending_payment" if is_diagnostic else "pending"
     )
     db.add(db_booking)
-    
-    # Notify Instructor
-    notif = models.Notification(
-        user_id=instructor.user_id,
-        title="New Booking Request",
-        message=f"You have a new booking request from {current_user.full_name} for {booking.date}.",
-        timestamp=datetime.now().isoformat()
-    )
-    db.add(notif)
+
+    if not is_diagnostic:
+        # Notify instructor immediately for regular bookings
+        # Diagnostic ride bookings notify after payment completes
+        notif = models.Notification(
+            user_id=instructor.user_id,
+            title="New Booking Request",
+            message=f"You have a new booking request from {current_user.full_name} for {booking.date}.",
+            timestamp=datetime.now().isoformat()
+        )
+        db.add(notif)
     
     db.commit()
     db.refresh(db_booking)

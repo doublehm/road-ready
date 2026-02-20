@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from sqlalchemy.orm import Session
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Query
+from pydantic import BaseModel
+from sqlalchemy.orm import Session, joinedload
+from typing import List, Optional
 import json
 from datetime import datetime
 from app import models, schemas
@@ -36,10 +37,43 @@ async def create_diagnostic_ride(
     Args:
         ride: Diagnostic ride data including ride_type, instructor_id, sensor data
     """
-    if current_user.role != "student":
+    # Determine student_id based on who creates the ride
+    if current_user.role == "student":
+        student_id = current_user.id
+    elif current_user.role == "instructor":
+        # Instructors can create rides for booked students
+        if not ride.booking_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Instructors must provide a booking_id to create rides"
+            )
+        booking = db.query(models.BookingRequest).filter(
+            models.BookingRequest.id == ride.booking_id
+        ).first()
+        if not booking:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found"
+            )
+        instructor_profile = db.query(models.InstructorProfile).filter(
+            models.InstructorProfile.user_id == current_user.id
+        ).first()
+        if not instructor_profile or booking.instructor_id != instructor_profile.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized for this booking"
+            )
+        if booking.status != "accepted":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Booking must be accepted to start a ride"
+            )
+        student_id = booking.student_id
+        ride.instructor_id = instructor_profile.id
+    else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only students can create diagnostic rides"
+            detail="Not authorized to create diagnostic rides"
         )
 
     # Validate ride type
@@ -62,7 +96,7 @@ async def create_diagnostic_ride(
 
     # Create diagnostic ride
     db_ride = models.DiagnosticRide(
-        student_id=current_user.id,
+        student_id=student_id,
         ride_type=ride.ride_type,
         instructor_id=ride.instructor_id,
         booking_id=ride.booking_id,
@@ -76,6 +110,8 @@ async def create_diagnostic_ride(
         speed_data=ride.speed_data,
         speed_limit_data=ride.speed_limit_data,
         heading_data=ride.heading_data,
+        evaluator_notes=ride.evaluator_notes,
+        human_feedback=ride.human_feedback,
         status="pending",
         created_at=datetime.now().isoformat()
     )
@@ -87,6 +123,43 @@ async def create_diagnostic_ride(
     return db_ride
 
 
+class HumanFeedbackRequest(BaseModel):
+    feedback: str  # JSON string: [{code, label, category, count, timestamps}]
+
+
+@router.post("/{ride_id}/feedback")
+async def submit_human_feedback(
+    ride_id: int,
+    request: HumanFeedbackRequest,
+    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """
+    Submit or update human feedback for a diagnostic ride.
+    Can be called by the student (parent-supervised) or supervising instructor.
+    """
+    ride = db.query(models.DiagnosticRide).filter(
+        models.DiagnosticRide.id == ride_id
+    ).first()
+
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+
+    if current_user.role == "student" and ride.student_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    elif current_user.role == "instructor":
+        instructor_profile = db.query(models.InstructorProfile).filter(
+            models.InstructorProfile.user_id == current_user.id
+        ).first()
+        if not instructor_profile or ride.instructor_id != instructor_profile.id:
+            raise HTTPException(status_code=403, detail="Not authorized")
+
+    ride.human_feedback = request.feedback
+    db.commit()
+    db.refresh(ride)
+    return {"message": "Feedback saved", "ride_id": ride.id}
+
+
 @router.post("/live-evaluate")
 async def live_evaluate(
     request: schemas.LiveEvaluationRequest,
@@ -96,10 +169,10 @@ async def live_evaluate(
     Evaluate a window of sensor data for real-time feedback.
     Returns any detected events (mistakes) in the current window.
     """
-    if current_user.role != "student":
+    if current_user.role not in ["student", "instructor"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only students can access live evaluation"
+            detail="Only students and instructors can access live evaluation"
         )
 
     evaluator = DiagnosticEvaluator()
@@ -139,8 +212,13 @@ async def list_diagnostic_rides(
     List all diagnostic rides for the current student.
     Instructors can see rides they supervised.
     """
+    query = db.query(models.DiagnosticRide).options(
+        joinedload(models.DiagnosticRide.student),
+        joinedload(models.DiagnosticRide.instructor)
+    )
+
     if current_user.role == "student":
-        rides = db.query(models.DiagnosticRide).filter(
+        rides = query.filter(
             models.DiagnosticRide.student_id == current_user.id
         ).order_by(models.DiagnosticRide.created_at.desc()).all()
     elif current_user.role == "instructor":
@@ -149,13 +227,127 @@ async def list_diagnostic_rides(
         ).first()
         if not instructor_profile:
             return []
-        rides = db.query(models.DiagnosticRide).filter(
+        rides = query.filter(
             models.DiagnosticRide.instructor_id == instructor_profile.id
         ).order_by(models.DiagnosticRide.created_at.desc()).all()
     else:
         rides = []
 
     return rides
+
+
+@router.get("/progress-trends")
+async def get_progress_trends(
+    student_id: Optional[int] = Query(None),
+    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """
+    Get progress trends across diagnostic rides.
+    Students see their own trends.
+    Instructors see a specific student's trends OR their aggregate supervision trends.
+    """
+    query = db.query(models.DiagnosticRide).filter(
+        models.DiagnosticRide.status == "completed"
+    )
+
+    if current_user.role == "student":
+        query = query.filter(models.DiagnosticRide.student_id == current_user.id)
+    elif current_user.role == "instructor":
+        instructor_profile = db.query(models.InstructorProfile).filter(
+            models.InstructorProfile.user_id == current_user.id
+        ).first()
+        if not instructor_profile:
+            raise HTTPException(status_code=404, detail="Instructor profile not found")
+        
+        if student_id:
+            # Verify instructor supervised at least one ride for this student
+            supervised = db.query(models.DiagnosticRide).filter(
+                models.DiagnosticRide.student_id == student_id,
+                models.DiagnosticRide.instructor_id == instructor_profile.id
+            ).first()
+            if not supervised:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You can only view trends for students you have supervised"
+                )
+            query = query.filter(models.DiagnosticRide.student_id == student_id)
+        else:
+            # Aggregate trends for all rides this instructor supervised
+            query = query.filter(models.DiagnosticRide.instructor_id == instructor_profile.id)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid user role")
+
+    rides = query.order_by(models.DiagnosticRide.created_at.asc()).all()
+
+    if not rides:
+        return {
+            "total_rides": 0,
+            "pass_rate": 0,
+            "average_overall": 0,
+            "best_overall": 0,
+            "score_trend": [],
+            "improvement_areas": [],
+            "total_distance_km": 0,
+            "total_time_hours": 0,
+        }
+
+    total_rides = len(rides)
+    passed_count = sum(1 for r in rides if r.passed)
+    overall_scores = [r.overall_score for r in rides if r.overall_score is not None]
+    braking_scores = [r.braking_score for r in rides if r.braking_score is not None]
+    speed_scores = [r.speed_score for r in rides if r.speed_score is not None]
+    cornering_scores = [r.cornering_score for r in rides if r.cornering_score is not None]
+
+    avg_overall = sum(overall_scores) / len(overall_scores) if overall_scores else 0
+    best_overall = max(overall_scores) if overall_scores else 0
+
+    total_distance = sum(r.distance_km or 0 for r in rides)
+    total_minutes = sum(r.duration_minutes or 0 for r in rides)
+    avg_duration = total_minutes / total_rides if total_rides > 0 else 0
+
+    # Category averages
+    avg_braking = sum(braking_scores) / len(braking_scores) if braking_scores else 0
+    avg_speed = sum(speed_scores) / len(speed_scores) if speed_scores else 0
+    avg_cornering = sum(cornering_scores) / len(cornering_scores) if cornering_scores else 0
+
+    # Identify weakest areas (analytical approach: scores < 75 in category averages)
+    improvement_areas = []
+    if avg_braking < 75: improvement_areas.append('braking')
+    if avg_speed < 75: improvement_areas.append('speed control')
+    if avg_cornering < 75: improvement_areas.append('cornering')
+
+    recent_ride = rides[-1]
+    
+    score_trend = []
+    for r in rides:
+        score_trend.append({
+            "ride_id": r.id,
+            "date": r.created_at,
+            "overall": round(r.overall_score or 0, 1),
+            "braking": round(r.braking_score or 0, 1),
+            "speed": round(r.speed_score or 0, 1),
+            "cornering": round(r.cornering_score or 0, 1),
+            "passed": r.passed,
+        })
+
+    return {
+        "total_rides": total_rides,
+        "pass_rate": round(passed_count / total_rides * 100, 1) if total_rides > 0 else 0,
+        "average_overall": round(avg_overall, 1),
+        "best_overall": round(best_overall, 1),
+        "recent_score": round(recent_ride.overall_score or 0, 1),
+        "avg_duration_minutes": round(avg_duration, 1),
+        "category_averages": {
+            "braking": round(avg_braking, 1),
+            "speed": round(avg_speed, 1),
+            "cornering": round(avg_cornering, 1)
+        },
+        "score_trend": score_trend,
+        "improvement_areas": improvement_areas,
+        "total_distance_km": round(total_distance, 1),
+        "total_time_hours": round(total_minutes / 60, 1),
+    }
 
 
 @router.get("/{ride_id}", response_model=schemas.DiagnosticRide)
@@ -167,7 +359,10 @@ async def get_diagnostic_ride(
     """
     Get details of a specific diagnostic ride.
     """
-    ride = db.query(models.DiagnosticRide).filter(
+    ride = db.query(models.DiagnosticRide).options(
+        joinedload(models.DiagnosticRide.student),
+        joinedload(models.DiagnosticRide.instructor)
+    ).filter(
         models.DiagnosticRide.id == ride_id
     ).first()
 
@@ -188,10 +383,23 @@ async def get_diagnostic_ride(
         instructor_profile = db.query(models.InstructorProfile).filter(
             models.InstructorProfile.user_id == current_user.id
         ).first()
-        if not instructor_profile or ride.instructor_id != instructor_profile.id:
+        if not instructor_profile:
+             raise HTTPException(status_code=404, detail="Instructor profile not found")
+
+        # Allow access if they supervised this ride OR if they have a booking with this student
+        has_access = ride.instructor_id == instructor_profile.id
+        if not has_access:
+            booking = db.query(models.BookingRequest).filter(
+                models.BookingRequest.instructor_id == instructor_profile.id,
+                models.BookingRequest.student_id == ride.student_id
+            ).first()
+            if booking:
+                has_access = True
+
+        if not has_access:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only view diagnostic rides you supervised"
+                detail="You can only view diagnostic rides for students you are training"
             )
 
     return ride
@@ -255,6 +463,7 @@ async def evaluate_diagnostic_ride(
             'speed_data': ride.speed_data or '[]',
             'speed_limit_data': ride.speed_limit_data or '[]',
             'heading_data': ride.heading_data or '[]',
+            'human_feedback': ride.human_feedback or '[]',
             'duration_minutes': ride.duration_minutes or 0,
             'distance_km': ride.distance_km or 0
         }
@@ -466,108 +675,6 @@ async def instructor_review(
     }
 
 
-@router.get("/progress-trends")
-async def get_progress_trends(
-    student_id: int = None,
-    current_user: models.User = Depends(deps.get_current_user),
-    db: Session = Depends(deps.get_db)
-):
-    """
-    Get progress trends across all diagnostic rides.
-    Students see their own trends. Instructors can view a student's trends.
-    """
-    target_student_id = None
-
-    if current_user.role == "student":
-        target_student_id = current_user.id
-    elif current_user.role == "instructor" and student_id:
-        # Verify instructor supervised at least one ride for this student
-        instructor_profile = db.query(models.InstructorProfile).filter(
-            models.InstructorProfile.user_id == current_user.id
-        ).first()
-        if not instructor_profile:
-            raise HTTPException(status_code=404, detail="Instructor profile not found")
-
-        supervised = db.query(models.DiagnosticRide).filter(
-            models.DiagnosticRide.student_id == student_id,
-            models.DiagnosticRide.instructor_id == instructor_profile.id
-        ).first()
-        if not supervised:
-            raise HTTPException(
-                status_code=403,
-                detail="You can only view trends for students you have supervised"
-            )
-        target_student_id = student_id
-    else:
-        raise HTTPException(status_code=400, detail="Student ID required for instructors")
-
-    rides = db.query(models.DiagnosticRide).filter(
-        models.DiagnosticRide.student_id == target_student_id,
-        models.DiagnosticRide.status == "completed"
-    ).order_by(models.DiagnosticRide.created_at.asc()).all()
-
-    if not rides:
-        return {
-            "total_rides": 0,
-            "pass_rate": 0,
-            "average_overall": 0,
-            "best_overall": 0,
-            "score_trend": [],
-            "improvement_areas": [],
-            "total_distance_km": 0,
-            "total_time_hours": 0,
-        }
-
-    total_rides = len(rides)
-    passed_count = sum(1 for r in rides if r.passed)
-    overall_scores = [r.overall_score for r in rides if r.overall_score is not None]
-    braking_scores = [r.braking_score for r in rides if r.braking_score is not None]
-    speed_scores = [r.speed_score for r in rides if r.speed_score is not None]
-    cornering_scores = [r.cornering_score for r in rides if r.cornering_score is not None]
-
-    avg_overall = sum(overall_scores) / len(overall_scores) if overall_scores else 0
-    best_overall = max(overall_scores) if overall_scores else 0
-
-    total_distance = sum(r.distance_km or 0 for r in rides)
-    total_minutes = sum(r.duration_minutes or 0 for r in rides)
-
-    # Identify weakest area from latest ride
-    improvement_areas = []
-    if rides:
-        latest = rides[-1]
-        scores = {
-            'braking': latest.braking_score or 0,
-            'speed_control': latest.speed_score or 0,
-            'cornering': latest.cornering_score or 0,
-        }
-        weakest = min(scores, key=scores.get)
-        if scores[weakest] < 75:
-            improvement_areas.append(weakest)
-
-    score_trend = []
-    for r in rides:
-        score_trend.append({
-            "ride_id": r.id,
-            "date": r.created_at,
-            "overall": round(r.overall_score or 0, 1),
-            "braking": round(r.braking_score or 0, 1),
-            "speed": round(r.speed_score or 0, 1),
-            "cornering": round(r.cornering_score or 0, 1),
-            "passed": r.passed,
-        })
-
-    return {
-        "total_rides": total_rides,
-        "pass_rate": round(passed_count / total_rides * 100, 1) if total_rides > 0 else 0,
-        "average_overall": round(avg_overall, 1),
-        "best_overall": round(best_overall, 1),
-        "score_trend": score_trend,
-        "improvement_areas": improvement_areas,
-        "total_distance_km": round(total_distance, 1),
-        "total_time_hours": round(total_minutes / 60, 1),
-    }
-
-
 @router.get("/student/{student_id}/rides", response_model=List[schemas.DiagnosticRide])
 async def get_student_rides(
     student_id: int,
@@ -597,8 +704,9 @@ async def get_student_rides(
             detail="You can only view rides for students you have supervised"
         )
 
-    rides = db.query(models.DiagnosticRide).filter(
+    return db.query(models.DiagnosticRide).options(
+        joinedload(models.DiagnosticRide.student),
+        joinedload(models.DiagnosticRide.instructor)
+    ).filter(
         models.DiagnosticRide.student_id == student_id
     ).order_by(models.DiagnosticRide.created_at.desc()).all()
-
-    return rides

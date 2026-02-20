@@ -23,7 +23,7 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.content}>
         <Text style={styles.title}>Road Ready</Text>
         <Text style={styles.subtitle}>Log in to start driving</Text>

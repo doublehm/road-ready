@@ -132,6 +132,166 @@ For instructor-supervised rides:
 - Can adjust scores or change pass/fail
 - Override is marked in database
 
+## Sensor Physics & Force Calculation
+
+### Overview
+
+The diagnostic evaluator uses the phone's built-in accelerometer to measure forces acting on the vehicle during a ride. All forces are expressed in **g-force** (multiples of Earth's gravitational acceleration, 9.81 m/s²). The raw accelerometer readings in m/s² are converted to g using:
+
+```
+force_in_g = abs(raw_acceleration_m_s2) / 9.81
+```
+
+### Harsh Braking — Deceleration Force
+
+**What it measures:** How abruptly the driver decelerates, measured via the forward/backward axis of the accelerometer.
+
+**Axis mapping:** Phone orientation in the car varies, so the evaluator checks both Y and Z axes and uses the strongest deceleration:
+
+- **Portrait mount** (phone upright in holder): Y-axis = forward/backward (braking)
+- **Landscape mount** (phone on its side): Z-axis = forward/backward (braking)
+
+```python
+y_decel_g = abs(y_accel) / 9.81   # only if y_accel < 0 (deceleration)
+z_decel_g = abs(z_accel) / 9.81   # only if z_accel < 0 (deceleration)
+deceleration_g = max(y_decel_g, z_decel_g)
+```
+
+**Thresholds:**
+
+| G-Force Range | Classification | Scoring Impact |
+|---------------|---------------|----------------|
+| 0.1 - 0.3g | Smooth braking | +2 pts bonus per event (max +20) |
+| 0.4 - 0.6g | Harsh braking | -10 pts per event, severity: `medium` |
+| > 0.6g | Severe braking | -10 pts per event, severity: `high` |
+
+**Real-world reference:**
+
+| G-Force | What it feels like |
+|---------|--------------------|
+| 0.1 - 0.3g | Normal comfortable stop at a red light |
+| 0.4g | Noticeable jerk, passengers lurch forward |
+| 0.6g | Emergency braking, approaching ABS activation |
+| 1.0g | Full emergency stop on dry pavement |
+
+**Source:** `app/services/diagnostic_evaluator.py` — `_evaluate_braking()` method
+
+### Sudden Stops — Speed Drop Detection
+
+**What it measures:** Rapid speed decrease detected via GPS speed data (complementary to accelerometer-based braking).
+
+**Calculation:** Compares consecutive GPS speed readings within a 1.5-second window:
+
+```python
+speed_drop = previous_speed - current_speed  # km/h
+```
+
+**Threshold:** A drop exceeding 5 km/h within 1.5 seconds triggers a sudden stop event (-15 pts, severity: `high`).
+
+**Source:** `app/services/diagnostic_evaluator.py` — `_evaluate_braking()` method
+
+### Sharp Turns — Lateral Force
+
+**What it measures:** The sideways (centripetal) force experienced during a turn, measured via the lateral axis of the accelerometer.
+
+**Axis mapping:** Similar to braking, phone orientation matters:
+
+- **Portrait mount**: X-axis = lateral (sideways force during turns)
+- **Landscape mount**: Y-axis may be lateral instead
+
+```python
+lateral_g = abs(x_accel) / 9.81
+
+# Fallback: if X is very low but Y is high, phone may be rotated
+y_lateral_g = abs(y_accel) / 9.81
+if y_lateral_g > lateral_g and lateral_g < 0.05:
+    lateral_g = y_lateral_g
+```
+
+**Thresholds:**
+
+| G-Force Range | Classification | Scoring Impact |
+|---------------|---------------|----------------|
+| 0.02 - 0.15g | Smooth turn | +2 pts bonus per event (max +20) |
+| 0.15 - 0.3g | Normal turn | No penalty |
+| 0.3 - 0.5g | Sharp turn | -8 pts per event, severity: `medium` |
+| > 0.5g | Very sharp turn | -8 pts per event, severity: `high` |
+
+**Real-world reference:**
+
+| G-Force | What it feels like |
+|---------|--------------------|
+| 0.15g | Gentle lane change or gradual highway curve |
+| 0.3g | Aggressive turn, passengers slide sideways |
+| 0.5g | Dangerously sharp turn, risk of skidding on wet roads |
+| 0.8g+ | Approaching tire grip limits |
+
+**The physics:** When a car turns, centripetal acceleration pushes occupants outward. The formula is `a = v²/r` where `v` is speed and `r` is turn radius. A tighter turn or higher speed = more lateral g-force. For example, a 50 km/h turn with a 50m radius produces ~0.39g lateral force.
+
+**Source:** `app/services/diagnostic_evaluator.py` — `_evaluate_cornering()` method
+
+### Jerky Steering — Rotation Rate Change
+
+**What it measures:** Abrupt changes in the phone's gyroscope Z-axis rotation (yaw rate), indicating inconsistent steering inputs.
+
+**Calculation:** Compares consecutive gyroscope Z-rotation readings:
+
+```python
+rotation_change = abs(current_rotation_z - previous_rotation_z)
+```
+
+**Threshold:** A change exceeding 0.5 rad/s between consecutive samples triggers a jerky steering event (-5 pts).
+
+**Source:** `app/services/diagnostic_evaluator.py` — `_evaluate_cornering()` method
+
+### Lane Discipline — Heading Stability
+
+**What it measures:** How steadily the driver maintains their lane, measured via GPS heading (compass bearing) variance over 10-sample windows.
+
+**Calculation:** Standard deviation of heading values within each window:
+
+```python
+std_dev = sqrt(sum((heading - avg_heading)² for heading in window) / len(window))
+```
+
+**Thresholds:**
+
+| Heading Std Dev | Classification | Scoring Impact |
+|----------------|---------------|----------------|
+| < 3.0° | Good lane discipline | No penalty |
+| 3.0 - 5.0° | Fair (some wandering) | -1 pt per weaving instance |
+| > 5.0° | Poor (excessive weaving) | -2 pts per instance (max -15) |
+
+**Source:** `app/services/diagnostic_evaluator.py` — `_evaluate_cornering()` method
+
+### Device-Detected Event Mapping (F-Codes)
+
+Sensor events detected during live evaluation are automatically mapped to unified fault codes for the feedback system:
+
+| Event Type | F-Code | Label | Triggered By |
+|-----------|--------|-------|-------------|
+| `harsh_braking` | F1 | Harsh Braking | Deceleration > 0.4g |
+| `speeding` | F2 | Speeding | Speed > posted limit + 5 km/h |
+| `sharp_turn` | F3 | Sharp Turn | Lateral force > 0.3g |
+| `sudden_stop` | F4 | Sudden Stop | Speed drop > 5 km/h in 1.5s |
+
+These F-codes appear alongside human-flagged criteria (A1-E4) in the unified feedback report.
+
+**Source:** `mobile-app/src/data/faults.js` — `DEVICE_EVENT_TO_CODE`
+
+### Sampling & Data Collection
+
+| Sensor | Sample Rate | Data Collected |
+|--------|-------------|----------------|
+| Accelerometer | 10 Hz | X, Y, Z acceleration (m/s²) |
+| Gyroscope | 10 Hz | X, Y, Z rotation (rad/s) |
+| GPS | 1 Hz | Latitude, longitude, speed (km/h), heading (°) |
+| Speed limits | On GPS update | Posted limit (km/h), zone type, road type |
+
+**Live evaluation:** Every 2 seconds, the app sends the latest 3 seconds of accelerometer data (30 samples) and 3 seconds of speed data (3 samples) to the `/diagnostic-rides/live-evaluate` endpoint for real-time event detection and alerts.
+
+**Final evaluation:** On ride completion, all collected sensor data is submitted to the backend where `DiagnosticEvaluator.evaluate()` processes the full dataset for comprehensive scoring.
+
 ## Key Files Created
 
 ### Backend

@@ -5,15 +5,32 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
 
 const FILTERS = ['All', 'Passed', 'Failed'];
+
+const CategoryStat = ({ label, score }) => {
+  const width = score ? `${Math.min(100, score)}%` : '0%';
+  const color = (score || 0) >= 75 ? '#28a745' : (score || 0) >= 60 ? '#ffc107' : '#dc3545';
+
+  return (
+    <View style={styles.catStatContainer}>
+      <View style={styles.catStatHeader}>
+        <Text style={styles.catStatLabel}>{label}</Text>
+        <Text style={styles.catStatValue}>{Math.round(score || 0)}</Text>
+      </View>
+      <View style={styles.catStatTrack}>
+        <View style={[styles.catStatFill, { width, backgroundColor: color }]} />
+      </View>
+    </View>
+  );
+};
 
 const DiagnosticRideHistoryScreen = ({ navigation }) => {
   const { userInfo } = useContext(AuthContext);
@@ -70,9 +87,18 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
     }
   };
 
+  const getFlagCount = (ride) => {
+    try {
+      if (!ride.human_feedback) return 0;
+      const feedback = JSON.parse(ride.human_feedback);
+      return feedback.reduce((sum, item) => sum + (item.count || 0), 0);
+    } catch { return 0; }
+  };
+
   const renderRideCard = ({ item }) => {
     const scoreColor = (item.overall_score || 0) >= 80 ? '#28a745' :
                        (item.overall_score || 0) >= 60 ? '#ffc107' : '#dc3545';
+    const flagCount = getFlagCount(item);
 
     return (
       <TouchableOpacity
@@ -88,6 +114,9 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.rideCardCenter}>
+          {isInstructor && item.student?.full_name && (
+            <Text style={styles.rideStudentName}>{item.student.full_name}</Text>
+          )}
           <View style={styles.rideCardRow}>
             <Text style={styles.rideDate}>{formatDate(item.created_at)}</Text>
             {item.passed !== null && (
@@ -127,6 +156,12 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
             <MiniScoreBar label="B" score={item.braking_score} />
             <MiniScoreBar label="S" score={item.speed_score} />
             <MiniScoreBar label="C" score={item.cornering_score} />
+            {flagCount > 0 && (
+              <View style={styles.flagBadge}>
+                <Ionicons name="flag" size={10} color="#e17055" />
+                <Text style={styles.flagBadgeText}>{flagCount}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -145,7 +180,7 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -164,24 +199,42 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
               <Text style={styles.summaryLabel}>Total Rides</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{trends.best_overall}</Text>
-              <Text style={styles.summaryLabel}>Best Score</Text>
-            </View>
-            <View style={styles.summaryItem}>
               <Text style={styles.summaryValue}>{trends.pass_rate}%</Text>
               <Text style={styles.summaryLabel}>Pass Rate</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{trends.total_distance_km} km</Text>
+              <Text style={[styles.summaryValue, {color: '#28a745'}]}>{trends.recent_score}</Text>
+              <Text style={styles.summaryLabel}>Recent Score</Text>
+            </View>
+          </View>
+
+          <View style={[styles.summaryRow, {marginTop: 20}]}>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>{trends.avg_duration_minutes}m</Text>
+              <Text style={styles.summaryLabel}>Avg Duration</Text>
+            </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>{trends.total_distance_km}km</Text>
               <Text style={styles.summaryLabel}>Total Distance</Text>
             </View>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryValue}>{trends.best_overall}</Text>
+              <Text style={styles.summaryLabel}>Best Overall</Text>
+            </View>
+          </View>
+
+          {/* Category Averages */}
+          <View style={styles.categoryStats}>
+            <CategoryStat label="Braking" score={trends.category_averages?.braking} />
+            <CategoryStat label="Speed" score={trends.category_averages?.speed} />
+            <CategoryStat label="Cornering" score={trends.category_averages?.cornering} />
           </View>
 
           {trends.improvement_areas.length > 0 && (
             <View style={styles.improvementRow}>
               <Ionicons name="trending-up" size={16} color="#007bff" />
               <Text style={styles.improvementText}>
-                Focus area: {trends.improvement_areas.join(', ').replace('_', ' ')}
+                Focus area: {trends.improvement_areas.join(', ')}
               </Text>
             </View>
           )}
@@ -299,6 +352,36 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     marginTop: 2,
   },
+  categoryStats: {
+    marginTop: 24,
+    gap: 12,
+  },
+  catStatContainer: {},
+  catStatHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  catStatLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#495057',
+  },
+  catStatValue: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+  },
+  catStatTrack: {
+    height: 6,
+    backgroundColor: '#e9ecef',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  catStatFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
   improvementRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -380,6 +463,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 6,
   },
+  rideStudentName: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
   rideDate: {
     fontSize: 14,
     fontWeight: '600',
@@ -445,6 +534,20 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     width: 18,
     textAlign: 'right',
+  },
+  flagBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#fff3e0',
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  flagBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#e17055',
   },
   emptyContainer: {
     alignItems: 'center',

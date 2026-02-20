@@ -284,6 +284,7 @@ class DiagnosticRide(Base):
     evaluation_result = Column(Text, nullable=True) # JSON detailed feedback
     criteria_results = Column(Text, nullable=True) # JSON pass/fail per criteria
     evaluator_notes = Column(Text, nullable=True) # instructor notes
+    human_feedback = Column(Text, nullable=True) # JSON: [{code, label, category, count, timestamps}]
     instructor_override = Column(Boolean, default=False)
 
     status = Column(String, default="pending") # "pending", "evaluating", "completed"

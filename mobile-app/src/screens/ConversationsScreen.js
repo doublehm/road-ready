@@ -148,7 +148,7 @@ const ConversationsScreen = ({ navigation }) => {
   if (loading) return <ActivityIndicator size="large" style={{flex:1}} />;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.header}>Messages</Text>
       <FlatList
         data={conversations}

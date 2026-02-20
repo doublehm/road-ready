@@ -111,7 +111,7 @@ const GradeStudentScreen = ({ navigation }) => {
 
   if (!selectedBooking) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <Text style={styles.header}>Select Student to Grade</Text>
         <FlatList 
           data={bookings}

@@ -8,7 +8,7 @@ const InstructorHomeScreen = ({ navigation }) => {
   const { logout, userInfo, unreadCount, pendingBookingsCount } = useContext(AuthContext);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         
         {/* Header */}
@@ -71,44 +71,16 @@ const InstructorHomeScreen = ({ navigation }) => {
           <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionCard}
-          onPress={() => navigation.navigate('GradeStudent')}
-        >
-          <View style={[styles.iconBg, { backgroundColor: '#e8f5e9' }]}>
-            <Ionicons name="create-outline" size={24} color="#28a745" />
-          </View>
-          <View style={styles.actionInfo}>
-            <Text style={styles.actionTitle}>Grade Student</Text>
-            <Text style={styles.actionDesc}>Log a new driving session</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#ccc" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.actionCard}
-          onPress={() => navigation.navigate('GradeDiagnosticRide')}
+          onPress={() => navigation.navigate('DiagnosticRideHistory')}
         >
           <View style={[styles.iconBg, { backgroundColor: '#e3f2fd' }]}>
             <Ionicons name="car-outline" size={24} color="#007bff" />
           </View>
           <View style={styles.actionInfo}>
-            <Text style={styles.actionTitle}>Grade Diagnostic Ride</Text>
-            <Text style={styles.actionDesc}>Submit diagnostic results</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#ccc" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionCard}
-          onPress={() => navigation.navigate('DiagnosticRideHistory')}
-        >
-          <View style={[styles.iconBg, { backgroundColor: '#d1ecf1' }]}>
-            <Ionicons name="analytics" size={24} color="#0c5460" />
-          </View>
-          <View style={styles.actionInfo}>
-            <Text style={styles.actionTitle}>Student Ride History</Text>
-            <Text style={styles.actionDesc}>View diagnostic ride records</Text>
+            <Text style={styles.actionTitle}>Students Diagnostic Sessions</Text>
+            <Text style={styles.actionDesc}>View and review diagnostic rides</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#ccc" />
         </TouchableOpacity>

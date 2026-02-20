@@ -45,7 +45,7 @@ const StudentHomeScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
         
         {/* Header */}
@@ -90,18 +90,8 @@ const StudentHomeScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.grid}>
           
-          <TouchableOpacity 
-            style={styles.gridItem} 
-            onPress={() => navigation.navigate('Find Instructor')}
-          >
-            <View style={[styles.iconBg, { backgroundColor: '#e3f2fd' }]}>
-              <Ionicons name="search" size={28} color="#007bff" />
-            </View>
-            <Text style={styles.gridLabel}>Book Lesson</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.gridItem} 
+          <TouchableOpacity
+            style={styles.gridItem}
             onPress={() => navigation.navigate('Learn')}
           >
             <View style={[styles.iconBg, { backgroundColor: '#fff3cd' }]}>

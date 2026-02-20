@@ -380,6 +380,8 @@ class DiagnosticRideCreate(DiagnosticRideBase):
     speed_limit_data: Optional[str] = None # JSON string
     heading_data: Optional[str] = None # JSON string
     criteria_results: Optional[str] = None # JSON string
+    evaluator_notes: Optional[str] = None # coach notes from during ride
+    human_feedback: Optional[str] = None # JSON: [{code, label, category, count, timestamps}]
 
 class LiveEvaluationRequest(BaseModel):
     acceleration_window: List[SensorDataPoint]
@@ -405,6 +407,9 @@ class DiagnosticRide(DiagnosticRideBase):
     id: int
     student_id: int
     booking_id: Optional[int] = None
+    instructor_id: Optional[int] = None
+    student: Optional[User] = None
+    instructor: Optional["InstructorProfile"] = None
     start_time: str
     end_time: Optional[str] = None
     duration_minutes: Optional[float] = None
@@ -423,6 +428,7 @@ class DiagnosticRide(DiagnosticRideBase):
     evaluation_result: Optional[str] = None
     criteria_results: Optional[str] = None
     evaluator_notes: Optional[str] = None
+    human_feedback: Optional[str] = None
     instructor_override: bool = False
     status: str
     created_at: str

@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import client from '../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const BookingFlowScreen = ({ route, navigation }) => {
-  const { instructor } = route.params;
+  const { instructor, forDiagnosticRide } = route.params;
   
   // State
   const [date, setDate] = useState(new Date());
@@ -70,7 +70,7 @@ const BookingFlowScreen = ({ route, navigation }) => {
       const dateStr = date.toISOString().split('T')[0];
       const timeStr = date.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
 
-      await client.post('/bookings/', {
+      const response = await client.post('/bookings/', {
         instructor_id: instructor.id,
         date: dateStr,
         time: timeStr,
@@ -78,12 +78,17 @@ const BookingFlowScreen = ({ route, navigation }) => {
         pickup_address: address,
         pickup_lat: marker?.latitude,
         pickup_lng: marker?.longitude,
-        notes: "Mobile Booking"
+        notes: forDiagnosticRide ? "Diagnostic Ride Session" : "Mobile Booking"
       });
-      
-      Alert.alert('Success', 'Booking request sent!', [
-        { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
-      ]);
+
+      if (forDiagnosticRide) {
+        // Navigate to Stripe checkout for payment
+        navigation.replace('Checkout', { bookingId: response.data.id });
+      } else {
+        Alert.alert('Success', 'Booking request sent!', [
+          { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
+        ]);
+      }
     } catch (e) {
       Alert.alert('Error', 'Booking failed.');
     } finally {
@@ -92,9 +97,9 @@ const BookingFlowScreen = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.header}>Book Session</Text>
+        <Text style={styles.header}>{forDiagnosticRide ? 'Book Diagnostic Ride' : 'Book Session'}</Text>
         
         {/* Date & Time Selection */}
         <Text style={styles.label}>Select Date & Time</Text>
@@ -149,7 +154,15 @@ const BookingFlowScreen = ({ route, navigation }) => {
             style={styles.map} 
             region={region}
             onPress={handleMapPress}
+            mapType="none"
           >
+            <UrlTile
+              urlTemplate="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maximumZ={19}
+              flipY={false}
+              shouldReplaceMapContent={true}
+              zIndex={-1}
+            />
             {marker && <Marker coordinate={marker} />}
           </MapView>
         </View>

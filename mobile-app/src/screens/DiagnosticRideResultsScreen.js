@@ -5,15 +5,16 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
 import RouteReplayMap from '../components/RouteReplayMap';
 import SpeedGraph from '../components/SpeedGraph';
 import EventTimeline from '../components/EventTimeline';
+import HumanFeedbackSection from '../components/HumanFeedbackSection';
 
 const ScoreCircle = ({ score, label, size = 100 }) => {
   const color = score >= 80 ? '#28a745' : score >= 60 ? '#ffc107' : '#dc3545';
@@ -163,10 +164,66 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
     }
   } catch (e) {}
 
+  let humanFeedback = [];
+  try {
+    if (ride.human_feedback) {
+      humanFeedback = JSON.parse(ride.human_feedback);
+    } else if (evaluationResult?.human_feedback) {
+      humanFeedback = evaluationResult.human_feedback;
+    }
+  } catch (e) {}
+
   const startTimestamp = speedData.length > 0 ? speedData[0].timestamp : 0;
 
+  const getTimelineEvents = () => {
+    // allEvents now includes human flags from backend
+    const combined = [...allEvents];
+
+    // Check if human flags are already in combined
+    const hasHumanFlags = combined.some(e => e.type === 'human_flag');
+
+    if (!hasHumanFlags && humanFeedback.length > 0) {
+      humanFeedback.forEach(flag => {
+        if (flag.timestamps) {
+          flag.timestamps.forEach(t => {
+            combined.push({
+              type: 'human_flag',
+              timestamp: t.ts,
+              severity: 'human',
+              label: flag.label,
+              code: flag.code,
+            });
+          });
+        }
+      });
+    }
+
+    // Add coach notes manually
+    if (ride.evaluator_notes) {
+      const noteLines = ride.evaluator_notes.split('\n');
+      noteLines.forEach(line => {
+        const match = line.match(/^\[(\d+):(\d+)\]\s*(.*)/);
+        if (match) {
+          const mins = parseInt(match[1]);
+          const secs = parseInt(match[2]);
+          const elapsedMs = (mins * 60 + secs) * 1000;
+          combined.push({
+            type: 'coach_note',
+            timestamp: startTimestamp + elapsedMs,
+            severity: 'note',
+            text: match[3],
+          });
+        }
+      });
+    }
+
+    return combined.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  };
+
+  const timelineEvents = getTimelineEvents();
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
@@ -179,18 +236,6 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
               : 'Keep practicing and try again'}
           </Text>
         </View>
-
-        {ride.passed && (
-          <View style={styles.savingsCard}>
-            <Ionicons name="trophy" size={24} color="#fff" />
-            <Text style={styles.savingsText}>
-              You saved $800 by skipping Basics!
-            </Text>
-            <Text style={styles.savingsSubtext}>
-              Advanced Module is now unlocked
-            </Text>
-          </View>
-        )}
 
         {/* Scores */}
         <View style={styles.scoresContainer}>
@@ -356,8 +401,9 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Event Timeline</Text>
           <EventTimeline
-            events={allEvents}
+            events={timelineEvents}
             startTime={startTimestamp}
+            humanFeedback={humanFeedback}
           />
         </View>
 
@@ -451,24 +497,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#6c757d',
     textAlign: 'center',
-  },
-  savingsCard: {
-    backgroundColor: '#28a745',
-    borderRadius: 12,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 20,
-    gap: 4,
-  },
-  savingsText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  savingsSubtext: {
-    fontSize: 14,
-    color: '#fff',
-    opacity: 0.9,
   },
   scoresContainer: {
     alignItems: 'center',
@@ -646,6 +674,25 @@ const styles = StyleSheet.create({
     color: '#6c757d',
     marginBottom: 4,
     lineHeight: 18,
+  },
+  notesCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    borderLeftWidth: 4,
+    borderLeftColor: '#007bff',
+  },
+  noteIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  notesText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#495057',
+    lineHeight: 20,
+    fontStyle: 'italic',
   },
   tipsContainer: {
     marginTop: 8,
