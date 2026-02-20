@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Polyline, Marker, UrlTile } from 'react-native-maps';
+import OSMMap from '../components/OSMMap';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import useGPSTracking from '../hooks/useGPSTracking';
 import useDeviceMotion from '../hooks/useDeviceMotion';
@@ -520,36 +521,27 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         <Text style={styles.safetyText}>DRIVER SAFETY MODE — OPERATE BY SUPERVISOR ONLY</Text>
       </View>
 
-      <MapView
+      <OSMMap
         style={styles.map}
         region={{
           latitude: gpsTracking.location.latitude,
           longitude: gpsTracking.location.longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
         }}
-        mapType="none"
-      >
-        <UrlTile
-          urlTemplate="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          maximumZ={20}
-          flipY={false}
-          shouldReplaceMapContent={true}
-          zIndex={-1}
-        />
-        <Marker
-          coordinate={{
+        markers={[
+          {
             latitude: gpsTracking.location.latitude,
             longitude: gpsTracking.location.longitude,
-          }}
-          title="Current Position"
-        />
-        <Polyline
-          coordinates={gpsTracking.routeCoordinates}
-          strokeWidth={4}
-          strokeColor="#007bff"
-        />
-      </MapView>
+            title: "Current Position"
+          }
+        ]}
+        polylines={[
+          {
+            coordinates: gpsTracking.routeCoordinates,
+            strokeWidth: 4,
+            strokeColor: "#007bff"
+          }
+        ]}
+      />
 
       {/* Debug Indicator */}
       <View style={{ position: 'absolute', top: 10, left: 10, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4, borderRadius: 4, zIndex: 9999 }}>

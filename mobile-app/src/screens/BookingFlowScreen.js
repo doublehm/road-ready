@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert,
 import client from '../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
+import OSMMap from '../components/OSMMap';
 import * as Location from 'expo-location';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -150,21 +151,11 @@ const BookingFlowScreen = ({ route, navigation }) => {
         {/* Map & Address */}
         <Text style={styles.label}>Pickup Location</Text>
         <View style={styles.mapContainer}>
-          <MapView 
+          <OSMMap 
             style={styles.map} 
             region={region}
-            onPress={handleMapPress}
-            mapType="none"
-          >
-            <UrlTile
-              urlTemplate="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-              maximumZ={20}
-              flipY={false}
-              shouldReplaceMapContent={true}
-              zIndex={-1}
-            />
-            {marker && <Marker coordinate={marker} />}
-          </MapView>
+            markers={marker ? [marker] : []}
+          />
         </View>
         <TextInput 
           style={styles.input} 

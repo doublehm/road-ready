@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MapView, { Polyline, Marker, UrlTile } from 'react-native-maps';
+import OSMMap from './OSMMap';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const SEGMENT_COLORS = {
@@ -112,77 +113,40 @@ const RouteReplayMap = ({ routeSegments = [], events = [], routeCoords = [], hei
 
   return (
     <View style={[styles.container, { height }]}>
-      <MapView 
+      <OSMMap 
         style={styles.map} 
-        region={region} 
-        scrollEnabled={true} 
-        zoomEnabled={true}
-        mapType="none"
-      >
-        <UrlTile
-          urlTemplate="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          maximumZ={20}
-          flipY={false}
-          shouldReplaceMapContent={true}
-          zIndex={-1}
-        />
-        {/* Color-coded route polylines */}
-        {polylines.map((line, i) => (
-          <Polyline
-            key={`line-${i}`}
-            coordinates={line.coords}
-            strokeWidth={5}
-            strokeColor={SEGMENT_COLORS[line.color] || SEGMENT_COLORS.green}
-          />
-        ))}
-
-        {/* Fallback: single-color route */}
-        {polylines.length === 0 && routeCoords.length > 0 && (
-          <Polyline
-            coordinates={routeCoords}
-            strokeWidth={4}
-            strokeColor="#007bff"
-          />
-        )}
-
-        {/* Event markers */}
-        {eventMarkers.map((event, i) => {
-          const iconConfig = EVENT_ICONS[event.type] || { name: 'alert-circle', color: '#dc3545' };
-          return (
-            <Marker
-              key={`event-${i}`}
-              coordinate={{ latitude: event.lat, longitude: event.lng }}
-              title={event.type.replace('_', ' ').toUpperCase()}
-              description={event.description || ''}
-              pinColor={iconConfig.color}
-            />
-          );
-        })}
-
-        {/* Start marker */}
-        {routeSegments.length > 0 && routeSegments[0].start?.lat && (
-          <Marker
-            coordinate={{
-              latitude: routeSegments[0].start.lat,
-              longitude: routeSegments[0].start.lng,
-            }}
-            title="Start"
-            pinColor="#007bff"
-          />
-        )}
-
-        {/* End marker */}
-        {routeSegments.length > 0 && routeSegments[routeSegments.length - 1].end?.lat && (
-          <Marker
-            coordinate={{
-              latitude: routeSegments[routeSegments.length - 1].end.lat,
-              longitude: routeSegments[routeSegments.length - 1].end.lng,
-            }}
-            title="End"
-            pinColor="#6c757d"
-          />
-        )}
-      </MapView>
+        region={region}
+        markers={[
+          ...eventMarkers.map(event => ({
+            latitude: event.lat,
+            longitude: event.lng,
+            title: event.type.replace('_', ' ').toUpperCase(),
+            description: event.description || ''
+          })),
+          ...(routeSegments.length > 0 && routeSegments[0].start?.lat ? [{
+            latitude: routeSegments[0].start.lat,
+            longitude: routeSegments[0].start.lng,
+            title: "Start"
+          }] : []),
+          ...(routeSegments.length > 0 && routeSegments[routeSegments.length - 1].end?.lat ? [{
+            latitude: routeSegments[routeSegments.length - 1].end.lat,
+            longitude: routeSegments[routeSegments.length - 1].end.lng,
+            title: "End"
+          }] : [])
+        ]}
+        polylines={[
+          ...polylines.map((line, i) => ({
+            coordinates: line.coords,
+            strokeWidth: 5,
+            strokeColor: SEGMENT_COLORS[line.color] || SEGMENT_COLORS.green
+          })),
+          ...(polylines.length === 0 && routeCoords.length > 0 ? [{
+            coordinates: routeCoords,
+            strokeWidth: 4,
+            strokeColor: "#007bff"
+          }] : [])
+        ]}
+      />
 
       {/* Legend */}
       <View style={styles.legend}>
