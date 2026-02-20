@@ -43,13 +43,23 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
           
+          echo "--- DEPLOYMENT DIAGNOSTICS ---"
+          echo "Public IP: $(curl -s ifconfig.me)"
+          echo "Running Processes (Gunicorn/Uvicorn):"
+          ps aux | grep -E "gunicorn|uvicorn" | grep -v grep || echo "No processes found"
+          echo "Nginx proxy_pass config:"
+          sudo grep -r "proxy_pass" /etc/nginx/sites-enabled/ || echo "No nginx config found"
+          echo "Checking version marker in base.html:"
+          grep "v2.0" app/templates/base.html || echo "v2.0 NOT FOUND ON DISK!"
+          echo "------------------------------"
+
           # Stop conflicts
           sudo systemctl stop roadready || true
           sudo systemctl disable roadready || true
 
           # Rebuild and Restart Docker
-          sudo docker compose down
-          sudo docker compose up -d --build
+          sudo docker compose down || true
+          sudo docker compose up -d --build --force-recreate
           
           # Ensure Nginx is happy
           sudo systemctl restart nginx
