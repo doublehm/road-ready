@@ -177,25 +177,16 @@
             const lat = startPoint ? startPoint.latitude : 49.2827; // Default to Vancouver
             const lng = startPoint ? startPoint.longitude : -123.1207;
             
-            map = L.map('rideMap').setView([lat, lng], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            map = RoadReadyMaps.init('rideMap', [lat, lng], 15);
 
             const path = routeCoords.map(p => [p.latitude, p.longitude]);
             pathPolyline = L.polyline(path, {color: 'blue', weight: 4, opacity: 0.6}).addTo(map);
 
             if (routeCoords.length > 0) {
-                L.marker(path[0], {icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41]
-                })}).addTo(map).bindPopup("Start");
+                L.marker(path[0], {icon: RoadReadyMaps.icons.start}).addTo(map).bindPopup("Start");
                 
                 if (!isLive) {
-                    L.marker(path[path.length-1], {icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                        iconSize: [25, 41], iconAnchor: [12, 41]
-                    })}).addTo(map).bindPopup("End");
+                    L.marker(path[path.length-1], {icon: RoadReadyMaps.icons.dropoff}).addTo(map).bindPopup("End");
                 } else {
                     currentMarker = L.marker(path[path.length-1]).addTo(map).bindPopup("Live Position");
                 }
