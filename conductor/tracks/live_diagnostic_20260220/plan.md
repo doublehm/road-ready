@@ -23,7 +23,7 @@
 - [x] Task: Add a "Live" status indicator and transition logic between live/completed states. 97013fb
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Web Dashboard Live Visualization' (Protocol in workflow.md) 97013fb
 
-## Phase 4: Integration & Optimization
+## Phase 4: Integration & Optimization [checkpoint: 7cf0859]
 - [ ] Task: Perform end-to-end testing between mobile app and web dashboard.
 - [ ] Task: Optimize WebSocket message frequency to balance latency and battery/data usage.
 - [ ] Task: Final code review and documentation updates.
