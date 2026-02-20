@@ -5,6 +5,7 @@
 *   **Database:** SQLite - Lightweight, file-based SQL database.
 *   **ORM:** SQLAlchemy - SQL toolkit and Object-Relational Mapper.
 *   **Authentication:** JWT (JSON Web Tokens) using `python-jose` and `PyJWT`.
+*   **Real-time Communication:** WebSockets (FastAPI) for live telemetry and event streaming.
 
 ## Frontend (Web)
 *   **Templating:** Jinja2 - Modern and designer-friendly templating language for Python.
