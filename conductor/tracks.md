@@ -3,7 +3,7 @@
 This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
 
 ## Active Tracks
-- [ ] **Track: Live Diagnostic Ride Enhancements**
+- [~] **Track: Live Diagnostic Ride Enhancements**
 *Link: [./tracks/live_diagnostic_20260220/](./tracks/live_diagnostic_20260220/)*
 
 ## Archived Tracks
