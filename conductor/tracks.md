@@ -3,7 +3,8 @@
 This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
 
 ## Active Tracks
-*(No active tracks)*
+- [ ] **Track: Open Source Map Migration**
+*Link: [./tracks/osm_migration_20260220/](./tracks/osm_migration_20260220/)*
 
 ## Archived Tracks
 - [Live Diagnostic Ride Enhancements](./archive/live_diagnostic_20260220/index.md) (Completed: 2026-02-20) - *Implemented real-time telemetry and event streaming for diagnostic rides.*
