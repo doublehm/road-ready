@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Query
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
-from typing import List, Optional
+from typing import List, Optional, Dict
 import json
 from datetime import datetime
 from app import models, schemas
@@ -10,6 +10,68 @@ from app.services.diagnostic_evaluator import DiagnosticEvaluator
 from app.services.speed_limit_service import get_speed_limit
 
 router = APIRouter()
+
+class ConnectionManager:
+    def __init__(self):
+        # Dictionary mapping ride_id to list of active websockets
+        # {ride_id: {"mobile": [ws], "web": [ws, ws]}}
+        self.active_connections: Dict[str, Dict[str, List[WebSocket]]] = {}
+
+    async def connect(self, websocket: WebSocket, ride_id: str, client_type: str):
+        await websocket.accept()
+        if ride_id not in self.active_connections:
+            self.active_connections[ride_id] = {"mobile": [], "web": []}
+        
+        if client_type not in self.active_connections[ride_id]:
+            self.active_connections[ride_id][client_type] = []
+            
+        self.active_connections[ride_id][client_type].append(websocket)
+
+    def disconnect(self, websocket: WebSocket, ride_id: str, client_type: str):
+        if ride_id in self.active_connections:
+            if client_type in self.active_connections[ride_id]:
+                if websocket in self.active_connections[ride_id][client_type]:
+                    self.active_connections[ride_id][client_type].remove(websocket)
+            
+            # Cleanup if no connections left for this ride
+            if not self.active_connections[ride_id]["mobile"] and not self.active_connections[ride_id]["web"]:
+                del self.active_connections[ride_id]
+
+    async def broadcast(self, message: dict, ride_id: str, sender_type: str):
+        if ride_id in self.active_connections:
+            # If sender is mobile, broadcast to all web clients for this ride
+            if sender_type == "mobile":
+                for connection in self.active_connections[ride_id]["web"]:
+                    await connection.send_json(message)
+            # If sender is web, broadcast to mobile (e.g. commands/ack)
+            elif sender_type == "web":
+                for connection in self.active_connections[ride_id]["mobile"]:
+                    await connection.send_json(message)
+
+manager = ConnectionManager()
+
+
+@router.websocket("/ws/{ride_id}")
+async def websocket_endpoint(websocket: WebSocket, ride_id: str, client_type: str = "web"):
+    await manager.connect(websocket, ride_id, client_type)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            
+            # Simple ping-pong
+            if data.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+                continue
+
+            # Broadcast message to others in the same ride
+            await manager.broadcast(data, ride_id, client_type)
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, ride_id, client_type)
+    except Exception as e:
+        print(f"WebSocket error: {e}")
+        manager.disconnect(websocket, ride_id, client_type)
+
 
 @router.get("/speed-limit")
 async def get_speed_limit_for_location(
