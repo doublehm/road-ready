@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator, Platform } from 'react-native';
 import client from '../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MapView, { Marker, UrlTile } from 'react-native-maps';
 import OSMMap from '../components/OSMMap';
 import * as Location from 'expo-location';
 import DateTimePicker from '@react-native-community/datetimepicker';

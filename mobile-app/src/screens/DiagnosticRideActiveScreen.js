@@ -11,7 +11,6 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import MapView, { Polyline, Marker, UrlTile } from 'react-native-maps';
 import OSMMap from '../components/OSMMap';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import useGPSTracking from '../hooks/useGPSTracking';

@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import MapView, { Polyline, Marker, UrlTile } from 'react-native-maps';
 import OSMMap from './OSMMap';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 

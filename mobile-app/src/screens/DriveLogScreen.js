@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import MapView, { Polyline, Marker, UrlTile } from 'react-native-maps';
 import OSMMap from '../components/OSMMap';
 import * as Location from 'expo-location';
 import { AuthContext } from '../context/AuthContext';
