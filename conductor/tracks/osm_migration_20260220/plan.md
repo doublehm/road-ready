@@ -20,15 +20,15 @@ Goal: Replace web-based maps with Leaflet.js and integrate an open-source geocod
 ## Phase 3: Mobile Implementation (React Native)
 Goal: Update the Expo application to use OpenStreetMap tiles with react-native-maps.
 
-- [ ] Task: Configure `react-native-maps` to use OpenStreetMap tile providers in `mobile-app/App.js` or relevant screens.
-- [ ] Task: Implement the Dark Theme style for the mobile map component.
-- [ ] Task: Update the Live Ride screen in the mobile app to handle real-time marker and polyline updates via OSM.
-- [ ] Task: Conductor - User Manual Verification 'Mobile Implementation' (Protocol in workflow.md)
+- [x] Task: Configure `react-native-maps` to use OpenStreetMap tile providers in `mobile-app/App.js` or relevant screens. 2a5eff5
+- [x] Task: Implement the Dark Theme style for the mobile map component. 2a5eff5
+- [x] Task: Update the Live Ride screen in the mobile app to handle real-time marker and polyline updates via OSM. 2a5eff5
+- [x] Task: Conductor - User Manual Verification 'Mobile Implementation' (Protocol in workflow.md) 2a5eff5
 
 ## Phase 4: Integration & Final Polish
 Goal: Ensure data consistency and perform final verification across all platforms.
 
-- [ ] Task: Verify end-to-end telemetry flow from mobile app to web dashboard using the new maps.
-- [ ] Task: Audit codebase for any remaining 'google' or 'maps.googleapis' strings.
-- [ ] Task: Perform cross-browser and cross-platform (iOS/Android) map rendering checks.
+- [~] Task: Verify end-to-end telemetry flow from mobile app to web dashboard using the new maps.
+- [~] Task: Audit codebase for any remaining 'google' or 'maps.googleapis' strings.
+- [~] Task: Perform cross-browser and cross-platform (iOS/Android) map rendering checks.
 - [ ] Task: Conductor - User Manual Verification 'Integration & Final Polish' (Protocol in workflow.md)
