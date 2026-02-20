@@ -25,10 +25,10 @@ Goal: Update the Expo application to use OpenStreetMap tiles with react-native-m
 - [x] Task: Update the Live Ride screen in the mobile app to handle real-time marker and polyline updates via OSM. 2a5eff5
 - [x] Task: Conductor - User Manual Verification 'Mobile Implementation' (Protocol in workflow.md) 2a5eff5
 
-## Phase 4: Integration & Final Polish
+## Phase 4: Integration & Final Polish [checkpoint: 46e61f7]
 Goal: Ensure data consistency and perform final verification across all platforms.
 
-- [~] Task: Verify end-to-end telemetry flow from mobile app to web dashboard using the new maps.
-- [~] Task: Audit codebase for any remaining 'google' or 'maps.googleapis' strings.
-- [~] Task: Perform cross-browser and cross-platform (iOS/Android) map rendering checks.
-- [ ] Task: Conductor - User Manual Verification 'Integration & Final Polish' (Protocol in workflow.md)
+- [x] Task: Verify end-to-end telemetry flow from mobile app to web dashboard using the new maps. 46e61f7
+- [x] Task: Audit codebase for any remaining 'google' or 'maps.googleapis' strings. 46e61f7
+- [x] Task: Perform cross-browser and cross-platform (iOS/Android) map rendering checks. 46e61f7
+- [x] Task: Conductor - User Manual Verification 'Integration & Final Polish' (Protocol in workflow.md) 46e61f7
