@@ -204,3 +204,21 @@ footer {
     background-color: var(--bg-body);
     padding: 3rem 0;
 }
+
+/* Leaflet Map Styles */
+.rr-map-container {
+    height: 400px;
+    width: 100%;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+/* Fallback filter if not using specialized dark tiles */
+[data-bs-theme="dark"] .leaflet-tile-pane {
+    filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+
+[data-bs-theme="dark"] .leaflet-container {
+    background: #111;
+}
