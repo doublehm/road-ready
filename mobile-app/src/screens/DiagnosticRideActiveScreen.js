@@ -11,6 +11,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, Surface, IconButton, FAB, Portal, Dialog, Button, Badge } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import OSMMap from '../components/OSMMap';
@@ -353,12 +354,22 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     };
   }, [connectWebSocket]);
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// ... (imports remain)
+
+const DiagnosticRideActiveScreen = ({ route, navigation }) => {
+  // ... (params and hooks remain)
+
+  const [isOffline, setIsOffline] = useState(false);
+  const syncBufferRef = useRef([]);
+  const BUFFER_KEY_PREFIX = '@ride_buffer_';
+
+  // ... (reconnect and ws logic remain)
+
   // Telemetry Streaming & Sync Effect
   useEffect(() => {
     if (!rideId || !gpsTracking.location) return;
-
-    // Local buffer for HTTP sync
-    const syncBuffer = [];
 
     const streamInterval = setInterval(() => {
       const point = {
@@ -379,23 +390,32 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         data: point
       });
 
-      // 2. Buffer for HTTP sync (reliability)
-      syncBuffer.push(point);
+      // 2. Add to local buffer
+      syncBufferRef.current.push(point);
     }, 1000);
 
     // Periodically flush buffer to DB via HTTP
     const syncInterval = setInterval(async () => {
-      if (syncBuffer.length === 0) return;
+      if (syncBufferRef.current.length === 0) return;
       
-      const chunk = [...syncBuffer];
-      syncBuffer.length = 0; // Clear buffer
+      const chunk = [...syncBufferRef.current];
+      syncBufferRef.current = []; // Clear buffer
 
       try {
         await client.post(`/diagnostic-rides/${rideId}/telemetry`, chunk);
-        console.log(`Synced ${chunk.length} points to DB`);
+        setIsOffline(false);
+        // Success: optionally clear persistent backup if we implemented one
       } catch (e) {
         console.warn('HTTP Sync failed, returning points to buffer:', e);
-        syncBuffer.unshift(...chunk); // Put back to retry
+        syncBufferRef.current = [...chunk, ...syncBufferRef.current]; // Put back to retry
+        setIsOffline(true);
+        
+        // Persist buffer to AsyncStorage for crash recovery
+        try {
+          await AsyncStorage.setItem(`${BUFFER_KEY_PREFIX}${rideId}`, JSON.stringify(syncBufferRef.current));
+        } catch (storageError) {
+          console.error('Failed to persist buffer to storage:', storageError);
+        }
       }
     }, 10000); // Sync every 10 seconds
 
@@ -636,10 +656,10 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
 
       <View style={[styles.overlay, { top: 80 }]}>
         {/* Connection Status Badge */}
-        <View style={{ position: 'absolute', top: -30, right: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: isWsConnected ? '#28a745' : '#dc3545' }}>
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: isWsConnected ? '#28a745' : '#dc3545', marginRight: 6 }} />
-          <Text style={{ fontSize: 10, fontWeight: 'bold', color: isWsConnected ? '#28a745' : '#dc3545' }}>
-            {isWsConnected ? 'LIVE SYNC ACTIVE' : 'SYNC OFFLINE'}
+        <View style={{ position: 'absolute', top: -30, right: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: (isWsConnected && !isOffline) ? '#28a745' : (isOffline ? '#ffc107' : '#dc3545') }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: (isWsConnected && !isOffline) ? '#28a745' : (isOffline ? '#ffc107' : '#dc3545'), marginRight: 6 }} />
+          <Text style={{ fontSize: 10, fontWeight: 'bold', color: (isWsConnected && !isOffline) ? '#28a745' : (isOffline ? '#ffc107' : '#dc3545') }}>
+            {isWsConnected ? (isOffline ? 'BUFFERING DATA' : 'LIVE SYNC ACTIVE') : (isOffline ? 'OFFLINE BUFFERING' : 'SYNC OFFLINE')}
           </Text>
         </View>
 
