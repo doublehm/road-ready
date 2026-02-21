@@ -12,7 +12,7 @@
 - [x] Task: Reset and migrate SQLite `roadready.db` for a fresh start. f812704d
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: SQL Schema Refactoring (Relational Clean-up)' (Protocol in workflow.md)
 
-#### Phase 3: NoSQL Persistence Layer
+#### Phase 3: NoSQL Persistence Layer [checkpoint: 20c04ca2]
 - [x] Task: Implement NoSQL repository for high-throughput sensor data writes. f003d869
 - [x] Task: Update `app/api/diagnostic_rides.py` to persist telemetry chunks directly to NoSQL. d74fccf8
 - [x] Task: Implement telemetry retrieval service that aggregates data from NoSQL for the frontend. 994ccb73
