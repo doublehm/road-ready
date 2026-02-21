@@ -6,7 +6,7 @@
 - [x] Task: Implement dual-database connection management in `app/database.py`. ae0397ca
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Tech Stack Update' (Protocol in workflow.md)
 
-#### Phase 2: SQL Schema Refactoring (Relational Clean-up)
+#### Phase 2: SQL Schema Refactoring (Relational Clean-up) [checkpoint: 4657be10]
 - [x] Task: Refactor `app/models.py` to remove high-frequency tables (`DiagnosticRidePoint`, `Acceleration`, `Rotation`). 69e7ee0e
 - [x] Task: Update `DiagnosticRide` model to link to NoSQL document IDs or ride IDs. 17eeceea
 - [x] Task: Reset and migrate SQLite `roadready.db` for a fresh start. f812704d
