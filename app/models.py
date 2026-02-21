@@ -291,6 +291,8 @@ class DiagnosticRide(Base):
     status = Column(String, default="pending") # "pending", "evaluating", "completed"
     created_at = Column(String) # ISO timestamp
     evaluated_at = Column(String, nullable=True) # ISO timestamp
+    
+    nosql_ref = Column(String, nullable=True) # Reference to MongoDB document if needed
 
     student = relationship("User", foreign_keys=[student_id])
     instructor = relationship("InstructorProfile", foreign_keys=[instructor_id])
