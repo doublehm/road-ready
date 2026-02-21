@@ -7,7 +7,7 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Tech Stack Update' (Protocol in workflow.md)
 
 #### Phase 2: SQL Schema Refactoring (Relational Clean-up)
-- [ ] Task: Refactor `app/models.py` to remove high-frequency tables (`DiagnosticRidePoint`, `Acceleration`, `Rotation`).
+- [x] Task: Refactor `app/models.py` to remove high-frequency tables (`DiagnosticRidePoint`, `Acceleration`, `Rotation`). 69e7ee0e
 - [ ] Task: Update `DiagnosticRide` model to link to NoSQL document IDs or ride IDs.
 - [ ] Task: Reset and migrate SQLite `roadready.db` for a fresh start.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: SQL Schema Refactoring (Relational Clean-up)' (Protocol in workflow.md)
