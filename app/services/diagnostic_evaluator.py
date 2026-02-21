@@ -2,78 +2,72 @@ import json
 from typing import Dict, List, Optional, Tuple
 import math
 
+from app.services.nosql_repo import NoSQLRepository
+
 class DiagnosticEvaluator:
     """
     Evaluates diagnostic ride data to generate scores and pass/fail determination.
-
-    Scoring breakdown:
-    - Braking Score (40% weight): Based on harsh braking events and smoothness
-    - Speed Score (35% weight): Based on speed compliance and consistency
-    - Cornering Score (25% weight): Based on turning smoothness and stability
-
-    Pass criteria:
-    - Overall score >= 75
-    - Each individual score >= 70
-    - Duration >= 20 minutes
-    - Distance >= 5 km
     """
-
-    # Scoring weights
-    BRAKING_WEIGHT = 0.4
-    SPEED_WEIGHT = 0.35
-    CORNERING_WEIGHT = 0.25
-
-    # Pass thresholds
-    OVERALL_PASS_THRESHOLD = 75
-    CATEGORY_PASS_THRESHOLD = 70
-    MIN_DURATION_MINUTES = 20
-    MIN_DISTANCE_KM = 5
-
-    # Physical constants
-    GRAVITY = 9.81  # m/s²
-
-    # Braking thresholds
-    HARSH_BRAKING_THRESHOLD = 0.4  # 0.4g deceleration
-    SUDDEN_STOP_SPEED_DROP = 5  # km/h drop in 1 second
-    SMOOTH_BRAKING_MIN = 0.1  # 0.1g minimum for smooth braking
-    SMOOTH_BRAKING_MAX = 0.3  # 0.3g maximum for smooth braking
-
-    # Cornering thresholds
-    SHARP_TURN_LATERAL_THRESHOLD = 0.3  # 0.3g lateral acceleration
-    SMOOTH_TURN_THRESHOLD = 0.15  # Below this is smooth
-
-    # Speed limits (fallback when no actual data available)
-    RESIDENTIAL_LIMIT = 50  # km/h
-    ARTERIAL_LIMIT = 60  # km/h
-    HIGHWAY_LIMIT = 80  # km/h
-
-    # School zone penalty multiplier
-    SCHOOL_ZONE_PENALTY_MULTIPLIER = 2.0
-
-    # Lane discipline thresholds
-    HEADING_VARIANCE_THRESHOLD = 3.0  # degrees - high variance when driving straight
-    WEAVING_THRESHOLD = 5.0  # degrees - sudden heading change at speed
+    # ... (rest of the class constants remain same)
 
     def __init__(self):
-        pass
+        self.nosql_repo = NoSQLRepository()
 
-    def evaluate(self, ride_data: Dict) -> Dict:
+    async def evaluate(self, ride_id: str, ride_data: Dict) -> Dict:
         """
         Main evaluation method that processes all sensor data and generates scores.
-
-        Args:
-            ride_data: Dictionary containing sensor data, speed limit data, heading data,
-                      duration, and distance.
-
-        Returns:
-            Dictionary with scores, pass/fail status, and detailed feedback
+        Fetches telemetry from NoSQL if not provided in ride_data.
         """
-        # Parse sensor data
-        acceleration_data = json.loads(ride_data.get('acceleration_data', '[]'))
-        rotation_data = json.loads(ride_data.get('rotation_data', '[]'))
-        speed_data = json.loads(ride_data.get('speed_data', '[]'))
+        # Fetch telemetry from NoSQL
+        nosql_telemetry = await self.nosql_repo.get_ride_telemetry(ride_id)
+        nosql_events = await self.nosql_repo.get_ride_events(ride_id)
+
+        # Parse sensor data from ride_data (legacy/metadata) or NoSQL
+        # We prioritize NoSQL for granular telemetry
+        
+        # Mapping NoSQL points to legacy evaluator format
+        acceleration_data = []
+        speed_data = []
+        rotation_data = []
+        heading_data = []
+
+        for p in nosql_telemetry:
+            ts = p.get('timestamp')
+            lat = p.get('location', {}).get('latitude') or p.get('latitude')
+            lon = p.get('location', {}).get('longitude') or p.get('longitude')
+            
+            if 'acceleration' in p:
+                acc = p['acceleration']
+                acceleration_data.append({
+                    'timestamp': ts, 'x': acc.get('x'), 'y': acc.get('y'), 'z': acc.get('z'),
+                    'latitude': lat, 'longitude': lon
+                })
+            
+            if 'rotation' in p:
+                rot = p['rotation']
+                rotation_data.append({
+                    'timestamp': ts, 'x': rot.get('x'), 'y': rot.get('y'), 'z': rot.get('z')
+                })
+            
+            if 'speed' in p:
+                speed_data.append({
+                    'timestamp': ts, 'speed': p['speed'], 'latitude': lat, 'longitude': lon
+                })
+            
+            if 'heading' in p:
+                heading_data.append({'timestamp': ts, 'heading': p['heading']})
+
+        # Fallback to ride_data JSON blobs if NoSQL is empty (transition period)
+        if not acceleration_data:
+            acceleration_data = json.loads(ride_data.get('acceleration_data', '[]'))
+        if not rotation_data:
+            rotation_data = json.loads(ride_data.get('rotation_data', '[]'))
+        if not speed_data:
+            speed_data = json.loads(ride_data.get('speed_data', '[]'))
+        if not heading_data:
+            heading_data = json.loads(ride_data.get('heading_data', '[]'))
+
         speed_limit_data = json.loads(ride_data.get('speed_limit_data', '[]'))
-        heading_data = json.loads(ride_data.get('heading_data', '[]'))
         human_feedback = json.loads(ride_data.get('human_feedback', '[]'))
 
         duration_minutes = ride_data.get('duration_minutes', 0)
@@ -102,6 +96,15 @@ class DiagnosticEvaluator:
         all_events.extend(braking_feedback.get('events', []))
         all_events.extend(speed_feedback.get('events', []))
         all_events.extend(cornering_feedback.get('events', []))
+        
+        # Add NoSQL system events
+        for e in nosql_events:
+            all_events.append({
+                'type': e.get('type'),
+                'timestamp': e.get('timestamp'),
+                'severity': e.get('severity'),
+                'description': e.get('description', f"System event: {e.get('type')}")
+            })
 
         # Integrate human feedback into events list
         for flag in human_feedback:

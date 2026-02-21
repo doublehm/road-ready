@@ -683,48 +683,23 @@ async def evaluate_diagnostic_ride(
 
     # Run evaluation
     try:
-        # Fetch granular data if JSON blobs are empty (e.g. persisted via WS but failed final upload)
-        accel_json = ride.acceleration_data
-        if not accel_json or accel_json == '[]':
-            accel_rows = db.query(models.DiagnosticRideAcceleration).filter(
-                models.DiagnosticRideAcceleration.ride_id == ride_id
-            ).order_by(models.DiagnosticRideAcceleration.timestamp.asc()).all()
-            accel_json = json.dumps([{"timestamp": r.timestamp, "x": r.x, "y": r.y, "z": r.z} for r in accel_rows])
-
-        speed_json = ride.speed_data
-        route_json = ride.route_coords
-        if not speed_json or speed_json == '[]':
-            point_rows = db.query(models.DiagnosticRidePoint).filter(
-                models.DiagnosticRidePoint.ride_id == ride_id
-            ).order_by(models.DiagnosticRidePoint.timestamp.asc()).all()
-            speed_json = json.dumps([{"timestamp": r.timestamp, "speed": r.speed, "latitude": r.latitude, "longitude": r.longitude} for r in point_rows])
-            route_json = json.dumps([{"latitude": r.latitude, "longitude": r.longitude} for r in point_rows])
-
-        rotation_json = ride.rotation_data
-        if not rotation_json or rotation_json == '[]':
-            rot_rows = db.query(models.DiagnosticRideRotation).filter(
-                models.DiagnosticRideRotation.ride_id == ride_id
-            ).order_by(models.DiagnosticRideRotation.timestamp.asc()).all()
-            rotation_json = json.dumps([{"timestamp": r.timestamp, "x": r.x, "y": r.y, "z": r.z} for r in rot_rows])
-
         evaluator = DiagnosticEvaluator()
+        
+        # We pass basic metadata to evaluator, it will fetch granular telemetry from NoSQL
         ride_data = {
-            'acceleration_data': accel_json or '[]',
-            'rotation_data': rotation_json or '[]',
-            'speed_data': speed_json or '[]',
             'speed_limit_data': ride.speed_limit_data or '[]',
             'heading_data': ride.heading_data or '[]',
             'human_feedback': ride.human_feedback or '[]',
             'duration_minutes': ride.duration_minutes or 0,
-            'distance_km': ride.distance_km or 0
+            'distance_km': ride.distance_km or 0,
+            'acceleration_data': ride.acceleration_data or '[]', # Fallback blobs
+            'rotation_data': ride.rotation_data or '[]',
+            'speed_data': ride.speed_data or '[]'
         }
 
-        evaluation_result = evaluator.evaluate(ride_data)
+        evaluation_result = await evaluator.evaluate(str(ride_id), ride_data)
 
         # Update ride with evaluation results
-        ride.acceleration_data = accel_json
-        ride.speed_data = speed_json
-        ride.route_coords = route_json
         ride.braking_score = evaluation_result['braking_score']
         ride.speed_score = evaluation_result['speed_score']
         ride.cornering_score = evaluation_result['cornering_score']
