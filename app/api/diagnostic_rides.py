@@ -6,10 +6,20 @@ import json
 from datetime import datetime
 from app import models, schemas, database
 from app.api import deps
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Query, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+from sqlalchemy.orm import Session, joinedload
+from typing import List, Optional, Dict
+import json
+from datetime import datetime
+from app import models, schemas, database
+from app.api import deps
+from app.services.nosql_repo import NoSQLRepository
 from app.services.diagnostic_evaluator import DiagnosticEvaluator
 from app.services.speed_limit_service import get_speed_limit
 
 router = APIRouter()
+nosql_repo = NoSQLRepository()
 
 class ConnectionManager:
     def __init__(self):
@@ -66,14 +76,8 @@ class ConnectionManager:
                 for dead in dead_connections:
                     self.disconnect(dead, ride_id, client_type)
 
-    def persist_data(self, ride_id: str, message: dict):
-        db = database.SessionLocal()
+    async def persist_data(self, ride_id: str, message: dict):
         try:
-            try:
-                ride_int_id = int(ride_id)
-            except ValueError:
-                return
-
             msg_type = message.get("type")
             data = message.get("data", {})
 
@@ -81,99 +85,22 @@ class ConnectionManager:
                 # Handle single point or list of points
                 points = data if isinstance(data, list) else [data]
                 
+                # Cleanup points for NoSQL storage (adding metadata)
                 for p in points:
-                    ts = p.get("timestamp")
-                    if ts is not None:
-                        try: ts = float(ts)
-                        except: ts = datetime.now().timestamp()
+                    if "timestamp" not in p or p["timestamp"] is None:
+                        p["timestamp"] = datetime.now().timestamp()
                     else:
-                        ts = datetime.now().timestamp()
+                        try: p["timestamp"] = float(p["timestamp"])
+                        except: p["timestamp"] = datetime.now().timestamp()
 
-                    # Location & Speed
-                    # Try nested first (mobile native), then flat (schemas/fallback)
-                    loc = p.get("location")
-                    lat = None
-                    lon = None
-                    if loc and isinstance(loc, dict):
-                        lat = loc.get("latitude")
-                        lon = loc.get("longitude")
-                    
-                    if lat is None:
-                        lat = p.get("latitude")
-                    if lon is None:
-                        lon = p.get("longitude")
-
-                    if lat is not None:
-                        new_point = models.DiagnosticRidePoint(
-                            ride_id=ride_int_id,
-                            timestamp=ts,
-                            latitude=lat,
-                            longitude=lon if lon is not None else 0,
-                            speed=p.get("speed", 0),
-                            heading=p.get("heading")
-                        )
-                        db.add(new_point)
-                    
-                    # Acceleration
-                    accel = p.get("acceleration")
-                    acc_x, acc_y, acc_z = None, None, None
-                    if accel and isinstance(accel, dict):
-                        acc_x = accel.get("x")
-                        acc_y = accel.get("y")
-                        acc_z = accel.get("z")
-                    
-                    if acc_x is None:
-                        acc_x = p.get("x")
-                        acc_y = p.get("y")
-                        acc_z = p.get("z")
-
-                    if acc_x is not None:
-                        new_accel = models.DiagnosticRideAcceleration(
-                            ride_id=ride_int_id,
-                            timestamp=ts,
-                            x=acc_x,
-                            y=acc_y if acc_y is not None else 0,
-                            z=acc_z if acc_z is not None else 0
-                        )
-                        db.add(new_accel)
-
-                    # Rotation
-                    rot = p.get("rotation")
-                    rot_x, rot_y, rot_z = None, None, None
-                    if rot and isinstance(rot, dict):
-                        rot_x = rot.get("x")
-                        rot_y = rot.get("y")
-                        rot_z = rot.get("z")
-                    
-                    if rot_x is None:
-                        # schemas.SensorDataPoint doesn't have rot_x/y/z directly, 
-                        # but some flat structures might use them.
-                        rot_x = p.get("rot_x")
-                        rot_y = p.get("rot_y")
-                        rot_z = p.get("rot_z")
-
-                    if rot_x is not None:
-                        new_rot = models.DiagnosticRideRotation(
-                            ride_id=ride_int_id,
-                            timestamp=ts,
-                            x=rot_x,
-                            y=rot_y if rot_y is not None else 0,
-                            z=rot_z if rot_z is not None else 0
-                        )
-                        db.add(new_rot)
+                await nosql_repo.save_telemetry_chunk(ride_id, points)
 
             elif msg_type == "event":
-                ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_int_id).first()
-                if ride:
-                    events = json.loads(ride.human_feedback or "[]")
-                    events.append(data)
-                    ride.human_feedback = json.dumps(events)
-            
-            db.commit()
+                await nosql_repo.save_event(ride_id, data)
+                
         except Exception as e:
-            db.rollback()
-        finally:
-            db.close()
+            # Log error but don't crash the WebSocket loop
+            pass
 
 manager = ConnectionManager()
 
@@ -198,7 +125,7 @@ async def save_telemetry(
         raise HTTPException(status_code=403, detail="Not authorized")
     
     # Use the same persistence logic as WebSocket
-    manager.persist_data(str(ride_id), {
+    await manager.persist_data(str(ride_id), {
         "type": "telemetry",
         "data": [p.dict() for p in request]
     })
@@ -227,7 +154,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
             # Persist data from mobile
             if client_type == "mobile" and data.get("type") in ["telemetry", "event"]:
-                manager.persist_data(ride_id, data)
+                await manager.persist_data(ride_id, data)
 
             # Broadcast message to others in the same ride
             await manager.broadcast(data, ride_id, client_type)
