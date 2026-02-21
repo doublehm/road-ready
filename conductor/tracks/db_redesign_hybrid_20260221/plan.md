@@ -2,7 +2,7 @@
 
 #### Phase 1: Infrastructure & Tech Stack Update
 - [x] Task: Update `tech-stack.md` to reflect the new Hybrid SQL + NoSQL architecture. b0a15393
-- [ ] Task: Configure NoSQL store (targeting MongoDB/Pymongo) for telemetry storage.
+- [x] Task: Configure NoSQL store (targeting MongoDB/Pymongo) for telemetry storage. 79acbb20
 - [ ] Task: Implement dual-database connection management in `app/database.py`.
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Infrastructure & Tech Stack Update' (Protocol in workflow.md)
 
