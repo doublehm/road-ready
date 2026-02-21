@@ -1,6 +1,6 @@
 # Implementation Plan: Database Redesign (Hybrid SQL + NoSQL)
 
-#### Phase 1: Infrastructure & Tech Stack Update
+#### Phase 1: Infrastructure & Tech Stack Update [checkpoint: 43d21384]
 - [x] Task: Update `tech-stack.md` to reflect the new Hybrid SQL + NoSQL architecture. b0a15393
 - [x] Task: Configure NoSQL store (targeting MongoDB/Pymongo) for telemetry storage. 79acbb20
 - [x] Task: Implement dual-database connection management in `app/database.py`. ae0397ca
