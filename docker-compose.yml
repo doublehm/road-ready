@@ -14,5 +14,18 @@ services:
       - ./app/static/uploads:/app/app/static/uploads
     environment:
       - DATABASE_URL=sqlite:///./roadready.db
+      - MONGODB_URL=mongodb://mongodb:27017/roadready
       # Add your Stripe keys here later, e.g.:
       # - STRIPE_API_KEY=sk_test_...
+
+  mongodb:
+    image: mongo:latest
+    container_name: roadready_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
