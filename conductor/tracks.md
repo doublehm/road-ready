@@ -4,6 +4,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ## Active Tracks
 
+---
+
 - [ ] **Track: Database Redesign (Hybrid SQL + NoSQL)**
 *Link: [./tracks/db_redesign_hybrid_20260221/](./tracks/db_redesign_hybrid_20260221/)*
 
