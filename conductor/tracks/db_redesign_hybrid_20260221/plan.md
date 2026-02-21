@@ -18,7 +18,7 @@
 - [x] Task: Implement telemetry retrieval service that aggregates data from NoSQL for the frontend. 994ccb73
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: NoSQL Persistence Layer' (Protocol in workflow.md)
 
-#### Phase 4: Evaluation Engine & API Integration
+#### Phase 4: Evaluation Engine & API Integration [checkpoint: 31653d31]
 - [x] Task: Update `DiagnosticEvaluator.py` to fetch and process data from the NoSQL store. 84edd257
 - [x] Task: Refactor `evaluate_diagnostic_ride` endpoint to work with hybrid data sources. 84edd257
 - [x] Task: Update live-streaming WebSockets to pipe data into the NoSQL buffer. 84edd257
