@@ -133,6 +133,47 @@ async def save_telemetry(
     return {"status": "persisted", "count": len(request)}
 
 
+@router.get("/{ride_id}/telemetry")
+async def get_ride_telemetry(
+    ride_id: int,
+    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """
+    Retrieve all telemetry points for a specific ride from NoSQL.
+    """
+    # Verify ride access
+    ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    if current_user.role == "student" and ride.student_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Check permissions for instructor
+    if current_user.role == "instructor":
+        instructor_profile = db.query(models.InstructorProfile).filter(models.InstructorProfile.user_id == current_user.id).first()
+        if not instructor_profile:
+            raise HTTPException(status_code=404, detail="Instructor profile not found")
+        if ride.instructor_id != instructor_profile.id:
+            # Check if they have a booking
+            booking = db.query(models.BookingRequest).filter(
+                models.BookingRequest.instructor_id == instructor_profile.id,
+                models.BookingRequest.student_id == ride.student_id
+            ).first()
+            if not booking:
+                raise HTTPException(status_code=403, detail="Not authorized")
+
+    points = await nosql_repo.get_ride_telemetry(str(ride_id))
+    
+    # Remove _id from MongoDB documents for JSON serialization
+    for p in points:
+        if "_id" in p:
+            p["_id"] = str(p["_id"])
+            
+    return points
+
+
 async def websocket_endpoint(websocket: WebSocket):
     ride_id = websocket.query_params.get("ride_id")
     client_type = websocket.query_params.get("client_type", "web")
