@@ -31,7 +31,7 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: Mobile App Buffering & Resilient Sync' (Protocol in workflow.md)
 
 #### Phase 6: Final Verification & Quality Gates
-- [ ] Task: Execute full TDD cycle for the new hybrid services.
-- [ ] Task: Verify end-to-end flow: Mobile Buffer -> NoSQL Sync -> SQL Metadata -> Evaluation.
-- [ ] Task: Run coverage reports and ensure >80% on new data modules.
-- [ ] Task: Conductor - User Manual Verification 'Phase 6: Final Verification & Quality Gates' (Protocol in workflow.md)
+- [~] Task: Execute full TDD cycle for the new hybrid services.
+- [~] Task: Verify end-to-end flow: Mobile Buffer -> NoSQL Sync -> SQL Metadata -> Evaluation.
+- [~] Task: Run coverage reports and ensure >80% on new data modules.
+- [~] Task: Conductor - User Manual Verification 'Phase 6: Final Verification & Quality Gates' (Protocol in workflow.md)
