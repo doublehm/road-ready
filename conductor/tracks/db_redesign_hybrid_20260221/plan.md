@@ -19,9 +19,9 @@
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: NoSQL Persistence Layer' (Protocol in workflow.md)
 
 #### Phase 4: Evaluation Engine & API Integration
-- [ ] Task: Update `DiagnosticEvaluator.py` to fetch and process data from the NoSQL store.
-- [ ] Task: Refactor `evaluate_diagnostic_ride` endpoint to work with hybrid data sources.
-- [ ] Task: Update live-streaming WebSockets to pipe data into the NoSQL buffer.
+- [x] Task: Update `DiagnosticEvaluator.py` to fetch and process data from the NoSQL store. 84edd257
+- [x] Task: Refactor `evaluate_diagnostic_ride` endpoint to work with hybrid data sources. 84edd257
+- [x] Task: Update live-streaming WebSockets to pipe data into the NoSQL buffer. 84edd257
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Evaluation Engine & API Integration' (Protocol in workflow.md)
 
 #### Phase 5: Mobile App Buffering & Resilient Sync
