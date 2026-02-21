@@ -354,18 +354,9 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     };
   }, [connectWebSocket]);
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// ... (imports remain)
-
-const DiagnosticRideActiveScreen = ({ route, navigation }) => {
-  // ... (params and hooks remain)
-
   const [isOffline, setIsOffline] = useState(false);
   const syncBufferRef = useRef([]);
   const BUFFER_KEY_PREFIX = '@ride_buffer_';
-
-  // ... (reconnect and ws logic remain)
 
   // Telemetry Streaming & Sync Effect
   useEffect(() => {

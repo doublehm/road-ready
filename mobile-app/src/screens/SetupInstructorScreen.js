@@ -28,6 +28,7 @@ const SetupInstructorScreen = ({ navigation }) => {
 
   const [image, setImage] = useState(null); // License
   const [insuranceImage, setInsuranceImage] = useState(null); // Insurance
+  const [certImage, setCertImage] = useState(null); // Certification
   const [loading, setLoading] = useState(false);
 
   const onDateChange = (event, selectedDate) => {
@@ -67,7 +68,8 @@ const SetupInstructorScreen = ({ navigation }) => {
               });
               if (!result.canceled) {
                   if (type === 'license') setImage(result.assets[0].uri);
-                  else setInsuranceImage(result.assets[0].uri);
+                  else if (type === 'insurance') setInsuranceImage(result.assets[0].uri);
+                  else setCertImage(result.assets[0].uri);
               }
             } catch (e) {
               Alert.alert("Error", "Could not open camera.");
@@ -85,7 +87,8 @@ const SetupInstructorScreen = ({ navigation }) => {
               });
               if (!result.canceled) {
                   if (type === 'license') setImage(result.assets[0].uri);
-                  else setInsuranceImage(result.assets[0].uri);
+                  else if (type === 'insurance') setInsuranceImage(result.assets[0].uri);
+                  else setCertImage(result.assets[0].uri);
               }
             } catch (e) {
               Alert.alert("Error", "Could not open gallery.");
@@ -98,8 +101,8 @@ const SetupInstructorScreen = ({ navigation }) => {
   };
 
   const handleSetup = async () => {
-    if (!city || !hourlyRate || !image || !insuranceImage) {
-      Alert.alert('Error', 'Please fill in all fields and upload both documents.');
+    if (!city || !hourlyRate || !image || !insuranceImage || !certImage) {
+      Alert.alert('Error', 'Please fill in all fields and upload all 3 documents.');
       return;
     }
 
@@ -122,9 +125,11 @@ const SetupInstructorScreen = ({ navigation }) => {
       formData.append('car_model', carModel);
       formData.append('insurance_policy', insurance);
       formData.append('certification_id', certId);
+      formData.append('certification_expiry', dateStr);
       
       formData.append('license_image', { uri: image, name: 'license.jpg', type: 'image/jpeg' });
       formData.append('insurance_image', { uri: insuranceImage, name: 'insurance.jpg', type: 'image/jpeg' });
+      formData.append('certification_image', { uri: certImage, name: 'certification.jpg', type: 'image/jpeg' });
       formData.append('license_classes', JSON.stringify(selectedClasses));
 
       await client.post('/setup-instructor', formData, {
@@ -224,6 +229,18 @@ const SetupInstructorScreen = ({ navigation }) => {
             <View style={styles.cameraPlaceholder}>
               <Ionicons name="document-text" size={40} color="#666" />
               <Text style={styles.cameraText}>Upload Insurance</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.label}>Instructor Certificate</Text>
+        <TouchableOpacity style={styles.cameraBtn} onPress={() => pickImage('certification')}>
+          {certImage ? (
+            <Image source={{ uri: certImage }} style={styles.preview} />
+          ) : (
+            <View style={styles.cameraPlaceholder}>
+              <Ionicons name="ribbon" size={40} color="#666" />
+              <Text style={styles.cameraText}>Upload Certificate</Text>
             </View>
           )}
         </TouchableOpacity>

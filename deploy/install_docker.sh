@@ -19,7 +19,7 @@ fi
 # 2. Install Docker & Nginx
 echo "📦 Installing Docker and Nginx..."
 sudo apt-get update
-sudo apt-get install -y docker.io docker-compose-v2 nginx
+sudo apt-get install -y docker.io docker-compose nginx
 
 # 3. Setup Project Directory
 echo "📂 Setting up Directory..."
@@ -40,7 +40,7 @@ sudo systemctl restart nginx
 echo "🚀 Building and Starting Container..."
 cd /opt/road-ready
 # We use sudo for docker commands here just in case user permissions aren't fresh
-sudo docker compose up -d --build
+sudo docker-compose up -d --build
 
 echo "✅ Deployment Complete!"
 echo "🌍 App is running on port 80 (via Nginx proxy to Docker port 8000)."
