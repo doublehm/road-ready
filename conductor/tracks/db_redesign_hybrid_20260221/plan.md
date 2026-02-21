@@ -24,7 +24,7 @@
 - [x] Task: Update live-streaming WebSockets to pipe data into the NoSQL buffer. 84edd257
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Evaluation Engine & API Integration' (Protocol in workflow.md)
 
-#### Phase 5: Mobile App Buffering & Resilient Sync
+#### Phase 5: Mobile App Buffering & Resilient Sync [checkpoint: b0168c03]
 - [x] Task: Implement local telemetry buffering in the mobile app using `AsyncStorage` or `SQLite`. 7e34f634
 - [x] Task: Enhance `DiagnosticRideActiveScreen` with a background sync mechanism for buffered data. 7e34f634
 - [x] Task: Implement "Offline Mode" indicators in the mobile UI. 7e34f634
