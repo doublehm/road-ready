@@ -4,12 +4,13 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { TouchableOpacity, Text } from 'react-native';
+import { SERVER_URL } from '../api/client';
 
 const LegalScreen = ({ route, navigation }) => {
   const { type } = route.params; // 'terms' or 'privacy'
   
-  // Extract base domain from the API URL (e.g., http://10.32.100.57:8000)
-  const BASE_DOMAIN = "http://10.32.100.57:8000"; 
+  // Extract base domain from the API URL
+  const BASE_DOMAIN = SERVER_URL; 
   const url = `${BASE_DOMAIN}/${type}`;
 
   return (

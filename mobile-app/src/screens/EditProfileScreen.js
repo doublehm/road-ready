@@ -1,13 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView, Image } from 'react-native';
-import client from '../api/client';
+import client, { SERVER_URL } from '../api/client';
 import { AuthContext } from '../context/AuthContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-
-// Update this to your machine's IP
-const SERVER_URL = "http://10.32.100.57:8000";
 
 const EditProfileScreen = ({ navigation }) => {
   const { userInfo, fetchUser, userToken } = useContext(AuthContext);

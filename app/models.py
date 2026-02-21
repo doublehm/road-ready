@@ -268,6 +268,7 @@ class DiagnosticRide(Base):
     duration_minutes = Column(Float, nullable=True)
     distance_km = Column(Float, nullable=True)
 
+    # These legacy fields will be kept for backward compatibility but populated less frequently
     route_coords = Column(Text, nullable=True) # JSON GPS coordinates
     acceleration_data = Column(Text, nullable=True) # JSON sensor data
     rotation_data = Column(Text, nullable=True) # JSON sensor data
@@ -294,6 +295,34 @@ class DiagnosticRide(Base):
     student = relationship("User", foreign_keys=[student_id])
     instructor = relationship("InstructorProfile", foreign_keys=[instructor_id])
     booking = relationship("BookingRequest", foreign_keys=[booking_id])
+
+class DiagnosticRidePoint(Base):
+    __tablename__ = "diagnostic_ride_points"
+    id = Column(Integer, primary_key=True, index=True)
+    ride_id = Column(Integer, ForeignKey("diagnostic_rides.id"))
+    timestamp = Column(Float)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    speed = Column(Float)
+    heading = Column(Float, nullable=True)
+
+class DiagnosticRideAcceleration(Base):
+    __tablename__ = "diagnostic_ride_acceleration"
+    id = Column(Integer, primary_key=True, index=True)
+    ride_id = Column(Integer, ForeignKey("diagnostic_rides.id"))
+    timestamp = Column(Float)
+    x = Column(Float)
+    y = Column(Float)
+    z = Column(Float)
+
+class DiagnosticRideRotation(Base):
+    __tablename__ = "diagnostic_ride_rotation"
+    id = Column(Integer, primary_key=True, index=True)
+    ride_id = Column(Integer, ForeignKey("diagnostic_rides.id"))
+    timestamp = Column(Float)
+    x = Column(Float)
+    y = Column(Float)
+    z = Column(Float)
 
 class DriveLog(Base):
     __tablename__ = "drive_logs"

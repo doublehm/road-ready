@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -7,6 +8,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -187,13 +189,24 @@ const AppNav = () => {
   );
 };
 
+const theme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#007bff',
+    accent: '#28a745',
+  },
+};
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="auto" />
-      <AuthProvider>
-        <AppNav />
-      </AuthProvider>
+      <PaperProvider theme={theme}>
+        <AuthProvider>
+          <AppNav />
+        </AuthProvider>
+      </PaperProvider>
     </SafeAreaProvider>
   );
 }

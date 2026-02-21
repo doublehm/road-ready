@@ -11,7 +11,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AuthContext } from '../context/AuthContext';
-import client from '../api/client';
+import client, { clearCache } from '../api/client';
+import { Alert } from 'react-native';
 
 const FILTERS = ['All', 'Passed', 'Failed'];
 
@@ -43,10 +44,13 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
   const [filter, setFilter] = useState('All');
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (userInfo) {
+      fetchData();
+    }
+  }, [userInfo]);
 
   const fetchData = async () => {
+    if (!userInfo) return;
     try {
       const [ridesRes, trendsRes] = await Promise.all([
         client.get('/diagnostic-rides/'),
@@ -56,6 +60,20 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
       if (trendsRes.data) setTrends(trendsRes.data);
     } catch (error) {
       console.error('Error fetching ride history:', error);
+      if (error.message?.includes('SQLITE_FULL') || error.message?.includes('database or disk is full')) {
+        Alert.alert(
+          'Storage Full',
+          'Your device storage is full, which may prevent the app from loading data correctly. Would you like to clear the app cache?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Clear Cache', onPress: async () => {
+                await clearCache();
+                fetchData();
+              }
+            }
+          ]
+        );
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

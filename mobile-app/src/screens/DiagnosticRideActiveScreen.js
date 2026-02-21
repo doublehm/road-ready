@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,9 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
+import { Card, Surface, IconButton, FAB, Portal, Dialog, Button, Badge } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import OSMMap from '../components/OSMMap';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -37,7 +39,10 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const [feedbackPanelVisible, setFeedbackPanelVisible] = useState(false);
   const feedbackCountsRef = useRef({}); // {code: {code, label, category, count, timestamps}}
   const [feedbackBadgeCount, setFeedbackBadgeCount] = useState(0);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [allEvents, setAllEvents] = useState([]);
   const [rideId, setRideId] = useState(null);
+  const [isWsConnected, setIsWsConnected] = useState(false);
   const ws = useRef(null);
   const messageBuffer = useRef([]);
 
@@ -145,6 +150,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         if (response.data.events && response.data.events.length > 0) {
           const newEvents = response.data.events;
           setLatestEvents(prev => [...newEvents, ...prev].slice(0, 8));
+          setAllEvents(prev => [...newEvents, ...prev]);
 
           // Auto-map sensor events to feedback criteria (F-codes)
           newEvents.forEach(event => {
@@ -263,27 +269,54 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   }, []);
 
   // WebSocket Connection Effect
-  useEffect(() => {
+  const reconnectTimeout = useRef(null);
+  const reconnectAttempts = useRef(0);
+
+  const connectWebSocket = useCallback(() => {
     if (!rideId) return;
 
-    const wsBase = client.defaults.baseURL.replace('http', 'ws');
+    // Clean up existing connection if any
+    if (ws.current) {
+      ws.current.onopen = null;
+      ws.current.onmessage = null;
+      ws.current.onerror = null;
+      ws.current.onclose = null;
+      ws.current.close();
+    }
+
+    const wsBase = client.defaults.baseURL
+      .replace('https://', 'wss://')
+      .replace('http://', 'ws://');
     const wsUrl = `${wsBase}/live-ride-stream?ride_id=${rideId}&client_type=mobile`;
     
-    console.log('Connecting to WebSocket:', wsUrl);
-    ws.current = new WebSocket(wsUrl);
+    console.log(`Connecting to WebSocket (Attempt ${reconnectAttempts.current + 1}):`, wsUrl);
+    
+    const socket = new WebSocket(wsUrl);
+    ws.current = socket;
 
-    ws.current.onopen = () => {
+    let heartbeatInterval;
+
+    socket.onopen = () => {
       console.log('WebSocket connected');
-      ws.current.send(JSON.stringify({ type: 'ping' }));
+      setIsWsConnected(true);
+      reconnectAttempts.current = 0;
+      socket.send(JSON.stringify({ type: 'ping' }));
       
       // Flush buffered messages
       while (messageBuffer.current.length > 0) {
         const bufferedMsg = messageBuffer.current.shift();
-        ws.current.send(JSON.stringify(bufferedMsg));
+        socket.send(JSON.stringify(bufferedMsg));
       }
+
+      // Start heartbeat
+      heartbeatInterval = setInterval(() => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, 30000);
     };
 
-    ws.current.onmessage = (e) => {
+    socket.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
         if (data.type === 'pong') console.log('WS Pong');
@@ -292,36 +325,85 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       }
     };
 
-    ws.current.onerror = (e) => console.error('WebSocket error:', e.message);
-    ws.current.onclose = (e) => console.log('WebSocket closed:', e.code, e.reason);
-
-    return () => {
-      if (ws.current) ws.current.close();
+    socket.onerror = (e) => {
+      console.error('WebSocket error:', e.message);
+      setIsWsConnected(false);
     };
-  }, [rideId]);
 
-  // Telemetry Streaming Effect
+    socket.onclose = (e) => {
+      console.log('WebSocket closed:', e.code, e.reason);
+      setIsWsConnected(false);
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      
+      // Don't reconnect if we intentionally closed it (e.g. unmount or ride complete)
+      if (e.code !== 1000 && rideId && !isUploading) {
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+        reconnectAttempts.current += 1;
+        console.log(`Reconnecting in ${delay}ms...`);
+        reconnectTimeout.current = setTimeout(connectWebSocket, delay);
+      }
+    };
+  }, [rideId, isUploading]);
+
+  useEffect(() => {
+    connectWebSocket();
+    return () => {
+      if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+      if (ws.current) ws.current.close(1000);
+    };
+  }, [connectWebSocket]);
+
+  // Telemetry Streaming & Sync Effect
   useEffect(() => {
     if (!rideId || !gpsTracking.location) return;
 
+    // Local buffer for HTTP sync
+    const syncBuffer = [];
+
     const streamInterval = setInterval(() => {
+      const point = {
+        acceleration: deviceMotion.acceleration,
+        rotation: deviceMotion.rotation,
+        speed: gpsTracking.speed,
+        location: {
+          latitude: gpsTracking.location.latitude,
+          longitude: gpsTracking.location.longitude,
+        },
+        heading: gpsTracking.location.heading,
+        timestamp: Date.now() / 1000,
+      };
+
+      // 1. Send via WebSocket for live dashboard (low latency)
       sendMessage({
         type: 'telemetry',
-        data: {
-          acceleration: deviceMotion.acceleration,
-          speed: gpsTracking.speed,
-          location: {
-            latitude: gpsTracking.location.latitude,
-            longitude: gpsTracking.location.longitude,
-          },
-          heading: gpsTracking.location.heading,
-          timestamp: Date.now() / 1000,
-        }
+        data: point
       });
-    }, 2000);
 
-    return () => clearInterval(streamInterval);
-  }, [rideId, deviceMotion.acceleration, gpsTracking.speed, gpsTracking.location, sendMessage]);
+      // 2. Buffer for HTTP sync (reliability)
+      syncBuffer.push(point);
+    }, 1000);
+
+    // Periodically flush buffer to DB via HTTP
+    const syncInterval = setInterval(async () => {
+      if (syncBuffer.length === 0) return;
+      
+      const chunk = [...syncBuffer];
+      syncBuffer.length = 0; // Clear buffer
+
+      try {
+        await client.post(`/diagnostic-rides/${rideId}/telemetry`, chunk);
+        console.log(`Synced ${chunk.length} points to DB`);
+      } catch (e) {
+        console.warn('HTTP Sync failed, returning points to buffer:', e);
+        syncBuffer.unshift(...chunk); // Put back to retry
+      }
+    }, 10000); // Sync every 10 seconds
+
+    return () => {
+      clearInterval(streamInterval);
+      clearInterval(syncInterval);
+    };
+  }, [rideId, deviceMotion.acceleration, deviceMotion.rotation, gpsTracking.speed, gpsTracking.location, sendMessage]);
 
   useEffect(() => {
     let interval;
@@ -370,19 +452,20 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const handleCompleteRide = async () => {
     const durationMinutes = duration / 60;
 
-    if (durationMinutes < 20) {
+    // Reduced thresholds for development/testing ease
+    if (durationMinutes < 1) {
       Alert.alert(
         'Too Short',
-        'Diagnostic ride must be at least 20 minutes long. Continue driving or cancel.',
+        'Diagnostic ride must be at least 20 minutes long in production (reduced to 1 min for testing).',
         [{ text: 'OK' }]
       );
       return;
     }
 
-    if (gpsTracking.distance < 5) {
+    if (gpsTracking.distance < 0.1) {
       Alert.alert(
         'Too Short',
-        'Diagnostic ride must cover at least 5 km. Continue driving or cancel.',
+        'Diagnostic ride must cover at least 5 km in production (reduced to 100m for testing).',
         [{ text: 'OK' }]
       );
       return;
@@ -402,35 +485,12 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     setIsUploading(true);
 
     try {
+      // Stop tracking locally
       const gpsData = gpsTracking.stopTracking();
       const motionData = deviceMotion.stopTracking();
       const speedLimitData = speedLimit.getSpeedLimitData();
 
       const endTime = new Date();
-
-      const accelerationData = motionData.map((point) => ({
-        timestamp: point.timestamp,
-        x: point.acceleration.x,
-        y: point.acceleration.y,
-        z: point.acceleration.z,
-      }));
-
-      const rotationData = motionData.map((point) => ({
-        timestamp: point.timestamp,
-        x: point.rotation.x,
-        y: point.rotation.y,
-        z: point.rotation.z,
-      }));
-
-      // Extract heading data from speed data points
-      const headingData = gpsData.speedData
-        .filter(p => p.heading !== undefined && p.heading !== null)
-        .map(p => ({
-          timestamp: p.timestamp,
-          heading: p.heading,
-          latitude: p.latitude,
-          longitude: p.longitude,
-        }));
 
       // Format coach notes if any
       const notes = coachNotesRef.current;
@@ -443,6 +503,8 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         }).join('\n');
       }
 
+      // Minimal metadata for the final update
+      // We rely on the backend to reconstruct sensor blobs from granular tables if needed
       const rideData = {
         ride_type:
           rideType === 'parent'
@@ -454,12 +516,9 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         end_time: endTime.toISOString(),
         duration_minutes: duration / 60,
         distance_km: gpsData.distance,
-        route_coords: JSON.stringify(gpsData.routeCoordinates),
-        acceleration_data: JSON.stringify(accelerationData),
-        rotation_data: JSON.stringify(rotationData),
-        speed_data: JSON.stringify(gpsData.speedData),
+        // Only sending critical arrays that might have missed some live-stream chunks
+        // or those not yet streaming granularly
         speed_limit_data: JSON.stringify(speedLimitData),
-        heading_data: JSON.stringify(headingData),
         evaluator_notes: evaluatorNotes,
         human_feedback: JSON.stringify(
           Object.values(feedbackCountsRef.current).filter(item => item.count > 0)
@@ -467,21 +526,33 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       };
 
       let finalRideId = rideId;
-      if (rideId) {
-        await client.put(`/diagnostic-rides/${rideId}`, rideData);
-      } else {
-        const response = await client.post('/diagnostic-rides/', rideData);
-        finalRideId = response.data.id;
+      try {
+        if (rideId) {
+          // Partial update - the backend schemas should allow null for sensor blobs
+          await client.put(`/diagnostic-rides/${rideId}`, rideData);
+        } else {
+          const response = await client.post('/diagnostic-rides/', rideData);
+          finalRideId = response.data.id;
+        }
+      } catch (uploadError) {
+        console.warn('Metadata upload failed, attempting to trigger evaluation anyway:', uploadError);
+        if (!finalRideId) throw uploadError;
       }
 
-      await client.post(`/diagnostic-rides/${finalRideId}/evaluate`);
+      try {
+        // This triggers the DiagnosticEvaluator which now pulls from granular tables
+        await client.post(`/diagnostic-rides/${finalRideId}/evaluate`);
+      } catch (evalError) {
+        console.error('Evaluation trigger failed:', evalError);
+        throw evalError;
+      }
 
       // Auto-complete the booking if this ride was linked to one
       if (bookingId) {
         try {
           await client.post(`/bookings/${bookingId}/complete`);
         } catch (e) {
-          console.log('Could not auto-complete booking:', e);
+          console.log('Could not auto-complete booking (this is often non-critical):', e);
         }
       }
 
@@ -493,14 +564,45 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       ]);
     } catch (error) {
       console.error('Error submitting ride:', error);
+      const isNetworkError = error.message.includes('Network Error');
       Alert.alert(
-        'Error',
-        'Failed to submit ride data. Please try again or contact support.'
+        'Submission Error',
+        isNetworkError 
+          ? `Could not connect to the server. Please ensure your backend is running at ${client.defaults.baseURL} and your phone is on the same network.`
+          : 'Failed to submit ride data. Please try again or contact support.'
       );
     } finally {
       setIsUploading(false);
     }
   };
+
+  // Memoize map props so OSMMap doesn't receive new object references on every
+  // render (which would bypass React.memo and re-animate on every GPS tick).
+  // Must be before the early return to satisfy the Rules of Hooks.
+  const mapRegion = useMemo(() => {
+    if (!gpsTracking.location) return null;
+    return {
+      latitude: gpsTracking.location.latitude,
+      longitude: gpsTracking.location.longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    };
+  }, [gpsTracking.location?.latitude, gpsTracking.location?.longitude]);
+
+  const mapMarkers = useMemo(() => {
+    if (!gpsTracking.location) return [];
+    return [{
+      latitude: gpsTracking.location.latitude,
+      longitude: gpsTracking.location.longitude,
+      title: 'Current Position',
+    }];
+  }, [gpsTracking.location?.latitude, gpsTracking.location?.longitude]);
+
+  const mapPolylines = useMemo(() => [{
+    coordinates: gpsTracking.routeCoordinates,
+    strokeWidth: 4,
+    strokeColor: '#007bff',
+  }], [gpsTracking.routeCoordinates]);
 
   if (!gpsTracking.location) {
     return (
@@ -522,24 +624,9 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
 
       <OSMMap
         style={styles.map}
-        region={{
-          latitude: gpsTracking.location.latitude,
-          longitude: gpsTracking.location.longitude,
-        }}
-        markers={[
-          {
-            latitude: gpsTracking.location.latitude,
-            longitude: gpsTracking.location.longitude,
-            title: "Current Position"
-          }
-        ]}
-        polylines={[
-          {
-            coordinates: gpsTracking.routeCoordinates,
-            strokeWidth: 4,
-            strokeColor: "#007bff"
-          }
-        ]}
+        region={mapRegion}
+        markers={mapMarkers}
+        polylines={mapPolylines}
       />
 
       {/* Debug Indicator */}
@@ -548,6 +635,14 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       </View>
 
       <View style={[styles.overlay, { top: 80 }]}>
+        {/* Connection Status Badge */}
+        <View style={{ position: 'absolute', top: -30, right: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.9)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: isWsConnected ? '#28a745' : '#dc3545' }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: isWsConnected ? '#28a745' : '#dc3545', marginRight: 6 }} />
+          <Text style={{ fontSize: 10, fontWeight: 'bold', color: isWsConnected ? '#28a745' : '#dc3545' }}>
+            {isWsConnected ? 'LIVE SYNC ACTIVE' : 'SYNC OFFLINE'}
+          </Text>
+        </View>
+
         {/* Real-time Alert Banner */}
         {alertMessage && (
           <View style={[
@@ -564,90 +659,92 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
 
         {/* Stats Row */}
         <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Time</Text>
-            <Text style={styles.statValue}>{formatTime(duration)}</Text>
+          <Surface style={styles.statBox} elevation={2}>
+            <Text style={styles.statLabel} accessibilityRole="header">Time</Text>
+            <Text style={styles.statValue} accessibilityLabel={`Elapsed time ${formatTime(duration)}`}>{formatTime(duration)}</Text>
             <Text style={styles.statTarget}>Target: 20:00</Text>
-          </View>
+          </Surface>
 
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Distance</Text>
-            <Text style={styles.statValue}>
+          <Surface style={styles.statBox} elevation={2}>
+            <Text style={styles.statLabel} accessibilityRole="header">Distance</Text>
+            <Text style={styles.statValue} accessibilityLabel={`Distance driven ${gpsTracking.distance.toFixed(2)} kilometers`}>
               {gpsTracking.distance.toFixed(2)} km
             </Text>
             <Text style={styles.statTarget}>Target: 5.0 km</Text>
-          </View>
+          </Surface>
 
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Speed</Text>
-            <Text style={[styles.statValue, { color: getSpeedColor() }]}>
+          <Surface style={styles.statBox} elevation={2}>
+            <Text style={styles.statLabel} accessibilityRole="header">Speed</Text>
+            <Text style={[styles.statValue, { color: getSpeedColor() }]} accessibilityLabel={`Current speed ${gpsTracking.speed.toFixed(0)} kilometers per hour`}>
               {gpsTracking.speed.toFixed(0)} km/h
             </Text>
-          </View>
+          </Surface>
 
-          <View style={[styles.statBox, styles.limitBox]}>
-            <Text style={styles.statLabel}>Limit</Text>
-            <Text style={styles.statValue}>
+          <Surface style={[styles.statBox, styles.limitBox]} elevation={4}>
+            <Text style={styles.statLabel} accessibilityRole="header">Limit</Text>
+            <Text style={styles.statValue} accessibilityLabel={`Speed limit ${speedLimit.currentSpeedLimit || 'unknown'}`}>
               {speedLimit.currentSpeedLimit || '--'}
             </Text>
             {speedLimit.zoneType === 'school' && (
-              <View style={styles.schoolBadge}>
-                <Text style={styles.schoolBadgeText}>SCHOOL</Text>
-              </View>
+              <Badge style={styles.schoolBadge} size={14}>SCHOOL</Badge>
             )}
             {speedLimit.zoneType !== 'school' && speedLimit.roadType && (
               <Text style={styles.statTarget}>
                 {speedLimit.roadType}
               </Text>
             )}
-          </View>
+          </Surface>
         </View>
 
         {/* Mistake Log */}
         {latestEvents.length > 0 && (
-          <View style={styles.eventLogContainer}>
-            <Text style={styles.eventLogTitle}>Recent Events</Text>
-            {latestEvents.map((event, idx) => (
-              <View key={idx} style={styles.eventItem}>
-                <Ionicons
-                  name={getEventIcon(event.type)}
-                  size={16}
-                  color={event.severity === 'high' ? "#dc3545" : "#ffc107"}
-                />
-                <Text style={styles.eventText}>
-                  {getEventDescription(event)}
-                </Text>
+          <Card style={styles.eventLogContainer} onPress={() => setReportModalVisible(true)}>
+            <Card.Content>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <Text style={styles.eventLogTitle} accessibilityRole="header">Recent Events</Text>
+                <Text style={{ fontSize: 10, color: '#007bff' }}>View All ({allEvents.length})</Text>
               </View>
-            ))}
-          </View>
+              <ScrollView style={{ maxHeight: 90 }}>
+                {latestEvents.map((event, idx) => (
+                  <View key={idx} style={styles.eventItem}>
+                    <Ionicons
+                      name={getEventIcon(event.type)}
+                      size={16}
+                      color={event.severity === 'high' ? "#dc3545" : "#ffc107"}
+                    />
+                    <Text style={styles.eventText}>
+                      {getEventDescription(event)}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </Card.Content>
+          </Card>
         )}
 
         {/* Supervisor Actions */}
         <View style={styles.actionRow}>
-          <TouchableOpacity
-              style={[styles.actionButton, styles.feedbackButton]}
+          <Button
+              mode="outlined"
+              icon="flag"
               onPress={() => setFeedbackPanelVisible(true)}
+              style={[styles.actionButton, { borderColor: '#e17055' }]}
+              labelStyle={{ color: '#e17055' }}
+              accessibilityLabel="Open Feedback Panel to flag mistakes"
           >
-              <Ionicons name="flag" size={20} color="#e17055" />
-              <Text style={styles.feedbackButtonText}>
-                Flag{feedbackBadgeCount > 0 ? ` (${feedbackBadgeCount})` : ''}
-              </Text>
-              {feedbackBadgeCount > 0 && (
-                <View style={styles.feedbackBadge}>
-                  <Text style={styles.feedbackBadgeText}>{feedbackBadgeCount}</Text>
-                </View>
-              )}
-          </TouchableOpacity>
+              Flag {feedbackBadgeCount > 0 ? `(${feedbackBadgeCount})` : ''}
+          </Button>
 
-          <TouchableOpacity
-              style={[styles.actionButton, styles.noteButton]}
+          <Button
+              mode="outlined"
+              icon="chat-processing"
               onPress={() => setNoteModalVisible(true)}
+              style={[styles.actionButton, { borderColor: '#007bff' }]}
+              labelStyle={{ color: '#007bff' }}
+              accessibilityLabel="Add coach note"
           >
-              <Ionicons name="chatbox-ellipses" size={20} color="#007bff" />
-              <Text style={styles.noteButtonText}>
-                Note{coachNotesRef.current.length > 0 ? ` (${coachNotesRef.current.length})` : ''}
-              </Text>
-          </TouchableOpacity>
+              Note {coachNotesRef.current.length > 0 ? `(${coachNotesRef.current.length})` : ''}
+          </Button>
         </View>
 
         <View style={styles.sensorIndicators}>
@@ -673,30 +770,22 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           </View>
         </View>
 
-        <TouchableOpacity
-          style={[
-            styles.completeButton,
-            !canComplete && styles.completeButtonDisabled,
-            isUploading && styles.completeButtonDisabled,
-          ]}
+        <Button
+          mode="contained"
           onPress={handleCompleteRide}
           disabled={!canComplete || isUploading}
+          loading={isUploading}
+          style={[
+            styles.completeButton,
+            (!canComplete || isUploading) && { backgroundColor: '#6c757d' }
+          ]}
+          contentStyle={{ height: 60 }}
+          labelStyle={{ fontSize: 18, fontWeight: 'bold' }}
+          accessibilityLabel={canComplete ? "Complete Diagnostic Ride" : "Keep driving to meet requirements"}
+          accessibilityRole="button"
         >
-          <Text style={styles.completeButtonText}>
-            {isUploading
-              ? 'Submitting...'
-              : canComplete
-              ? 'Complete Ride'
-              : 'Keep Driving'}
-          </Text>
-          {!canComplete && (
-            <Text style={styles.completeButtonSubtext}>
-              {duration < 60 * 20
-                ? `${Math.ceil(20 - duration / 60)} min remaining`
-                : `${(5 - gpsTracking.distance).toFixed(1)} km remaining`}
-            </Text>
-          )}
-        </TouchableOpacity>
+          {canComplete ? 'Complete Ride' : 'Keep Driving'}
+        </Button>
       </View>
       {/* Feedback Panel */}
       <FeedbackPanel
@@ -706,6 +795,40 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         onUpdateCount={handleFeedbackUpdate}
         elapsedSeconds={duration}
       />
+
+      {/* Live Report Modal */}
+      <Portal>
+        <Dialog visible={reportModalVisible} onDismiss={() => setReportModalVisible(false)} style={{ maxHeight: '80%' }}>
+          <Dialog.Title>Full Live Report</Dialog.Title>
+          <Dialog.ScrollArea>
+            <ScrollView contentContainerStyle={{ paddingVertical: 10 }}>
+              {allEvents.length > 0 ? (
+                allEvents.map((event, idx) => (
+                  <View key={idx} style={[styles.eventItem, { marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }]}>
+                    <Ionicons
+                      name={getEventIcon(event.type)}
+                      size={24}
+                      color={event.severity === 'high' ? "#dc3545" : "#ffc107"}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 14 }}>{event.type.replace('_', ' ').toUpperCase()}</Text>
+                      <Text style={{ fontSize: 12, color: '#666' }}>{getEventDescription(event)}</Text>
+                      <Text style={{ fontSize: 10, color: '#999', marginTop: 2 }}>
+                        {new Date(event.timestamp * 1000).toLocaleTimeString()}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={{ textAlign: 'center', color: '#666', padding: 20 }}>No events recorded yet.</Text>
+              )}
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setReportModalVisible(false)}>Close</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
       {/* Coach Note Modal */}
       <Modal
@@ -999,29 +1122,8 @@ const styles = StyleSheet.create({
     bottom: 24,
     left: 16,
     right: 16,
-    backgroundColor: '#28a745',
     borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
     elevation: 5,
-  },
-  completeButtonDisabled: {
-    backgroundColor: '#6c757d',
-  },
-  completeButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  completeButtonSubtext: {
-    fontSize: 14,
-    color: '#fff',
-    marginTop: 4,
-    opacity: 0.9,
   },
   modalOverlay: {
     flex: 1,

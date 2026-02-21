@@ -132,18 +132,20 @@ async def complete_booking(
 ):
     """
     Mark a booking as completed and update module progress hours.
+    Allows instructors (for regular lessons) and students (for self-supervised/parent rides)
+    to complete the booking.
     """
-    if current_user.role != "instructor":
-        raise HTTPException(status_code=403, detail="Only instructors can complete bookings")
-
     booking = db.query(models.BookingRequest).filter(models.BookingRequest.id == booking_id).first()
 
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
 
-    # Ensure this booking belongs to the logged-in instructor
-    if booking.instructor.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    # Permission check: instructor of the booking OR the student themselves
+    is_instructor = (current_user.role == "instructor" and booking.instructor.user_id == current_user.id)
+    is_student = (current_user.role == "student" and booking.student_id == current_user.id)
+
+    if not is_instructor and not is_student:
+        raise HTTPException(status_code=403, detail="Not authorized to complete this booking")
 
     # Mark booking as completed
     booking.status = "completed"

@@ -56,3 +56,23 @@ def test_booking_form_contains_leaflet(client, db, auth_headers):
     assert "leaflet.js" in content
     # Verify our custom map helper (should FAIL)
     assert 'src="/static/maps.js"' in content
+
+def test_instructor_dashboard_contains_leaflet(client, db, auth_headers):
+    # Setup: Create an instructor
+    user = models.User(email="instr_dash_map@example.com", full_name="Dash Map", role="instructor", hashed_password="pw")
+    db.add(user)
+    db.commit()
+    instructor = models.InstructorProfile(user_id=user.id, hourly_rate=60.0, city="Test", bio="Bio", car_model="X", insurance_policy="Y", certification_id="Z")
+    db.add(instructor)
+    db.commit()
+    
+    # Mock login (cookie based for web routes)
+    client.cookies.set("user_id", str(user.id))
+    response = client.get("/dashboard")
+    
+    assert response.status_code == 200
+    content = response.text
+    
+    assert "leaflet.css" in content
+    assert "leaflet.js" in content
+    assert 'src="/static/maps.js"' in content

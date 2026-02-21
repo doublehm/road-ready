@@ -107,7 +107,8 @@ export default function useGPSTracking() {
           // Add to route
           const newCoordinate = { latitude, longitude };
           routeRef.current.push(newCoordinate);
-          setRouteCoordinates([...routeRef.current]);
+          // For UI, only keep last 500 points for the map trail
+          setRouteCoordinates(routeRef.current.slice(-500));
 
           // Calculate distance if we have a previous point
           if (routeRef.current.length > 1) {
@@ -128,8 +129,9 @@ export default function useGPSTracking() {
           speedDataRef.current.push(speedPoint);
 
           // Update speed data periodically (every 5 samples)
+          // Keep last 100 points in state for charts/UI
           if (speedDataRef.current.length % 5 === 0) {
-            setSpeedData([...speedDataRef.current]);
+            setSpeedData(speedDataRef.current.slice(-100));
           }
         }
       );

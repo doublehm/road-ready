@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Modal, TextInput, Image } from 'react-native';
-import client from '../api/client';
+import client, { SERVER_URL } from '../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -78,8 +78,8 @@ const BookingRequestsScreen = ({ navigation }) => {
     }
 
     const licenseImg = item.student?.student_profile?.license_image;
-    // Construct full URL. Adjust IP if needed.
-    const imageUrl = licenseImg ? `http://10.32.100.57:8000/static/uploads/${licenseImg}` : null;
+    // Construct full URL.
+    const imageUrl = licenseImg ? `${SERVER_URL}/static/uploads/${licenseImg}` : null;
 
     return (
     <View style={styles.card}>

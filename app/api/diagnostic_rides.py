@@ -39,66 +39,171 @@ class ConnectionManager:
 
     async def broadcast(self, message: dict, ride_id: str, sender_type: str):
         if ride_id in self.active_connections:
-            # If sender is mobile, broadcast to all web clients for this ride
-            if sender_type == "mobile":
-                for connection in self.active_connections[ride_id]["web"]:
-                    await connection.send_json(message)
-            # If sender is web, broadcast to mobile (e.g. commands/ack)
-            elif sender_type == "web":
-                for connection in self.active_connections[ride_id]["mobile"]:
-                    await connection.send_json(message)
+            # Broadcast to all clients for this ride (web and mobile)
+            # This ensures even the mobile client gets an ack if desired, 
+            # and all web dashboards are in sync.
+            for client_type in ["mobile", "web"]:
+                dead_connections = []
+                for connection in self.active_connections[ride_id][client_type]:
+                    try:
+                        await connection.send_json(message)
+                    except Exception:
+                        dead_connections.append(connection)
+                
+                for dead in dead_connections:
+                    self.disconnect(dead, ride_id, client_type)
 
     async def broadcast_to_all(self, message: dict, ride_id: str):
         if ride_id in self.active_connections:
             for client_type in ["mobile", "web"]:
+                dead_connections = []
                 for connection in self.active_connections[ride_id][client_type]:
-                    await connection.send_json(message)
+                    try:
+                        await connection.send_json(message)
+                    except Exception:
+                        dead_connections.append(connection)
+                
+                for dead in dead_connections:
+                    self.disconnect(dead, ride_id, client_type)
 
     def persist_data(self, ride_id: str, message: dict):
         db = database.SessionLocal()
         try:
-            # Attempt to find the ride. ride_id from WS is usually a string.
             try:
                 ride_int_id = int(ride_id)
             except ValueError:
                 return
 
-            ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_int_id).first()
-            if ride:
-                if message["type"] == "telemetry":
-                    data = message.get("data", {})
-                    # Append location to route_coords
-                    if "location" in data:
-                        coords = json.loads(ride.route_coords or "[]")
-                        coords.append(data["location"])
-                        ride.route_coords = json.dumps(coords)
-                    
-                    # Append acceleration
-                    if "acceleration" in data:
-                        accel = json.loads(ride.acceleration_data or "[]")
-                        accel.append(data["acceleration"])
-                        ride.acceleration_data = json.dumps(accel)
-                        
-                    # Append speed
-                    if "speed" in data:
-                        speeds = json.loads(ride.speed_data or "[]")
-                        # Add a default timestamp if missing
-                        ts = data.get("timestamp") or datetime.now().timestamp()
-                        speeds.append({"speed": data["speed"], "timestamp": ts})
-                        ride.speed_data = json.dumps(speeds)
+            msg_type = message.get("type")
+            data = message.get("data", {})
 
-                elif message["type"] == "event":
-                    events = json.loads(ride.human_feedback or "[]")
-                    events.append(message["data"])
-                    ride.human_feedback = json.dumps(events)
+            if msg_type == "telemetry":
+                # Handle single point or list of points
+                points = data if isinstance(data, list) else [data]
                 
-                db.commit()
+                for p in points:
+                    ts = p.get("timestamp")
+                    if ts is not None:
+                        try: ts = float(ts)
+                        except: ts = datetime.now().timestamp()
+                    else:
+                        ts = datetime.now().timestamp()
+
+                    # Location & Speed
+                    # Try nested first (mobile native), then flat (schemas/fallback)
+                    loc = p.get("location")
+                    lat = None
+                    lon = None
+                    if loc and isinstance(loc, dict):
+                        lat = loc.get("latitude")
+                        lon = loc.get("longitude")
+                    
+                    if lat is None:
+                        lat = p.get("latitude")
+                    if lon is None:
+                        lon = p.get("longitude")
+
+                    if lat is not None:
+                        new_point = models.DiagnosticRidePoint(
+                            ride_id=ride_int_id,
+                            timestamp=ts,
+                            latitude=lat,
+                            longitude=lon if lon is not None else 0,
+                            speed=p.get("speed", 0),
+                            heading=p.get("heading")
+                        )
+                        db.add(new_point)
+                    
+                    # Acceleration
+                    accel = p.get("acceleration")
+                    acc_x, acc_y, acc_z = None, None, None
+                    if accel and isinstance(accel, dict):
+                        acc_x = accel.get("x")
+                        acc_y = accel.get("y")
+                        acc_z = accel.get("z")
+                    
+                    if acc_x is None:
+                        acc_x = p.get("x")
+                        acc_y = p.get("y")
+                        acc_z = p.get("z")
+
+                    if acc_x is not None:
+                        new_accel = models.DiagnosticRideAcceleration(
+                            ride_id=ride_int_id,
+                            timestamp=ts,
+                            x=acc_x,
+                            y=acc_y if acc_y is not None else 0,
+                            z=acc_z if acc_z is not None else 0
+                        )
+                        db.add(new_accel)
+
+                    # Rotation
+                    rot = p.get("rotation")
+                    rot_x, rot_y, rot_z = None, None, None
+                    if rot and isinstance(rot, dict):
+                        rot_x = rot.get("x")
+                        rot_y = rot.get("y")
+                        rot_z = rot.get("z")
+                    
+                    if rot_x is None:
+                        # schemas.SensorDataPoint doesn't have rot_x/y/z directly, 
+                        # but some flat structures might use them.
+                        rot_x = p.get("rot_x")
+                        rot_y = p.get("rot_y")
+                        rot_z = p.get("rot_z")
+
+                    if rot_x is not None:
+                        new_rot = models.DiagnosticRideRotation(
+                            ride_id=ride_int_id,
+                            timestamp=ts,
+                            x=rot_x,
+                            y=rot_y if rot_y is not None else 0,
+                            z=rot_z if rot_z is not None else 0
+                        )
+                        db.add(new_rot)
+
+            elif msg_type == "event":
+                ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_int_id).first()
+                if ride:
+                    events = json.loads(ride.human_feedback or "[]")
+                    events.append(data)
+                    ride.human_feedback = json.dumps(events)
+            
+            db.commit()
         except Exception as e:
-            print(f"Error persisting live data: {e}")
+            db.rollback()
         finally:
             db.close()
 
 manager = ConnectionManager()
+
+
+@router.post("/{ride_id}/telemetry")
+async def save_telemetry(
+    ride_id: int,
+    request: List[schemas.SensorDataPoint],
+    current_user: models.User = Depends(deps.get_current_user),
+    db: Session = Depends(deps.get_db)
+):
+    """
+    HTTP endpoint for persisting chunks of telemetry data.
+    Acts as a reliable fallback if the WebSocket is disconnected.
+    """
+    # Verify ride ownership
+    ride = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.id == ride_id).first()
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    if current_user.role == "student" and ride.student_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Use the same persistence logic as WebSocket
+    manager.persist_data(str(ride_id), {
+        "type": "telemetry",
+        "data": [p.dict() for p in request]
+    })
+    
+    return {"status": "persisted", "count": len(request)}
 
 
 async def websocket_endpoint(websocket: WebSocket):
@@ -129,8 +234,7 @@ async def websocket_endpoint(websocket: WebSocket):
             
     except WebSocketDisconnect:
         manager.disconnect(websocket, ride_id, client_type)
-    except Exception as e:
-        print(f"WebSocket error: {e}")
+    except Exception:
         manager.disconnect(websocket, ride_id, client_type)
 
 
@@ -611,11 +715,35 @@ async def evaluate_diagnostic_ride(
 
     # Run evaluation
     try:
+        # Fetch granular data if JSON blobs are empty (e.g. persisted via WS but failed final upload)
+        accel_json = ride.acceleration_data
+        if not accel_json or accel_json == '[]':
+            accel_rows = db.query(models.DiagnosticRideAcceleration).filter(
+                models.DiagnosticRideAcceleration.ride_id == ride_id
+            ).order_by(models.DiagnosticRideAcceleration.timestamp.asc()).all()
+            accel_json = json.dumps([{"timestamp": r.timestamp, "x": r.x, "y": r.y, "z": r.z} for r in accel_rows])
+
+        speed_json = ride.speed_data
+        route_json = ride.route_coords
+        if not speed_json or speed_json == '[]':
+            point_rows = db.query(models.DiagnosticRidePoint).filter(
+                models.DiagnosticRidePoint.ride_id == ride_id
+            ).order_by(models.DiagnosticRidePoint.timestamp.asc()).all()
+            speed_json = json.dumps([{"timestamp": r.timestamp, "speed": r.speed, "latitude": r.latitude, "longitude": r.longitude} for r in point_rows])
+            route_json = json.dumps([{"latitude": r.latitude, "longitude": r.longitude} for r in point_rows])
+
+        rotation_json = ride.rotation_data
+        if not rotation_json or rotation_json == '[]':
+            rot_rows = db.query(models.DiagnosticRideRotation).filter(
+                models.DiagnosticRideRotation.ride_id == ride_id
+            ).order_by(models.DiagnosticRideRotation.timestamp.asc()).all()
+            rotation_json = json.dumps([{"timestamp": r.timestamp, "x": r.x, "y": r.y, "z": r.z} for r in rot_rows])
+
         evaluator = DiagnosticEvaluator()
         ride_data = {
-            'acceleration_data': ride.acceleration_data or '[]',
-            'rotation_data': ride.rotation_data or '[]',
-            'speed_data': ride.speed_data or '[]',
+            'acceleration_data': accel_json or '[]',
+            'rotation_data': rotation_json or '[]',
+            'speed_data': speed_json or '[]',
             'speed_limit_data': ride.speed_limit_data or '[]',
             'heading_data': ride.heading_data or '[]',
             'human_feedback': ride.human_feedback or '[]',
@@ -626,6 +754,9 @@ async def evaluate_diagnostic_ride(
         evaluation_result = evaluator.evaluate(ride_data)
 
         # Update ride with evaluation results
+        ride.acceleration_data = accel_json
+        ride.speed_data = speed_json
+        ride.route_coords = route_json
         ride.braking_score = evaluation_result['braking_score']
         ride.speed_score = evaluation_result['speed_score']
         ride.cornering_score = evaluation_result['cornering_score']
@@ -712,7 +843,7 @@ async def evaluate_diagnostic_ride(
         }
 
     except Exception as e:
-        ride.status = "pending"
+        ride.status = "failed"
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

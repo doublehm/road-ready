@@ -1146,6 +1146,27 @@ async def diagnostic_ride_detail(
     elif user.role == "instructor" and ride.instructor_id != user.instructor_profile.id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
+    # If ride is pending/live, populate the JSON fields from granular tables for the view
+    if ride.status == 'pending':
+        # Reconstruct route and speed from points table
+        points = db.query(models.DiagnosticRidePoint).filter(
+            models.DiagnosticRidePoint.ride_id == ride_id
+        ).order_by(models.DiagnosticRidePoint.timestamp.asc()).all()
+        
+        if points:
+            if not ride.route_coords or ride.route_coords == '[]':
+                ride.route_coords = json.dumps([{"latitude": p.latitude, "longitude": p.longitude} for p in points])
+            if not ride.speed_data or ride.speed_data == '[]':
+                ride.speed_data = json.dumps([{"timestamp": p.timestamp, "speed": p.speed} for p in points])
+                
+        # Reconstruct acceleration
+        accels = db.query(models.DiagnosticRideAcceleration).filter(
+            models.DiagnosticRideAcceleration.ride_id == ride_id
+        ).order_by(models.DiagnosticRideAcceleration.timestamp.asc()).all()
+        
+        if accels and (not ride.acceleration_data or ride.acceleration_data == '[]'):
+            ride.acceleration_data = json.dumps([{"timestamp": a.timestamp, "x": a.x, "y": a.y, "z": a.z} for a in accels])
+
     return templates.TemplateResponse("diagnostic_ride_detail.html", {
         "request": request,
         "user": user,

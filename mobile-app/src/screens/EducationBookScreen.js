@@ -2,13 +2,14 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SERVER_URL } from '../api/client';
 
 const EducationBookScreen = ({ route }) => {
   const { province } = route.params;
   
   // Pointing to the mobile-optimized web viewer we built
   // Using the local IP discovered earlier
-  const uri = `http://10.32.100.57:8000/education/${province}`;
+  const uri = `${SERVER_URL}/education/${province}`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

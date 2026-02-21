@@ -200,9 +200,15 @@ class DiagnosticEvaluator:
             prev_point = speed_data[i-1]
             prev_speed = prev_point.get('speed', 0)
             curr_speed = point.get('speed', 0)
-            time_diff = point.get('timestamp', 0) - prev_point.get('timestamp', 0)
+            
+            try:
+                prev_ts = float(prev_point.get('timestamp', 0))
+                curr_ts = float(point.get('timestamp', 0))
+                time_diff = curr_ts - prev_ts
+            except (ValueError, TypeError):
+                time_diff = 0
 
-            if time_diff > 0 and time_diff <= 1.5:
+            if time_diff > 0 and (time_diff <= 1.5 or (time_diff <= 1500 and time_diff > 1.5)):
                 speed_drop = prev_speed - curr_speed
                 if speed_drop > self.SUDDEN_STOP_SPEED_DROP:
                     sudden_stop_count += 1
@@ -250,18 +256,28 @@ class DiagnosticEvaluator:
         if not speed_limit_data:
             return None
 
-        point_ts = speed_point.get('timestamp', 0)
+        try:
+            point_ts = float(speed_point.get('timestamp', 0))
+        except (ValueError, TypeError):
+            return None
+            
         best = None
         best_diff = float('inf')
 
         for sl in speed_limit_data:
-            diff = abs(sl.get('timestamp', 0) - point_ts)
-            if diff < best_diff:
-                best_diff = diff
-                best = sl
+            try:
+                sl_ts = float(sl.get('timestamp', 0))
+                diff = abs(sl_ts - point_ts)
+                if diff < best_diff:
+                    best_diff = diff
+                    best = sl
+            except (ValueError, TypeError):
+                continue
 
-        # Only use if within 60 seconds
-        if best and best_diff < 60000:
+        # Only use if within 60 seconds (60000ms or 60s depending on unit)
+        # Mobile app seems to use ms for some and s for others.
+        # If best_diff > 100000, it's likely a ms vs s mismatch.
+        if best and (best_diff < 60 or (best_diff < 60000 and best_diff > 1000)):
             return best
         return None
 
@@ -338,6 +354,11 @@ class DiagnosticEvaluator:
 
             excess = speed - speed_limit
 
+            try:
+                ts = float(point.get('timestamp', 0))
+            except (ValueError, TypeError):
+                ts = 0
+
             # Check for speeding
             if excess > 0:
                 speeding_time += time_duration
@@ -357,7 +378,7 @@ class DiagnosticEvaluator:
                 # Track violation segments
                 if current_violation is None:
                     current_violation = {
-                        'start_timestamp': point.get('timestamp'),
+                        'start_timestamp': ts,
                         'zone_type': zone_type,
                         'limit': speed_limit,
                         'max_speed': speed,
@@ -371,7 +392,7 @@ class DiagnosticEvaluator:
                 if excess > 5 and (i % 5 == 0 or is_school):
                     events.append({
                         'type': 'speeding',
-                        'timestamp': point.get('timestamp'),
+                        'timestamp': ts,
                         'lat': point.get('latitude'),
                         'lng': point.get('longitude'),
                         'value': round(speed, 1),

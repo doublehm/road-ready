@@ -163,8 +163,11 @@
                                 <small>{{ ride.start_time.split('T')[0] }}</small>
                             </div>
                             <p class="mb-1 small">Type: {{ ride.ride_type|replace('_', ' ')|title }}</p>
-                            <div class="mt-2">
-                                <button type="button" class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#diagModal{{ ride.id }}">
+                            <div class="mt-2 d-flex gap-2">
+                                <a href="/diagnostic-ride/{{ ride.id }}" class="btn btn-outline-primary btn-sm w-50">
+                                    {% if ride.status == 'pending' %}View Live{% else %}View Details{% endif %}
+                                </a>
+                                <button type="button" class="btn btn-primary btn-sm w-50" data-bs-toggle="modal" data-bs-target="#diagModal{{ ride.id }}">
                                     Log Results
                                 </button>
                             </div>
@@ -406,55 +409,6 @@
     let map, pickupMarker, dropoffMarker;
     let routeModalInstance = null;
 
-    function initMap() {
-        if (map) return;
-        // Default to Vancouver area
-        map = L.map('map').setView([49.2827, -123.1207], 11);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        map.on('click', function(e) {
-            if (!pickupMarker) {
-                pickupMarker = L.marker(e.latlng, {draggable: true, icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                })}).addTo(map).bindPopup("Pickup").openPopup();
-                updateInputs();
-            } else if (!dropoffMarker) {
-                dropoffMarker = L.marker(e.latlng, {draggable: true, icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-                })}).addTo(map).bindPopup("Drop-off").openPopup();
-                updateInputs();
-            }
-        });
-    }
-
-    function updateInputs() {
-        if (pickupMarker) {
-            document.getElementById('p_lat').value = pickupMarker.getLatLng().lat;
-            document.getElementById('p_lng').value = pickupMarker.getLatLng().lng;
-        }
-        if (dropoffMarker) {
-            document.getElementById('d_lat').value = dropoffMarker.getLatLng().lat;
-            document.getElementById('d_lng').value = dropoffMarker.getLatLng().lng;
-        }
-    }
-
-    function resetMarkers() {
-        if (pickupMarker) map.removeLayer(pickupMarker);
-        if (dropoffMarker) map.removeLayer(dropoffMarker);
-        pickupMarker = null;
-        dropoffMarker = null;
-        document.getElementById('p_lat').value = '';
-        document.getElementById('p_lng').value = '';
-        document.getElementById('d_lat').value = '';
-        document.getElementById('d_lng').value = '';
-    }
-
     function openRouteModal(id, name, pLat, pLng, dLat, dLng) {
         document.getElementById('modalStudentName').textContent = name;
         document.getElementById('routeForm').action = `/booking/${id}/route`;
@@ -464,21 +418,46 @@
         }
         routeModalInstance.show();
         
-        // Timeout to fix Leaflet gray tiles in modal
-        setTimeout(() => {
-            initMap();
-            map.invalidateSize();
-            resetMarkers();
+        // Wait for modal to be fully visible so container has dimensions
+        const modalEl = document.getElementById('routeModal');
+        modalEl.addEventListener('shown.bs.modal', function onShown() {
+            if (!map) {
+                // Vancouver default
+                map = RoadReadyMaps.init('map', [49.2827, -123.1207], 11);
+                
+                map.on('click', function(e) {
+                    if (!pickupMarker) {
+                        pickupMarker = L.marker(e.latlng, {
+                            draggable: true, 
+                            icon: RoadReadyMaps.icons.pickup
+                        }).addTo(map).bindPopup("Pickup").openPopup();
+                        updateInputs();
+                    } else if (!dropoffMarker) {
+                        dropoffMarker = L.marker(e.latlng, {
+                            draggable: true, 
+                            icon: RoadReadyMaps.icons.dropoff
+                        }).addTo(map).bindPopup("Drop-off").openPopup();
+                        updateInputs();
+                    }
+                });
+            } else {
+                map.invalidateSize();
+                resetMarkers();
+            }
 
             if (pLat && pLng) {
-                pickupMarker = L.marker([pLat, pLng], {draggable: true}).addTo(map).bindPopup("Pickup");
+                pickupMarker = L.marker([pLat, pLng], {draggable: true, icon: RoadReadyMaps.icons.pickup}).addTo(map).bindPopup("Pickup");
                 map.setView([pLat, pLng], 13);
             }
             if (dLat && dLng) {
-                dropoffMarker = L.marker([dLat, dLng], {draggable: true}).addTo(map).bindPopup("Drop-off");
+                dropoffMarker = L.marker([dLat, dLng], {draggable: true, icon: RoadReadyMaps.icons.dropoff}).addTo(map).bindPopup("Drop-off");
             }
             updateInputs();
-        }, 300);
+            
+            modalEl.removeEventListener('shown.bs.modal', onShown);
+        }, { once: true });
     }
+
+    function updateInputs() {
 </script>
 {% endblock %}

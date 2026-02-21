@@ -76,8 +76,9 @@ export default function useDeviceMotion(sampleRate = 10) {
         dataRef.current.push(dataPoint);
 
         // Update state periodically (every 10 samples to avoid too many re-renders)
+        // Only keep the last 100 samples in state for UI/live-eval to save memory
         if (dataRef.current.length % 10 === 0) {
-          setData([...dataRef.current]);
+          setData(dataRef.current.slice(-100));
         }
       });
 

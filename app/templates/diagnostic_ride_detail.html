@@ -19,6 +19,8 @@
             <div>
                 {% if ride.status == 'pending' %}
                     <span class="badge bg-primary fs-5" id="liveBadge">LIVE MODE <span class="spinner-grow spinner-grow-sm" role="status"></span></span>
+                {% elif ride.status == 'failed' %}
+                    <span class="badge bg-warning text-dark fs-5">Evaluation Error ⚠</span>
                 {% elif ride.passed %}
                     <span class="badge bg-success fs-5">Passed ✓</span>
                 {% else %}
@@ -67,9 +69,20 @@
                         </div>
                     </div>
 
-                    <div class="alert {% if ride.passed %}alert-success{% else %}alert-warning{% endif %} mb-0">
+                    <div class="alert {% if ride.passed %}alert-success{% elif ride.status == 'failed' %}alert-danger{% else %}alert-warning{% endif %} mb-0">
                         <h6 class="alert-heading">Evaluation Summary:</h6>
-                        <p class="small mb-0">{{ (ride.evaluation_result|from_json).summary }}</p>
+                        <div class="small mb-0">
+                            {% if ride.status == 'pending' %}
+                                Ride in progress. Real-time telemetry and events are being streamed.
+                            {% elif ride.status == 'failed' %}
+                                <p>An error occurred during the automatic evaluation of this ride. This can happen if sensor data was corrupted or incomplete.</p>
+                                <form action="/api/v1/diagnostic-rides/{{ ride.id }}/evaluate" method="post" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger mt-2">Retry Evaluation</button>
+                                </form>
+                            {% else %}
+                                {{ (ride.evaluation_result|from_json).summary if ride.evaluation_result else 'No summary available.' }}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -90,9 +103,12 @@
                     <h5 class="mb-0">Mistake Log</h5>
                 </div>
                 <div class="list-group list-group-flush overflow-auto" style="max-height: 400px;">
-                    {% set eval_data = ride.evaluation_result|from_json %}
-                    {% if eval_data.events %}
-                        {% for event in eval_data.events %}
+                    {% set eval_data = ride.evaluation_result|from_json if ride.evaluation_result else {} %}
+                    {% set live_events = ride.human_feedback|from_json if ride.human_feedback else [] %}
+                    {% set display_events = eval_data.events if (eval_data and eval_data.events) else live_events %}
+                    
+                    {% if display_events %}
+                        {% for event in display_events %}
                         <div class="list-group-item">
                             <div class="d-flex w-100 justify-content-between">
                                 <h6 class="mb-1 text-capitalize">{{ event.type|replace('_', ' ') }}</h6>
@@ -100,17 +116,17 @@
                             </div>
                             <p class="mb-1 small">
                                 {% if event.type == 'speeding' %}
-                                    Speeded: {{ event.value }} km/h (Limit: {{ event.limit }} km/h)
+                                    Speeded: {{ event.value|round(1) if event.value is number else event.value }} km/h (Limit: {{ event.limit }} km/h)
                                 {% elif event.type == 'harsh_braking' %}
-                                    Harsh Deceleration: {{ event.value }}g
+                                    Harsh Deceleration: {{ event.value|round(2) if event.value is number else event.value }}g
                                 {% elif event.type == 'sudden_stop' %}
-                                    Sudden Stop: -{{ event.value }} km/h drop
+                                    Sudden Stop: -{{ event.value|round(1) if event.value is number else event.value }} km/h drop
                                 {% elif event.type == 'sharp_turn' %}
-                                    Sharp Turn: {{ event.value }}g lateral
+                                    Sharp Turn: {{ event.value|round(2) if event.value is number else event.value }}g lateral
                                 {% endif %}
                             </p>
                             <span class="badge {% if event.severity == 'high' %}bg-danger{% else %}bg-warning text-dark{% endif %} rounded-pill" style="font-size: 0.7rem;">
-                                {{ event.severity|upper }} Severity
+                                {{ event.severity|upper if event.severity else 'MEDIUM' }} Severity
                             </span>
                         </div>
                         {% endfor %}
@@ -294,32 +310,66 @@
 
         // WebSocket for Live Updates
         if (isLive) {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/api/v1/live-ride-stream?ride_id={{ ride.id }}&client_type=web`;
-            console.log('Connecting to Live WebSocket:', wsUrl);
-            const socket = new WebSocket(wsUrl);
+            let socket;
+            let reconnectAttempts = 0;
+            const maxReconnectDelay = 30000;
 
-            socket.onmessage = function(event) {
-                try {
-                    const msg = JSON.parse(event.data);
-                    if (msg.type === 'telemetry') {
-                        updateLiveTelemetry(msg.data);
-                    } else if (msg.type === 'event') {
-                        addLiveEvent(msg.data);
-                    } else if (msg.type === 'system' && msg.data.event === 'ride_completed') {
-                        console.log('Ride completed system message received');
-                        // Show toast and refresh
-                        alert("Diagnostic ride completed! Refreshing page to show final report.");
-                        window.location.reload();
+            function connectWS() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/api/v1/live-ride-stream?ride_id={{ ride.id }}&client_type=web`;
+                console.log('Connecting to Live WebSocket:', wsUrl);
+                
+                socket = new WebSocket(wsUrl);
+
+                socket.onmessage = function(event) {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'telemetry') {
+                            updateLiveTelemetry(msg.data);
+                        } else if (msg.type === 'event') {
+                            addLiveEvent(msg.data);
+                        } else if (msg.type === 'system' && msg.data.event === 'ride_completed') {
+                            console.log('Ride completed system message received');
+                            alert("Diagnostic ride completed! Refreshing page to show final report.");
+                            window.location.reload();
+                        } else if (msg.type === 'pong') {
+                            console.log('WS Pong');
+                        }
+                    } catch (err) {
+                        console.error('Error parsing WS message:', err);
                     }
-                } catch (err) {
-                    console.error('Error parsing WS message:', err);
-                }
-            };
+                };
 
-            socket.onopen = () => console.log('Live Dashboard Connected');
-            socket.onclose = () => console.log('Live Dashboard Disconnected');
+                socket.onopen = () => {
+                    console.log('Live Dashboard Connected');
+                    reconnectAttempts = 0;
+                    socket.send(JSON.stringify({ type: 'ping' }));
+                    // Start heartbeat
+                    const heartbeat = setInterval(() => {
+                        if (socket.readyState === WebSocket.OPEN) {
+                            socket.send(JSON.stringify({ type: 'ping' }));
+                        } else {
+                            clearInterval(heartbeat);
+                        }
+                    }, 30000);
+                };
 
+                socket.onclose = () => {
+                    console.log('Live Dashboard Disconnected');
+                    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), maxReconnectDelay);
+                    reconnectAttempts++;
+                    console.log(`Reconnecting in ${delay}ms...`);
+                    setTimeout(connectWS, delay);
+                };
+
+                socket.onerror = (err) => {
+                    console.error('WebSocket error:', err);
+                };
+            }
+
+            connectWS();
+
+            let lastPanTime = 0;
             function updateLiveTelemetry(data) {
                 // Update Map
                 if (data.location) {
@@ -332,7 +382,17 @@
                     } else {
                         currentMarker.setLatLng(newPoint);
                     }
-                    map.panTo(newPoint);
+                    
+                    // Throttle panning to once per second to prevent "blinking" from overlapping animations
+                    const now = Date.now();
+                    if (now - lastPanTime > 1000) {
+                        map.panTo(newPoint, {
+                            animate: true,
+                            duration: 1.0,
+                            noMoveStart: true
+                        });
+                        lastPanTime = now;
+                    }
                 }
 
                 // Update Charts

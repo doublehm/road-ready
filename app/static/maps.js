@@ -8,13 +8,28 @@ const RoadReadyMaps = {
     tiles: {
         light: {
             url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            attribution: '&copy; OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap contributors',
+            options: {
+                maxZoom: 19,
+                fadeAnimation: true,
+                zoomAnimation: true,
+                updateWhenIdle: true,
+                updateWhenZooming: false,
+                keepBuffer: 2
+            }
         },
         dark: {
             url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
             attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
             subdomains: 'abcd',
-            maxZoom: 20
+            options: {
+                maxZoom: 20,
+                fadeAnimation: true,
+                zoomAnimation: true,
+                updateWhenIdle: true,
+                updateWhenZooming: false,
+                keepBuffer: 3 // Keep more tiles in buffer for dark theme
+            }
         }
     },
 
@@ -23,12 +38,27 @@ const RoadReadyMaps = {
         const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark';
         const tileConfig = isDarkMode ? this.tiles.dark : this.tiles.light;
 
-        const map = L.map(elementId).setView(coords, zoom);
+        const map = L.map(elementId, {
+            zoomControl: true,
+            wheelPxPerZoomLevel: 120 // Smoother scroll zoom
+        }).setView(coords, zoom);
+
         L.tileLayer(tileConfig.url, {
+            ...tileConfig.options,
             attribution: tileConfig.attribution,
-            subdomains: tileConfig.subdomains || '',
-            maxZoom: tileConfig.maxZoom || 19
+            subdomains: tileConfig.subdomains || ''
         }).addTo(map);
+
+        // Auto-invalidate size on container resize (replaces manual hacks)
+        const container = document.getElementById(elementId);
+        if (container && window.ResizeObserver) {
+            const observer = new ResizeObserver(() => {
+                map.invalidateSize({ debounce: true });
+            });
+            observer.observe(container);
+            // Store observer on map object for cleanup if needed
+            map._resizeObserver = observer;
+        }
 
         return map;
     },

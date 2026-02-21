@@ -4,8 +4,9 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { AuthContext } from '../context/AuthContext';
+import { SERVER_URL } from '../api/client';
 
-const BASE_URL = 'http://10.32.100.57:8000';
+const BASE_URL = SERVER_URL;
 
 const CheckoutScreen = ({ route, navigation }) => {
   const { bookingId } = route.params;

@@ -93,7 +93,9 @@
                                                 Quick Summary
                                             </button>
                                         {% else %}
-                                            <span class="text-muted small">Awaiting evaluation</span>
+                                            <a href="/diagnostic-ride/{{ ride.id }}" class="btn btn-sm btn-warning">
+                                                View Live Report
+                                            </a>
                                         {% endif %}
                                     </td>
                                 </tr>
