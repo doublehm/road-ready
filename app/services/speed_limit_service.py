@@ -63,6 +63,8 @@ def _best_road(elements: list) -> Optional[Dict]:
     with_maxspeed = [e for e in elements if e.get("tags", {}).get("maxspeed")]
     candidates = with_maxspeed if with_maxspeed else elements
     return max(candidates, key=priority)
+
+OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 OVERPASS_TIMEOUT = 5  # seconds
 
 # Cache: key = rounded (lat, lon) -> value = (result_dict, timestamp)
