@@ -193,7 +193,15 @@ class DiagnosticEvaluator:
             'cornering_score': round(cornering_score, 2),
             'overall_score': round(overall_score, 2),
             'passed': passed,
-            'evaluation_result': json.dumps(evaluation_result)
+            'evaluation_result': json.dumps(evaluation_result),
+            # Expose processed sensor data so the evaluate endpoint can persist it
+            # back to the SQL record for the results screen.
+            'speed_data': speed_data,
+            'route_coords': [
+                {'latitude': p['latitude'], 'longitude': p['longitude']}
+                for p in speed_data
+                if p.get('latitude') and p.get('longitude')
+            ],
         }
 
     def _evaluate_braking(self, acceleration_data: List[Dict], speed_data: List[Dict]) -> Tuple[float, Dict]:

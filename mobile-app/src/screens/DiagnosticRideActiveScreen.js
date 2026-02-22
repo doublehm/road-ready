@@ -69,6 +69,23 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const deviceMotion = useDeviceMotion(10); // 10 Hz sampling
   const speedLimit = useSpeedLimit(gpsTracking.location, !!startTime);
 
+  // Stable refs for the latest sensor values.
+  // Intervals must read from these refs rather than closing over state — state deps
+  // in useEffect cause the interval to be torn down and recreated on every sensor
+  // tick, so a 2-second interval would never fire if a 1-second dep keeps resetting it.
+  const latestMotionDataRef = useRef([]);
+  const latestSpeedDataRef = useRef([]);
+  const latestSpeedLimitRef = useRef(null);
+  const latestZoneTypeRef = useRef('regular');
+  const latestLocationRef = useRef(null);
+  const latestSpeedRef = useRef(0);
+  const latestAccelerationRef = useRef({ x: 0, y: 0, z: 0 });
+  const latestRotationRef = useRef({ x: 0, y: 0, z: 0 });
+  const latestDurationRef = useRef(0);
+  // triggerAlert is redefined every render; route calls through a ref so interval
+  // closures always invoke the freshest version.
+  const triggerAlertRef = useRef(null);
+
   // Speed comparison color
   const getSpeedColor = () => {
     if (!speedLimit.currentSpeedLimit || !gpsTracking.speed) return '#1a1a1a';
@@ -107,24 +124,32 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     setFeedbackBadgeCount(total);
   }, []);
 
-  // Real-time feedback loop
+  // Real-time feedback loop — runs every 2 seconds while the ride is active.
+  // IMPORTANT: only stable values (startTime, isUploading) are in the dep array.
+  // Sensor state arrays (deviceMotion.data, gpsTracking.speedData) change every
+  // ~1 s, which would reset the 2-second interval before it ever fires. We read
+  // those values from refs instead (synced each render below).
   useEffect(() => {
     if (!startTime || isUploading) return;
 
     const feedbackInterval = setInterval(async () => {
-      const motionData = deviceMotion.data.slice(-30); // 10Hz * 3s
-      const speedData = gpsTracking.speedData.slice(-3); // 1Hz * 3s
+      const motionData = latestMotionDataRef.current.slice(-30); // 10Hz * 3s
+      const speedData = latestSpeedDataRef.current.slice(-3);    // 1Hz * 3s
 
-      if (motionData.length < 10 || speedData.length < 1) return;
+      // Require motion data (for braking/cornering detection).
+      // Speed data is optional — speeding detection won't fire until GPS settles,
+      // but harsh braking and sharp turns are detected from motion alone.
+      if (motionData.length < 10) return;
 
       try {
+        const loc = latestLocationRef.current;
         const accelerationWindow = motionData.map(p => ({
           timestamp: p.timestamp,
           x: p.acceleration.x,
           y: p.acceleration.y,
           z: p.acceleration.z,
-          latitude: gpsTracking.location?.latitude,
-          longitude: gpsTracking.location?.longitude
+          latitude: loc?.latitude,
+          longitude: loc?.longitude,
         }));
 
         const speedWindow = speedData.map(p => ({
@@ -132,7 +157,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           speed: p.speed,
           latitude: p.latitude,
           longitude: p.longitude,
-          speed_limit: speedLimit.currentSpeedLimit || 0,
+          speed_limit: latestSpeedLimitRef.current || 0,
         }));
 
         const rotationWindow = motionData.map(p => ({
@@ -160,7 +185,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
               handleFeedbackUpdate(mapping.code, 1, {
                 ...mapping,
                 timestamp: Date.now(),
-                elapsed_seconds: duration,
+                elapsed_seconds: latestDurationRef.current,
               });
             }
           });
@@ -169,7 +194,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           const alertEvent = newEvents.find(e => e.severity === 'high') ||
                              newEvents.find(e => e.severity === 'medium');
           if (alertEvent) {
-            triggerAlert(alertEvent);
+            triggerAlertRef.current(alertEvent);
           }
 
           // Stream events to backend for live dashboard
@@ -179,11 +204,11 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
               data: {
                 ...event,
                 timestamp: Date.now() / 1000,
-                location: gpsTracking.location ? {
-                  latitude: gpsTracking.location.latitude,
-                  longitude: gpsTracking.location.longitude,
-                } : null
-              }
+                location: loc ? {
+                  latitude: loc.latitude,
+                  longitude: loc.longitude,
+                } : null,
+              },
             });
           });
         }
@@ -193,20 +218,24 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     }, 2000);
 
     return () => clearInterval(feedbackInterval);
-  }, [startTime, isUploading, deviceMotion.data, gpsTracking.speedData, speedLimit.currentSpeedLimit]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startTime, isUploading]);
 
-  const triggerAlert = (event) => {
+  // triggerAlert reads from refs so it's always fresh even when called from a
+  // long-lived interval closure. Assigning to the ref each render keeps the
+  // pointer up to date without requiring it as an effect dependency.
+  triggerAlertRef.current = (event) => {
     let msg = '';
     let detail = '';
     let icon = 'warning';
 
     if (event.type === 'speeding') {
       msg = 'Reduce Speed';
-      const limit = event.limit || speedLimit.currentSpeedLimit || '?';
-      const speed = Math.round(event.value || gpsTracking.speed);
+      const limit = event.limit || latestSpeedLimitRef.current || '?';
+      const speed = Math.round(event.value || latestSpeedRef.current);
       const excess = Math.round(speed - limit);
       detail = `${speed} km/h in a ${limit} km/h zone (+${excess} km/h over)`;
-      if (speedLimit.zoneType === 'school') {
+      if (latestZoneTypeRef.current === 'school') {
         msg = 'SCHOOL ZONE - Slow Down!';
         detail = `Speed limit is ${limit} km/h in this school zone`;
         icon = 'school';
@@ -359,26 +388,32 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const BUFFER_KEY_PREFIX = '@ride_buffer_';
 
   // Telemetry Streaming & Sync Effect
+  // IMPORTANT: only rideId and sendMessage are in the dep array — both are stable.
+  // Sensor values (acceleration, rotation, speed, location) change every 100ms–1s;
+  // including them would restart the 1 s / 10 s intervals on every tick, making it
+  // impossible for either interval to fire reliably.  We read current values from
+  // refs instead (synced each render below).
   useEffect(() => {
-    if (!rideId || !gpsTracking.location) return;
+    if (!rideId) return;
 
     const streamInterval = setInterval(() => {
+      if (!latestLocationRef.current) return; // GPS not fixed yet
       const point = {
-        acceleration: deviceMotion.acceleration,
-        rotation: deviceMotion.rotation,
-        speed: gpsTracking.speed,
+        acceleration: latestAccelerationRef.current,
+        rotation: latestRotationRef.current,
+        speed: latestSpeedRef.current,
         location: {
-          latitude: gpsTracking.location.latitude,
-          longitude: gpsTracking.location.longitude,
+          latitude: latestLocationRef.current.latitude,
+          longitude: latestLocationRef.current.longitude,
         },
-        heading: gpsTracking.location.heading,
+        heading: latestLocationRef.current.heading,
         timestamp: Date.now() / 1000,
       };
 
       // 1. Send via WebSocket for live dashboard (low latency)
       sendMessage({
         type: 'telemetry',
-        data: point
+        data: point,
       });
 
       // 2. Add to local buffer
@@ -395,7 +430,6 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       try {
         await client.post(`/diagnostic-rides/${rideId}/telemetry`, chunk);
         setIsOffline(false);
-        // Success: optionally clear persistent backup if we implemented one
       } catch (e) {
         console.warn('HTTP Sync failed, returning points to buffer:', e);
         syncBufferRef.current = [...chunk, ...syncBufferRef.current]; // Put back to retry
@@ -414,7 +448,8 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       clearInterval(streamInterval);
       clearInterval(syncInterval);
     };
-  }, [rideId, deviceMotion.acceleration, deviceMotion.rotation, gpsTracking.speed, gpsTracking.location, sendMessage]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rideId, sendMessage]);
 
   useEffect(() => {
     let interval;
@@ -586,6 +621,18 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       setIsUploading(false);
     }
   };
+
+  // Sync sensor refs on every render so intervals always read the latest values
+  // without needing those values in their dep arrays.
+  latestMotionDataRef.current = deviceMotion.data;
+  latestSpeedDataRef.current = gpsTracking.speedData;
+  latestSpeedLimitRef.current = speedLimit.currentSpeedLimit;
+  latestZoneTypeRef.current = speedLimit.zoneType;
+  latestLocationRef.current = gpsTracking.location;
+  latestSpeedRef.current = gpsTracking.speed;
+  latestAccelerationRef.current = deviceMotion.acceleration;
+  latestRotationRef.current = deviceMotion.rotation;
+  latestDurationRef.current = duration;
 
   // Memoize map props so OSMMap doesn't receive new object references on every
   // render (which would bypass React.memo and re-animate on every GPS tick).
