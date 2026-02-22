@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  AppState,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, Surface, IconButton, FAB, Portal, Dialog, Button, Badge } from 'react-native-paper';
@@ -383,6 +384,31 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     };
   }, [connectWebSocket]);
 
+  // Re-connect WebSocket when app returns to foreground.
+  // When the user switches away and back, the OS kills the socket.
+  // AppState 'active' fires on every foreground resume.
+  const appStateRef = useRef(AppState.currentState);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const prev = appStateRef.current;
+      appStateRef.current = nextState;
+
+      if (nextState === 'background' && rideId) {
+        // Persist the in-memory sync buffer so nothing is lost if the OS kills the app.
+        const snapshot = syncBufferRef.current.slice(-200); // last 200 events
+        AsyncStorage.setItem(`@ride_buffer_${rideId}`, JSON.stringify(snapshot)).catch(() => {});
+      }
+
+      if (prev !== 'active' && nextState === 'active' && rideId && !isUploading) {
+        // Clear any pending exponential-backoff timer — reconnect immediately.
+        if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
+        reconnectAttempts.current = 0;
+        connectWebSocket();
+      }
+    });
+    return () => subscription.remove();
+  }, [rideId, isUploading, connectWebSocket]);
+
   const [isOffline, setIsOffline] = useState(false);
   const syncBufferRef = useRef([]);
   const BUFFER_KEY_PREFIX = '@ride_buffer_';
@@ -532,7 +558,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
 
     try {
       // Stop tracking locally
-      const gpsData = gpsTracking.stopTracking();
+      const gpsData = await gpsTracking.stopTracking();
       const motionData = deviceMotion.stopTracking();
       const speedLimitData = speedLimit.getSpeedLimitData();
 

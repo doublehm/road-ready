@@ -15,7 +15,12 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "UIBackgroundModes": ["location", "fetch"],
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Road Ready tracks your GPS route during a diagnostic ride, even when the app is in the background.",
+        "NSLocationAlwaysUsageDescription": "Road Ready tracks your GPS route during a diagnostic ride, even when the app is in the background."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,13 +28,26 @@
         "backgroundColor": "#ffffff"
       },
       "newArchEnabled": true,
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Road Ready tracks your GPS route during a diagnostic ride, even when the app is in the background."
+        }
+      ]
     ]
   }
 }
