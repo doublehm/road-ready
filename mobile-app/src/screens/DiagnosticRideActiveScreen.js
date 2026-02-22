@@ -315,6 +315,10 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   // WebSocket Connection Effect
   const reconnectTimeout = useRef(null);
   const reconnectAttempts = useRef(0);
+  // Tracks whether the app is currently backgrounded.
+  // Android kills TCP connections when backgrounded — this is expected.
+  // We use this to suppress spurious errors and avoid reconnect loops in background.
+  const isInBackgroundRef = useRef(false);
 
   const connectWebSocket = useCallback(() => {
     if (!rideId) return;
@@ -370,7 +374,12 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     };
 
     socket.onerror = (e) => {
-      console.error('WebSocket error:', e.message);
+      if (isInBackgroundRef.current) {
+        // Android kills connections when backgrounded — this is expected, not an error.
+        console.log('WebSocket closed (app backgrounded)');
+      } else {
+        console.error('WebSocket error:', e.message);
+      }
       setIsWsConnected(false);
     };
 
@@ -378,6 +387,10 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       console.log('WebSocket closed:', e.code, e.reason);
       setIsWsConnected(false);
       if (heartbeatInterval) clearInterval(heartbeatInterval);
+
+      // If we're in the background, don't start a retry loop —
+      // the AppState handler will reconnect immediately when foregrounded.
+      if (isInBackgroundRef.current) return;
       
       // Don't reconnect if we intentionally closed it (e.g. unmount or ride complete)
       if (e.code !== 1000 && rideId && !isUploading) {
@@ -407,12 +420,14 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       appStateRef.current = nextState;
 
       if (nextState === 'background' && rideId) {
+        isInBackgroundRef.current = true;
         // Persist the in-memory sync buffer so nothing is lost if the OS kills the app.
         const snapshot = syncBufferRef.current.slice(-200); // last 200 events
         AsyncStorage.setItem(`@ride_buffer_${rideId}`, JSON.stringify(snapshot)).catch(() => {});
       }
 
       if (prev !== 'active' && nextState === 'active' && rideId && !isUploading) {
+        isInBackgroundRef.current = false;
         // Clear any pending exponential-backoff timer — reconnect immediately.
         if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
         reconnectAttempts.current = 0;
