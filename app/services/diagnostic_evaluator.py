@@ -34,14 +34,24 @@ class DiagnosticEvaluator:
     GRAVITY = 9.81  # m/s²
 
     # Braking thresholds
-    HARSH_BRAKING_THRESHOLD = 0.4  # 0.4g deceleration
-    SUDDEN_STOP_SPEED_DROP = 5  # km/h drop in 1 second
-    SMOOTH_BRAKING_MIN = 0.1  # 0.1g minimum for smooth braking
-    SMOOTH_BRAKING_MAX = 0.3  # 0.3g maximum for smooth braking
+    # 0.6g = genuine hard braking; lower values are normal deceleration / road vibration
+    HARSH_BRAKING_THRESHOLD = 0.6  # g
+    SUDDEN_STOP_SPEED_DROP = 10  # km/h drop within the sampling window
+    SMOOTH_BRAKING_MIN = 0.1  # g minimum for smooth braking bonus
+    SMOOTH_BRAKING_MAX = 0.4  # g maximum for smooth braking bonus
 
     # Cornering thresholds
-    SHARP_TURN_LATERAL_THRESHOLD = 0.3  # 0.3g lateral acceleration
-    SMOOTH_TURN_THRESHOLD = 0.15  # Below this is smooth
+    # 0.45g = aggressive lane change / sharp turn; normal city corners are ~0.2-0.3g
+    SHARP_TURN_LATERAL_THRESHOLD = 0.45  # g lateral acceleration
+    SMOOTH_TURN_THRESHOLD = 0.2  # Below this is smooth
+
+    # Minimum milliseconds between two events of the same type.
+    # Prevents consecutive sensor samples from one braking/cornering action
+    # being counted as dozens of separate events.
+    EVENT_COOLDOWN_MS = 3000  # 3 seconds
+
+    # Gyroscope: minimum change in rad/s between samples to count as jerky steering
+    JERKY_STEERING_RATE_THRESHOLD = 1.0  # rad/s (was 0.5 — too sensitive to normal corrections)
 
     # Speed limits (fallback when no actual data available)
     RESIDENTIAL_LIMIT = 50  # km/h
@@ -224,7 +234,10 @@ class DiagnosticEvaluator:
         if not acceleration_data:
             return 50.0, {'notes': ['Insufficient acceleration data for evaluation'], 'events': [], 'tips': []}
 
-        # Analyze acceleration data for harsh braking
+        # Analyze acceleration data for harsh braking.
+        # Use a cooldown so that consecutive samples from the same braking action
+        # are grouped into a single event rather than each sample being counted separately.
+        last_harsh_braking_ts = None
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
             y_accel = point.get('y', 0)
@@ -234,22 +247,31 @@ class DiagnosticEvaluator:
             z_decel_g = abs(z_accel) / self.GRAVITY if z_accel < 0 else 0
             deceleration_g = max(y_decel_g, z_decel_g)
 
+            try:
+                ts = float(point.get('timestamp') or 0)
+            except (ValueError, TypeError):
+                ts = 0
+
             if deceleration_g > self.HARSH_BRAKING_THRESHOLD:
-                harsh_braking_count += 1
-                score -= 10
-                events.append({
-                    'type': 'harsh_braking',
-                    'timestamp': point.get('timestamp'),
-                    'lat': point.get('latitude'),
-                    'lng': point.get('longitude'),
-                    'value': round(deceleration_g, 2),
-                    'severity': 'high' if deceleration_g > 0.6 else 'medium',
-                    'description': f'Harsh braking at {round(deceleration_g, 2)}g force'
-                })
+                # Skip if within cooldown window of the last event (same braking action)
+                if last_harsh_braking_ts is None or (ts - last_harsh_braking_ts) >= self.EVENT_COOLDOWN_MS:
+                    harsh_braking_count += 1
+                    score -= 10
+                    last_harsh_braking_ts = ts
+                    events.append({
+                        'type': 'harsh_braking',
+                        'timestamp': point.get('timestamp'),
+                        'lat': point.get('latitude'),
+                        'lng': point.get('longitude'),
+                        'value': round(deceleration_g, 2),
+                        'severity': 'high' if deceleration_g > 0.8 else 'medium',
+                        'description': f'Harsh braking at {round(deceleration_g, 2)}g force'
+                    })
             elif deceleration_g >= self.SMOOTH_BRAKING_MIN and deceleration_g <= self.SMOOTH_BRAKING_MAX:
                 smooth_braking_count += 1
 
-        # Analyze speed data for sudden stops
+        # Analyze speed data for sudden stops (same cooldown applied).
+        last_sudden_stop_ts = None
         for i in range(1, len(speed_data)):
             point = speed_data[i]
             prev_point = speed_data[i-1]
@@ -266,17 +288,23 @@ class DiagnosticEvaluator:
             if time_diff > 0 and (time_diff <= 1.5 or (time_diff <= 1500 and time_diff > 1.5)):
                 speed_drop = prev_speed - curr_speed
                 if speed_drop > self.SUDDEN_STOP_SPEED_DROP:
-                    sudden_stop_count += 1
-                    score -= 15
-                    events.append({
-                        'type': 'sudden_stop',
-                        'timestamp': point.get('timestamp'),
-                        'lat': point.get('latitude'),
-                        'lng': point.get('longitude'),
-                        'value': round(speed_drop, 2),
-                        'severity': 'high',
-                        'description': f'Sudden stop: {round(speed_drop, 1)} km/h drop in {round(time_diff, 1)}s'
-                    })
+                    try:
+                        ts = float(point.get('timestamp') or 0)
+                    except (ValueError, TypeError):
+                        ts = 0
+                    if last_sudden_stop_ts is None or (ts - last_sudden_stop_ts) >= self.EVENT_COOLDOWN_MS:
+                        sudden_stop_count += 1
+                        score -= 15
+                        last_sudden_stop_ts = ts
+                        events.append({
+                            'type': 'sudden_stop',
+                            'timestamp': point.get('timestamp'),
+                            'lat': point.get('latitude'),
+                            'lng': point.get('longitude'),
+                            'value': round(speed_drop, 2),
+                            'severity': 'high',
+                            'description': f'Sudden stop: {round(speed_drop, 1)} km/h drop in {round(time_diff, 1)}s'
+                        })
 
         # Bonus for smooth braking
         smooth_bonus = min(20, smooth_braking_count * 2)
@@ -527,6 +555,9 @@ class DiagnosticEvaluator:
         if not acceleration_data:
             return 50.0, {'notes': ['Insufficient data'], 'events': [], 'tips': []}
 
+        # Apply cooldown so that sustained lateral force during one turn
+        # is counted as a single event, not one per sensor sample.
+        last_sharp_turn_ts = None
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
             x_accel = point.get('x', 0)
@@ -536,18 +567,25 @@ class DiagnosticEvaluator:
             if y_lateral_g > lateral_g and lateral_g < 0.05:
                 lateral_g = y_lateral_g
 
+            try:
+                ts = float(point.get('timestamp') or 0)
+            except (ValueError, TypeError):
+                ts = 0
+
             if lateral_g > self.SHARP_TURN_LATERAL_THRESHOLD:
-                sharp_turn_count += 1
-                score -= 8
-                events.append({
-                    'type': 'sharp_turn',
-                    'timestamp': point.get('timestamp'),
-                    'lat': point.get('latitude'),
-                    'lng': point.get('longitude'),
-                    'value': round(lateral_g, 2),
-                    'severity': 'high' if lateral_g > 0.5 else 'medium',
-                    'description': f'Sharp turn at {round(lateral_g, 2)}g'
-                })
+                if last_sharp_turn_ts is None or (ts - last_sharp_turn_ts) >= self.EVENT_COOLDOWN_MS:
+                    sharp_turn_count += 1
+                    score -= 8
+                    last_sharp_turn_ts = ts
+                    events.append({
+                        'type': 'sharp_turn',
+                        'timestamp': point.get('timestamp'),
+                        'lat': point.get('latitude'),
+                        'lng': point.get('longitude'),
+                        'value': round(lateral_g, 2),
+                        'severity': 'high' if lateral_g > 0.65 else 'medium',
+                        'description': f'Sharp turn at {round(lateral_g, 2)}g'
+                    })
             elif lateral_g < self.SMOOTH_TURN_THRESHOLD and lateral_g > 0.02:
                 smooth_turn_count += 1
 
@@ -555,7 +593,7 @@ class DiagnosticEvaluator:
             for i in range(1, len(rotation_data)):
                 prev_rotation = rotation_data[i-1].get('z', 0)
                 curr_rotation = rotation_data[i].get('z', 0)
-                if abs(curr_rotation - prev_rotation) > 0.5:
+                if abs(curr_rotation - prev_rotation) > self.JERKY_STEERING_RATE_THRESHOLD:
                     jerky_steering_count += 1
                     score -= 5
 

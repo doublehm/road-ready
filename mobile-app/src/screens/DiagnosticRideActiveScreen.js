@@ -86,6 +86,11 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   // triggerAlert is redefined every render; route calls through a ref so interval
   // closures always invoke the freshest version.
   const triggerAlertRef = useRef(null);
+  // Tracks the last time each event type triggered an alert (ms timestamp).
+  // Prevents the same event type from flooding the UI every 2 seconds.
+  const lastAlertByTypeRef = useRef({});
+  // Max events to keep in memory — prevents unbounded growth that causes freeze/crash
+  const MAX_EVENTS = 300;
 
   // Speed comparison color
   const getSpeedColor = () => {
@@ -177,7 +182,8 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         if (response.data.events && response.data.events.length > 0) {
           const newEvents = response.data.events;
           setLatestEvents(prev => [...newEvents, ...prev].slice(0, 8));
-          setAllEvents(prev => [...newEvents, ...prev]);
+          // Cap allEvents to MAX_EVENTS to prevent unbounded memory growth and render freezes
+          setAllEvents(prev => [...newEvents, ...prev].slice(0, MAX_EVENTS));
 
           // Auto-map sensor events to feedback criteria (F-codes)
           newEvents.forEach(event => {
@@ -191,11 +197,18 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
             }
           });
 
-          // Trigger alert for any detected event (high or medium severity)
-          const alertEvent = newEvents.find(e => e.severity === 'high') ||
-                             newEvents.find(e => e.severity === 'medium');
+          // Trigger alert for the most severe new event, but rate-limit per event type
+          // to at most once every 15 seconds so the UI doesn't get flooded.
+          const ALERT_COOLDOWN_MS = 15000;
+          const now = Date.now();
+          const alertEvent = (newEvents.find(e => e.severity === 'high') ||
+                              newEvents.find(e => e.severity === 'medium'));
           if (alertEvent) {
-            triggerAlertRef.current(alertEvent);
+            const lastAlertTs = lastAlertByTypeRef.current[alertEvent.type] || 0;
+            if (now - lastAlertTs >= ALERT_COOLDOWN_MS) {
+              lastAlertByTypeRef.current[alertEvent.type] = now;
+              triggerAlertRef.current(alertEvent);
+            }
           }
 
           // Stream events to backend for live dashboard

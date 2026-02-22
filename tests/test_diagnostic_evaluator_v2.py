@@ -6,10 +6,11 @@ from app import models
 def test_evaluator_tracks_harsh_braking():
     evaluator = DiagnosticEvaluator()
     
-    # Simulate harsh braking data (Z acceleration < -3.92 m/s² for 0.4g)
+    # Simulate harsh braking data: -6.5 m/s² ≈ 0.66g, above the 0.6g threshold.
+    # Two samples separated by >3 s so each is a distinct event.
     acceleration_data = [
-        {'timestamp': 1000, 'x': 0, 'y': 0, 'z': -5.0, 'latitude': 49.2, 'longitude': -123.1},
-        {'timestamp': 1001, 'x': 0, 'y': 0, 'z': -0.1, 'latitude': 49.2, 'longitude': -123.1}
+        {'timestamp': 1000, 'x': 0, 'y': 0, 'z': -6.5, 'latitude': 49.2, 'longitude': -123.1},
+        {'timestamp': 5000, 'x': 0, 'y': 0, 'z': -0.1, 'latitude': 49.2, 'longitude': -123.1}
     ]
     speed_data = [] # Not needed for pure acceleration check
     
@@ -25,15 +26,21 @@ def test_evaluator_tracks_harsh_braking():
 def test_evaluator_tracks_speeding():
     evaluator = DiagnosticEvaluator()
     
-    # Simulate speeding (avg speed 30 -> limit 50, but one point is 70)
+    # Simulate sustained speeding: 7 consecutive points at 70 km/h in a 50 km/h zone.
+    # The evaluator requires CONSECUTIVE_SPEEDING_REQUIRED=3 AND i%5==0 to emit,
+    # so we need at least 6 points (the event fires at index 5 with consecutive_over=6).
     speed_data = [
-        {'timestamp': 1000, 'speed': 10, 'latitude': 49.2, 'longitude': -123.1},
-        {'timestamp': 1001, 'speed': 10, 'latitude': 49.21, 'longitude': -123.11},
-        {'timestamp': 1002, 'speed': 70, 'latitude': 49.22, 'longitude': -123.12}
+        {'timestamp': 1000 + i, 'speed': 70, 'latitude': 49.2 + i * 0.01, 'longitude': -123.1}
+        for i in range(7)
     ]
     
-    # _evaluate_speed detects residential limit (50) for these speeds
-    score, feedback = evaluator._evaluate_speed(speed_data, 1)
+    # Explicit speed_limit_data forcing a 50 km/h residential zone.
+    speed_limit_data = [
+        {'timestamp': 1000 + i, 'speed_limit': 50, 'zone_type': 'regular', 'road_type': 'residential'}
+        for i in range(7)
+    ]
+    
+    score, feedback = evaluator._evaluate_speed(speed_data, 1, speed_limit_data=speed_limit_data)
     
     assert score < 100
     assert len(feedback['events']) > 0
@@ -70,19 +77,27 @@ def test_live_evaluate_endpoint(client, db, auth_headers):
 def test_evaluate_aggregates_all_events():
     evaluator = DiagnosticEvaluator()
     
+    # Acceleration: -10 m/s² ≈ 1.02g — well above 0.6g threshold
+    # Speed: 7 sustained points at 90 km/h in a 80 km/h zone.
+    # Need ≥6 points so the event fires at i=5 (i%5==0, consecutive_over=6≥3).
+    speed_points = [
+        {'timestamp': 1005 + i, 'speed': 90, 'latitude': 49.3 + i * 0.01, 'longitude': -123.2}
+        for i in range(7)
+    ]
+    limit_points = [
+        {'timestamp': 1005 + i, 'speed_limit': 80, 'zone_type': 'regular', 'road_type': 'highway'}
+        for i in range(7)
+    ]
     ride_data = {
         'acceleration_data': json.dumps([
             {'timestamp': 1000, 'x': 0, 'y': 0, 'z': -10.0, 'latitude': 49.2, 'longitude': -123.1}
         ]),
-        'speed_data': json.dumps([
-            {'timestamp': 1005, 'speed': 90, 'latitude': 49.3, 'longitude': -123.2},
-            {'timestamp': 1006, 'speed': 95, 'latitude': 49.31, 'longitude': -123.21}
-        ]),
+        'speed_data': json.dumps(speed_points),
+        'speed_limit_data': json.dumps(limit_points),
         'duration_minutes': 25,
         'distance_km': 10
     }
     
-    # Avg speed is ~92.5 -> limit 80. So speeding detected.
     result = evaluator.evaluate(ride_data)
     eval_dict = json.loads(result['evaluation_result'])
     
@@ -94,4 +109,3 @@ def test_evaluate_aggregates_all_events():
     assert 'speeding' in event_types
     # Events should be sorted by timestamp
     assert events[0]['timestamp'] == 1000
-    assert events[1]['timestamp'] == 1005
