@@ -210,7 +210,6 @@ async def websocket_endpoint(websocket: WebSocket):
 async def get_speed_limit_for_location(
     lat: float,
     lon: float,
-    current_user: models.User = Depends(deps.get_current_user)
 ):
     """
     Get the speed limit for the given GPS coordinates.
