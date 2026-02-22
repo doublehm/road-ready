@@ -1,26 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
-import * as TaskManager from 'expo-task-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const BACKGROUND_LOCATION_TASK = 'ROAD_READY_BG_LOCATION';
-const BG_BUFFER_KEY = '@rr_bg_location_buffer';
-
-// Background task: runs even when app is suspended.
-// Saves locations to AsyncStorage so the foreground hook can merge them on resume.
-TaskManager.defineTask(BACKGROUND_LOCATION_TASK, ({ data, error }) => {
-  if (error) {
-    console.error('[BG Location]', error.message);
-    return;
-  }
-  if (data?.locations?.length) {
-    AsyncStorage.getItem(BG_BUFFER_KEY).then((raw) => {
-      const existing = raw ? JSON.parse(raw) : [];
-      const merged = [...existing, ...data.locations].slice(-500); // cap at 500
-      AsyncStorage.setItem(BG_BUFFER_KEY, JSON.stringify(merged));
-    });
-  }
-});
 
 /**
  * Calculate distance between two coordinates using Haversine formula
@@ -107,33 +87,6 @@ export default function useGPSTracking() {
       setDistance(0);
       setSpeedData([]);
 
-      // Clear any leftover background buffer from a prior ride
-      await AsyncStorage.removeItem(BG_BUFFER_KEY);
-
-      // Start background location task so GPS continues when app is suspended.
-      // Gracefully skipped if background permission is not granted.
-      try {
-        const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
-        if (bgStatus === 'granted') {
-          const alreadyRunning = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
-          if (!alreadyRunning) {
-            await Location.startLocationUpdatesAsync(BACKGROUND_LOCATION_TASK, {
-              accuracy: Location.Accuracy.High,
-              timeInterval: 2000,
-              distanceInterval: 5,
-              showsBackgroundLocationIndicator: true,
-              foregroundService: {
-                notificationTitle: 'Road Ready',
-                notificationBody: 'GPS tracking active during diagnostic ride.',
-                notificationColor: '#1a73e8',
-              },
-            });
-          }
-        }
-      } catch (bgErr) {
-        console.log('[GPS] Background location not available:', bgErr.message);
-      }
-
       // Start watching position
       subscriptionRef.current = await Location.watchPositionAsync(
         {
@@ -197,38 +150,6 @@ export default function useGPSTracking() {
       subscriptionRef.current.remove();
       subscriptionRef.current = null;
     }
-
-    // Stop background task if running
-    try {
-      const running = await Location.hasStartedLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
-      if (running) await Location.stopLocationUpdatesAsync(BACKGROUND_LOCATION_TASK);
-    } catch (_) {}
-
-    // Merge any background-buffered points collected while app was suspended
-    try {
-      const raw = await AsyncStorage.getItem(BG_BUFFER_KEY);
-      if (raw) {
-        const bgLocations = JSON.parse(raw);
-        for (const loc of bgLocations) {
-          const { latitude, longitude, speed: gpsSpeed } = loc.coords;
-          const speedKmh = gpsSpeed ? gpsSpeed * 3.6 : 0;
-          const coord = { latitude, longitude };
-          const last = routeRef.current[routeRef.current.length - 1];
-          if (!last || calculateDistance(last, coord) > 0.003) {
-            routeRef.current.push(coord);
-            speedDataRef.current.push({
-              timestamp: loc.timestamp,
-              speed: speedKmh,
-              latitude,
-              longitude,
-              heading: loc.coords.heading || 0,
-            });
-          }
-        }
-        speedDataRef.current.sort((a, b) => a.timestamp - b.timestamp);
-        await AsyncStorage.removeItem(BG_BUFFER_KEY);
-      }
-    } catch (_) {}
 
     setIsTracking(false);
 

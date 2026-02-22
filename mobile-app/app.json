@@ -41,13 +41,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Road Ready tracks your GPS route during a diagnostic ride, even when the app is in the background."
-        }
-      ]
+      "expo-font"
     ]
   }
 }
