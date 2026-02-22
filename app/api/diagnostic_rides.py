@@ -174,6 +174,7 @@ async def get_ride_telemetry(
     return points
 
 
+@router.websocket("/live-ride-stream")
 async def websocket_endpoint(websocket: WebSocket):
     ride_id = websocket.query_params.get("ride_id")
     client_type = websocket.query_params.get("client_type", "web")
