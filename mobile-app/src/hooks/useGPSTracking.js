@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Calculate distance between two coordinates using Haversine formula
@@ -144,7 +145,7 @@ export default function useGPSTracking() {
     }
   };
 
-  const stopTracking = () => {
+  const stopTracking = async () => {
     if (subscriptionRef.current) {
       subscriptionRef.current.remove();
       subscriptionRef.current = null;

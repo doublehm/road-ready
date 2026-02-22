@@ -24,6 +24,46 @@ BC_DEFAULTS = {
 
 BC_SCHOOL_ZONE_LIMIT = 30  # km/h Mon-Fri 8am-5pm
 
+# Road type priority: higher index = higher-class road.
+# When multiple roads are near the GPS point, we prefer the one the driver
+# is most likely on (e.g. motorway over an adjacent service road or link).
+ROAD_TYPE_PRIORITY = {
+    "service": 0,
+    "living_street": 1,
+    "residential": 2,
+    "unclassified": 3,
+    "tertiary_link": 4,
+    "tertiary": 5,
+    "secondary_link": 6,
+    "secondary": 7,
+    "primary_link": 8,
+    "primary": 9,
+    "trunk_link": 10,
+    "trunk": 11,
+    "motorway_link": 12,
+    "motorway": 13,
+}
+
+def _best_road(elements: list) -> Optional[Dict]:
+    """
+    From a list of Overpass way elements, return the one most likely being
+    driven on. Strategy:
+      1. Among elements with a maxspeed tag, pick the highest-class road type.
+      2. Fall back to the highest-class road overall.
+    This prevents a nearby 50 km/h service road or on-ramp from overriding the
+    100 km/h motorway the driver is actually on.
+    """
+    if not elements:
+        return None
+
+    def priority(elem):
+        road_type = elem.get("tags", {}).get("highway", "")
+        return ROAD_TYPE_PRIORITY.get(road_type, -1)
+
+    with_maxspeed = [e for e in elements if e.get("tags", {}).get("maxspeed")]
+    candidates = with_maxspeed if with_maxspeed else elements
+    return max(candidates, key=priority)
+
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 OVERPASS_TIMEOUT = 5  # seconds
 
@@ -94,26 +134,16 @@ def _query_overpass(lat: float, lon: float, radius: int = 50) -> Optional[Dict]:
         if not elements:
             return None
 
-        # Prefer elements with maxspeed tag
-        with_maxspeed = [e for e in elements if e.get("tags", {}).get("maxspeed")]
-        if with_maxspeed:
-            elem = with_maxspeed[0]
-            tags = elem.get("tags", {})
-            speed_limit = _parse_maxspeed(tags.get("maxspeed"))
-            return {
-                "speed_limit_kmh": speed_limit,
-                "source": "osm",
-                "road_name": tags.get("name"),
-                "road_type": tags.get("highway", "unknown"),
-                "maxspeed_conditional": tags.get("maxspeed:conditional"),
-            }
-
-        # No maxspeed tag - return road type for default lookup
-        elem = elements[0]
+        # Pick the best road — highest-class highway, preferring ones with a
+        # maxspeed tag. This avoids a nearby on-ramp or service road "winning".
+        elem = _best_road(elements)
+        if elem is None:
+            return None
         tags = elem.get("tags", {})
+        speed_limit = _parse_maxspeed(tags.get("maxspeed"))
         return {
-            "speed_limit_kmh": None,
-            "source": "osm_no_maxspeed",
+            "speed_limit_kmh": speed_limit,
+            "source": "osm" if speed_limit else "osm_no_maxspeed",
             "road_name": tags.get("name"),
             "road_type": tags.get("highway", "unknown"),
             "maxspeed_conditional": tags.get("maxspeed:conditional"),

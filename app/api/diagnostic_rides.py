@@ -706,6 +706,13 @@ async def evaluate_diagnostic_ride(
         ride.overall_score = evaluation_result['overall_score']
         ride.passed = evaluation_result['passed']
         ride.evaluation_result = evaluation_result['evaluation_result']
+
+        # Persist processed sensor data back to SQL so the results screen can
+        # display the SpeedGraph and RouteReplayMap without needing MongoDB.
+        if evaluation_result.get('speed_data'):
+            ride.speed_data = json.dumps(evaluation_result['speed_data'])
+        if evaluation_result.get('route_coords'):
+            ride.route_coords = json.dumps(evaluation_result['route_coords'])
         
         # Extract criteria_results from evaluation_result for easier access
         eval_dict = json.loads(ride.evaluation_result)

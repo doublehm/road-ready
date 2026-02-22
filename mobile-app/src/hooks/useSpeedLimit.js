@@ -20,8 +20,11 @@ function calculateDistance(coord1, coord2) {
 
 const QUERY_DISTANCE_THRESHOLD = 100; // meters
 const QUERY_TIME_THRESHOLD = 30000; // 30 seconds
-const DRAMATIC_CHANGE_THRESHOLD = 30; // km/h - changes larger than this need confirmation
-const SMOOTHING_HISTORY_SIZE = 3; // number of recent readings to consider
+const DRAMATIC_CHANGE_THRESHOLD = 20; // km/h — changes larger than this need confirmation
+const SMOOTHING_HISTORY_SIZE = 5;     // number of recent readings to keep
+// How many recent readings must agree with the new limit to confirm a dramatic
+// change. Higher = more resistant to glitches, slower to accept real changes.
+const DRAMATIC_CHANGE_MIN_AGREE = 3;
 
 /**
  * Custom hook for querying speed limits based on GPS location.
@@ -88,13 +91,13 @@ export default function useSpeedLimit(location, isActive = false) {
     let limitToApply = newLimit;
 
     // Smoothing: if the new limit is a dramatic change from the confirmed limit,
-    // only accept it if multiple recent readings agree (GPS drift protection)
+    // only accept it if enough recent readings agree (protects against OSM glitches
+    // like a 50 km/h on-ramp tag briefly appearing next to a 100 km/h highway).
     if (confirmed !== null && Math.abs(newLimit - confirmed) > DRAMATIC_CHANGE_THRESHOLD) {
       const recent = recentLimitsRef.current;
       // Count how many recent readings are close to the new limit (within 15 km/h)
       const agreeing = recent.filter(l => Math.abs(l - newLimit) <= 15).length;
-      // Need at least 2 consecutive similar readings to confirm a dramatic change
-      if (agreeing < 2) {
+      if (agreeing < DRAMATIC_CHANGE_MIN_AGREE) {
         // Reject the dramatic change - keep the confirmed limit
         limitToApply = confirmed;
       }

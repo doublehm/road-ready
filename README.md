@@ -1,35 +1,11 @@
-# Road Ready 🚗
+# Road Ready
 
-A platform connecting driving instructors with students.
+## Latest Features
 
-## Tech Stack
+- **Diagnostic Rides**: Enhance your riding experience with our new diagnostic rides feature. Monitor your performance and receive insights to improve your skills.
+- **Progress Tracking**: Keep track of your milestones and achievements with our intuitive progress tracking tools.
+- **Messaging**: Stay connected with other riders and instructors through our messaging system.
+- **Payments**: Experience hassle-free transactions with our integrated payment solutions for all services.
+- **Admin Dashboard**: Admins can now manage all aspects of the platform effortlessly with the new admin dashboard.
 
-*   **Backend:** FastAPI (Python)
-*   **Database:** SQLite
-*   **Templates:** Jinja2 + Bootstrap 5
-
-## Setup
-
-1.  **Dependencies:**
-    Dependencies are installed locally in the `lib` folder.
-
-2.  **Database:**
-    The database is pre-seeded with dummy instructors.
-    To re-seed:
-    ```bash
-    PYTHONPATH=./lib python3 seed.py
-    ```
-
-3.  **Run the Server:**
-    ```bash
-    PYTHONPATH=./lib python3 -m uvicorn app.main:app --reload
-    ```
-
-4.  **Access:**
-    Open [http://localhost:8000](http://localhost:8000)
-
-## Features
-
-*   **Student Portal:** Search for instructors by City and Budget.
-*   **Instructor Portal:** Manage availability and view profile.
-*   **Verification:** Mock flows for instructor and student verification.
+Stay tuned for more updates!

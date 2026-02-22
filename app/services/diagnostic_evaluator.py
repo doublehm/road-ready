@@ -193,7 +193,15 @@ class DiagnosticEvaluator:
             'cornering_score': round(cornering_score, 2),
             'overall_score': round(overall_score, 2),
             'passed': passed,
-            'evaluation_result': json.dumps(evaluation_result)
+            'evaluation_result': json.dumps(evaluation_result),
+            # Expose processed sensor data so the evaluate endpoint can persist it
+            # back to the SQL record for the results screen.
+            'speed_data': speed_data,
+            'route_coords': [
+                {'latitude': p['latitude'], 'longitude': p['longitude']}
+                for p in speed_data
+                if p.get('latitude') and p.get('longitude')
+            ],
         }
 
     def _evaluate_braking(self, acceleration_data: List[Dict], speed_data: List[Dict]) -> Tuple[float, Dict]:
@@ -371,6 +379,14 @@ class DiagnosticEvaluator:
         avg_speed = sum(speeds) / len(speeds) if speeds else 0
         fallback_limit, fallback_road_type = self._infer_speed_limit(avg_speed)
 
+        # Require this many consecutive data points over the limit before
+        # flagging a speeding event. One or two points at a glitched lower
+        # limit (e.g. an on-ramp tag briefly appearing near a 100 km/h highway)
+        # will be ignored. School zones are exempt — single-point violations
+        # still count there.
+        CONSECUTIVE_SPEEDING_REQUIRED = 3
+        consecutive_over = 0  # how many consecutive points have been over the limit
+
         for i in range(len(speed_data)):
             point = speed_data[i]
             speed = point.get('speed', 0)
@@ -400,6 +416,7 @@ class DiagnosticEvaluator:
                 ts = 0
 
             if excess > 0:
+                consecutive_over += 1
                 speeding_time += time_duration
                 if excess > max_excess_kmh:
                     max_excess_kmh = excess
@@ -419,7 +436,11 @@ class DiagnosticEvaluator:
                 current_violation['duration_seconds'] += time_duration
                 current_violation['max_speed'] = max(current_violation['max_speed'], speed)
 
-                if excess > 5 and (i % 5 == 0 or is_school):
+                # Only emit an event after sustained speeding (or immediately in school zones).
+                # This filters out single-point OSM glitches where a nearby road
+                # tag briefly lowers the detected limit.
+                sustained = consecutive_over >= CONSECUTIVE_SPEEDING_REQUIRED
+                if excess > 5 and (sustained or is_school) and (i % 5 == 0 or is_school):
                     events.append({
                         'type': 'speeding',
                         'timestamp': ts,
@@ -437,6 +458,7 @@ class DiagnosticEvaluator:
                         ),
                     })
             else:
+                consecutive_over = 0  # reset streak when within the limit
                 if current_violation:
                     speed_violations.append(current_violation)
                     current_violation = None
