@@ -331,7 +331,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     const wsBase = client.defaults.baseURL
       .replace('https://', 'wss://')
       .replace('http://', 'ws://');
-    const wsUrl = `${wsBase}/diagnostic-rides/live-ride-stream?ride_id=${rideId}&client_type=mobile`;
+    const wsUrl = `${wsBase}/live-ride-stream?ride_id=${rideId}&client_type=mobile`;
     
     console.log(`Connecting to WebSocket (Attempt ${reconnectAttempts.current + 1}):`, wsUrl);
     

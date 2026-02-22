@@ -2,8 +2,24 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import Constants from 'expo-constants';
 
-export const SERVER_URL = 'http://10.32.100.57:8000';
+// Dynamically resolve server host from Metro bundler in development.
+// This automatically picks up the correct IP when switching devices or networks —
+// no manual IP editing required.
+const getServerUrl = () => {
+  if (__DEV__) {
+    const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.debuggerHost;
+    if (hostUri) {
+      const host = hostUri.split(':')[0]; // strip the Metro port, keep just the IP
+      return `http://${host}:8000`;
+    }
+  }
+  // Production: replace with your deployed server URL
+  return 'http://10.32.100.57:8000';
+};
+
+export const SERVER_URL = getServerUrl();
 export const BASE_URL = `${SERVER_URL}/api/v1`;
 
 const client = axios.create({
