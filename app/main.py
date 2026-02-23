@@ -66,6 +66,10 @@ def _run_migrations():
         existing_ip = {col["name"] for col in inspector.get_columns("instructor_profiles")}
         ip_columns = {
             "certification_image": "TEXT",
+            "business_registration_number": "TEXT",
+            "tax_id": "TEXT",
+            "worksafe_bc_id": "TEXT",
+            "legal_entity_name": "TEXT",
         }
         with database.engine.connect() as conn:
             for col_name, col_type in ip_columns.items():
