@@ -244,8 +244,8 @@ class DiagnosticEvaluator:
         last_harsh_braking_ts = None
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
-            y_accel = point.get('y', 0)
-            z_accel = point.get('z', 0)
+            y_accel = point.get('y') or 0
+            z_accel = point.get('z') or 0
 
             y_decel_g = abs(y_accel) / self.GRAVITY if y_accel < 0 else 0
             z_decel_g = abs(z_accel) / self.GRAVITY if z_accel < 0 else 0
@@ -564,9 +564,9 @@ class DiagnosticEvaluator:
         last_sharp_turn_ts = None
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
-            x_accel = point.get('x', 0)
+            x_accel = point.get('x') or 0
             lateral_g = abs(x_accel) / self.GRAVITY
-            y_accel = point.get('y', 0)
+            y_accel = point.get('y') or 0
             y_lateral_g = abs(y_accel) / self.GRAVITY
             if y_lateral_g > lateral_g and lateral_g < 0.05:
                 lateral_g = y_lateral_g
@@ -595,8 +595,8 @@ class DiagnosticEvaluator:
 
         if rotation_data:
             for i in range(1, len(rotation_data)):
-                prev_rotation = rotation_data[i-1].get('z', 0)
-                curr_rotation = rotation_data[i].get('z', 0)
+                prev_rotation = rotation_data[i-1].get('z') or 0
+                curr_rotation = rotation_data[i].get('z') or 0
                 if abs(curr_rotation - prev_rotation) > self.JERKY_STEERING_RATE_THRESHOLD:
                     jerky_steering_count += 1
                     score -= 5

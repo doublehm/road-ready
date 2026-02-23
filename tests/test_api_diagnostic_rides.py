@@ -8,7 +8,7 @@ def test_create_diagnostic_ride_with_booking(client, db, auth_headers):
     db.commit()
     
     # Create an instructor and booking
-    instructor = models.InstructorProfile(user_id=student.id, bio="Bio", hourly_rate=50.0, city="Vancouver", car_model="X", insurance_policy="Y", certification_id="Z")
+    instructor = models.InstructorProfile(user_id=student.id, bio="Bio", hourly_rate=50.0, city="Vancouver", car_model="X", insurance_policy="INS-12345", certification_id="CERT-001")
     db.add(instructor)
     db.commit()
     
@@ -62,7 +62,7 @@ def test_instructor_dashboard_diagnostic_rides(client, db):
     instructor_user = models.User(email="inst@example.com", full_name="Inst", role="instructor", hashed_password="hashed")
     db.add(instructor_user)
     db.commit()
-    instructor_profile = models.InstructorProfile(user_id=instructor_user.id, bio="Bio", hourly_rate=50.0, city="V", car_model="X", insurance_policy="Y", certification_id="Z")
+    instructor_profile = models.InstructorProfile(user_id=instructor_user.id, bio="Bio", hourly_rate=50.0, city="V", car_model="X", insurance_policy="INS-12345", certification_id="CERT-001")
     db.add(instructor_profile)
     db.commit()
     

@@ -10,6 +10,8 @@ class UserBase(BaseModel):
 
     @validator('phone_number')
     def validate_phone(cls, v):
+        if v is None:
+            return v
         # Remove common delimiters
         clean_number = re.sub(r'[\s\-\(\)\.]', '', v)
         if not re.match(r'^\+?1?\d{7,15}$', clean_number):
@@ -43,7 +45,8 @@ class UserUpdate(BaseModel):
 class User(UserBase):
     id: int
     role: str
-    
+    phone_number: Optional[str] = None  # DB may have NULL for existing users
+
     class Config:
         from_attributes = True
 
