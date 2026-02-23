@@ -390,18 +390,11 @@ async def submit_human_feedback(
 @router.post("/live-evaluate")
 async def live_evaluate(
     request: schemas.LiveEvaluationRequest,
-    current_user: models.User = Depends(deps.get_current_user)
 ):
     """
     Evaluate a window of sensor data for real-time feedback.
     Returns any detected events (mistakes) in the current window.
     """
-    if current_user.role not in ["student", "instructor"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only students and instructors can access live evaluation"
-        )
-
     evaluator = DiagnosticEvaluator()
     
     # Convert SensorDataPoints to dicts for evaluator
