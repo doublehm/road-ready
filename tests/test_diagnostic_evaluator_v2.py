@@ -74,7 +74,8 @@ def test_live_evaluate_endpoint(client, db, auth_headers):
     assert len(data["events"]) == 1
     assert data["events"][0]["type"] == "harsh_braking"
 
-def test_evaluate_aggregates_all_events():
+@pytest.mark.asyncio
+async def test_evaluate_aggregates_all_events():
     evaluator = DiagnosticEvaluator()
     
     # Acceleration: -10 m/s² ≈ 1.02g — well above 0.6g threshold
@@ -98,7 +99,7 @@ def test_evaluate_aggregates_all_events():
         'distance_km': 10
     }
     
-    result = evaluator.evaluate(ride_data)
+    result = await evaluator.evaluate("test_ride_id", ride_data)
     eval_dict = json.loads(result['evaluation_result'])
     
     assert 'events' in eval_dict
