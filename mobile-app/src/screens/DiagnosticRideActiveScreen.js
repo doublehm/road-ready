@@ -621,8 +621,20 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         }).join('\n');
       }
 
-      // Minimal metadata for the final update
-      // We rely on the backend to reconstruct sensor blobs from granular tables if needed
+      // Build sensor arrays from local refs (fallback when MongoDB/WebSocket unavailable)
+      const accelerationData = motionData.map(d => ({
+        timestamp: d.timestamp,
+        x: d.acceleration.x,
+        y: d.acceleration.y,
+        z: d.acceleration.z,
+      }));
+      const rotationData = motionData.map(d => ({
+        timestamp: d.timestamp,
+        x: d.rotation.x,
+        y: d.rotation.y,
+        z: d.rotation.z,
+      }));
+
       const rideData = {
         ride_type:
           rideType === 'parent'
@@ -634,8 +646,10 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         end_time: endTime.toISOString(),
         duration_minutes: duration / 60,
         distance_km: gpsData.distance,
-        // Only sending critical arrays that might have missed some live-stream chunks
-        // or those not yet streaming granularly
+        route_coords: JSON.stringify(gpsData.routeCoordinates),
+        speed_data: JSON.stringify(gpsData.speedData),
+        acceleration_data: JSON.stringify(accelerationData),
+        rotation_data: JSON.stringify(rotationData),
         speed_limit_data: JSON.stringify(speedLimitData),
         evaluator_notes: evaluatorNotes,
         human_feedback: JSON.stringify(
