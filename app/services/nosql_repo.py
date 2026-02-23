@@ -7,16 +7,23 @@ logger = logging.getLogger(__name__)
 class NoSQLRepository:
     """
     Repository for high-throughput sensor data and events stored in MongoDB.
+    Falls back gracefully when MongoDB is unavailable.
     """
     def __init__(self):
         self.telemetry = nosql_db.telemetry
         self.events = nosql_db.events
+        self._available = True  # circuit breaker
+
+    def _mark_unavailable(self, e: Exception):
+        if self._available:
+            logger.warning(f"MongoDB unavailable, telemetry will not be persisted: {type(e).__name__}")
+            self._available = False
 
     async def save_telemetry_chunk(self, ride_id: str, points: List[Dict[str, Any]]) -> bool:
         """
         Persist a chunk of telemetry points for a specific ride.
         """
-        if not points:
+        if not points or not self._available:
             return True
             
         try:
@@ -27,7 +34,7 @@ class NoSQLRepository:
             await self.telemetry.insert_many(points)
             return True
         except Exception as e:
-            logger.error(f"Failed to save telemetry chunk for ride {ride_id}: {e}")
+            self._mark_unavailable(e)
             return False
 
     async def get_ride_telemetry(self, ride_id: str) -> List[Dict[str, Any]]:
@@ -41,12 +48,14 @@ class NoSQLRepository:
         """
         Persist a single event (mistake or system event) for a ride.
         """
+        if not self._available:
+            return True
         try:
             event["ride_id"] = str(ride_id)
             await self.events.insert_one(event)
             return True
         except Exception as e:
-            logger.error(f"Failed to save event for ride {ride_id}: {e}")
+            self._mark_unavailable(e)
             return False
 
     async def get_ride_events(self, ride_id: str) -> List[Dict[str, Any]]:

@@ -22,7 +22,12 @@ Base = declarative_base()
 # --- NoSQL Configuration (High-Volume Telemetry) ---
 # Default to localhost for local dev if not in Docker
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017/roadready")
-mongodb_client = AsyncIOMotorClient(MONGODB_URL)
+mongodb_client = AsyncIOMotorClient(
+    MONGODB_URL,
+    serverSelectionTimeoutMS=2000,
+    connectTimeoutMS=2000,
+    socketTimeoutMS=2000,
+)
 nosql_db = mongodb_client.get_default_database()
 
 def get_db():
