@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import client from '../api/client';
+import client, { registerLogoutCallback } from '../api/client';
 
 export const AuthContext = createContext();
 
@@ -12,6 +12,16 @@ export const AuthProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0); // Notifications
   const [unreadMessageCount, setUnreadMessageCount] = useState(0); // Messages
   const [pendingBookingsCount, setPendingBookingsCount] = useState(0); // Pending Bookings
+
+  // Register logout with the axios client so any 401 response triggers a clean logout
+  // without needing to pass state into every API call.
+  useEffect(() => {
+    registerLogoutCallback(() => {
+      setUserToken(null);
+      setUserRole(null);
+      setUserInfo(null);
+    });
+  }, []);
 
   const fetchUser = async (token) => {
       try {

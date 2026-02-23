@@ -22,6 +22,9 @@ const getServerUrl = () => {
 export const SERVER_URL = getServerUrl();
 export const BASE_URL = `${SERVER_URL}/api/v1`;
 
+// Log resolved URL once at startup so you can verify IP detection is correct
+console.log('[client] API base URL:', BASE_URL);
+
 const client = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
@@ -56,6 +59,28 @@ client.interceptors.request.use(async (config) => {
   }
   return config;
 });
+
+// Global 401 handler — token is stale or invalid (e.g. server restarted on another
+// device, or session expired). Clear credentials and let AuthContext redirect to login.
+// A module-level callback lets AuthContext register its logout function without a
+// circular import.
+let _logoutCallback = null;
+export const registerLogoutCallback = (fn) => { _logoutCallback = fn; };
+
+client.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Clear stored token so we don't keep retrying with a bad credential
+      await SecureStore.deleteItemAsync('userToken').catch(() => {});
+      await SecureStore.deleteItemAsync('userRole').catch(() => {});
+      if (_logoutCallback) {
+        _logoutCallback();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Wrap GET requests with caching
 const originalGet = client.get;
