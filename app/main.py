@@ -43,6 +43,8 @@ models.Base.metadata.create_all(bind=database.engine)
 
 # Migrate: add new columns to diagnostic_rides if missing
 def _run_migrations():
+    import logging
+    logger = logging.getLogger("road_ready.migrations")
     from sqlalchemy import inspect, text
     inspector = inspect(database.engine)
     if "diagnostic_rides" in inspector.get_table_names():
@@ -57,6 +59,7 @@ def _run_migrations():
             for col_name, col_type in new_columns.items():
                 if col_name not in existing:
                     conn.execute(text(f"ALTER TABLE diagnostic_rides ADD COLUMN {col_name} {col_type}"))
+                    logger.info(f"[migration] Added diagnostic_rides.{col_name}")
             conn.commit()
 
     if "instructor_profiles" in inspector.get_table_names():
@@ -68,7 +71,9 @@ def _run_migrations():
             for col_name, col_type in ip_columns.items():
                 if col_name not in existing_ip:
                     conn.execute(text(f"ALTER TABLE instructor_profiles ADD COLUMN {col_name} {col_type}"))
+                    logger.info(f"[migration] Added instructor_profiles.{col_name}")
             conn.commit()
+    logger.info("[migration] Migrations complete")
 
 _run_migrations()
 
@@ -89,6 +94,13 @@ app.add_api_websocket_route("/api/v1/live-ride-stream", websocket_endpoint)
 
 from app.api.router import api_router
 app.include_router(api_router, prefix="/api/v1")
+
+@app.on_event("startup")
+async def _startup_log():
+    import logging
+    logger = logging.getLogger("road_ready.startup")
+    ws_routes = [r.path for r in app.routes if type(r).__name__ == "APIWebSocketRoute"]
+    logger.info(f"[startup] Registered WebSocket routes: {ws_routes}")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
