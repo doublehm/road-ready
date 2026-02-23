@@ -73,9 +73,13 @@ class DiagnosticEvaluator:
         Main evaluation method that processes all sensor data and generates scores.
         Fetches telemetry from NoSQL and aggregates with metadata.
         """
-        # Fetch telemetry from NoSQL
-        nosql_telemetry = await self.nosql_repo.get_ride_telemetry(ride_id)
-        nosql_events = await self.nosql_repo.get_ride_events(ride_id)
+        # Fetch telemetry from NoSQL (falls back to SQL blobs if MongoDB is unavailable)
+        try:
+            nosql_telemetry = await self.nosql_repo.get_ride_telemetry(ride_id)
+            nosql_events = await self.nosql_repo.get_ride_events(ride_id)
+        except Exception:
+            nosql_telemetry = []
+            nosql_events = []
 
         # Mapping NoSQL points to legacy evaluator format
         acceleration_data = []

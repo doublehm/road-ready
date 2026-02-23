@@ -496,11 +496,29 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           console.error('Failed to persist buffer to storage:', storageError);
         }
       }
-    }, 10000); // Sync every 10 seconds
+    }, 30000); // Sync every 30 seconds (reduced from 10 s to cut network overhead)
+
+    // Deep flush every 5 minutes: force-send any pending buffer and clear it so
+    // accumulated telemetry doesn't pile up in memory on long/highway rides.
+    const deepFlushInterval = setInterval(async () => {
+      if (syncBufferRef.current.length === 0) return;
+      const chunk = [...syncBufferRef.current];
+      syncBufferRef.current = [];
+      try {
+        await client.post(`/diagnostic-rides/${rideId}/telemetry`, chunk);
+        setIsOffline(false);
+      } catch (e) {
+        // Don't put back on deep flush — data is already streaming via WebSocket.
+        // Losing a 5-min chunk here is preferable to an ever-growing buffer.
+        console.warn('Deep flush failed, discarding chunk to free memory:', e.message);
+        setIsOffline(true);
+      }
+    }, 300000); // Every 5 minutes
 
     return () => {
       clearInterval(streamInterval);
       clearInterval(syncInterval);
+      clearInterval(deepFlushInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rideId, sendMessage]);

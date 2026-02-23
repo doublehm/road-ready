@@ -10,6 +10,14 @@ import { Accelerometer, Gyroscope } from 'expo-sensors';
  * @param {number} sampleRate - Samples per second (default: 10 Hz)
  * @returns {Object} Motion data and control functions
  */
+// Max sensor samples held in memory during a ride (~60 s at 10 Hz).
+// Older samples are already flushed to the server via the live-stream; we only
+// need a recent window for the final submission fallback.
+const DATA_WINDOW = 600;
+// Minimum ms between React state updates for acceleration/rotation.
+// Sensors still sample at full rate into refs; this only limits re-renders.
+const STATE_THROTTLE_MS = 500;
+
 export default function useDeviceMotion(sampleRate = 10) {
   const [isTracking, setIsTracking] = useState(false);
   const [acceleration, setAcceleration] = useState({ x: 0, y: 0, z: 0 });
@@ -22,6 +30,8 @@ export default function useDeviceMotion(sampleRate = 10) {
   const gravityRef = useRef({ x: 0, y: 0, z: 1 }); // Start with 1g on Z axis
   const lastUserAccelRef = useRef({ x: 0, y: 0, z: 0 });
   const lastGyroRef = useRef({ x: 0, y: 0, z: 0 });
+  const lastAccelStateUpdateRef = useRef(0);
+  const lastGyroStateUpdateRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -70,7 +80,12 @@ export default function useDeviceMotion(sampleRate = 10) {
           z: (accelData.z - gravityRef.current.z) * 9.81,
         };
         
-        setAcceleration(lastUserAccelRef.current);
+        // Throttle state update to avoid excessive re-renders at high sample rates
+        const now = Date.now();
+        if (now - lastAccelStateUpdateRef.current >= STATE_THROTTLE_MS) {
+          setAcceleration(lastUserAccelRef.current);
+          lastAccelStateUpdateRef.current = now;
+        }
         syncData();
       });
 
@@ -81,7 +96,12 @@ export default function useDeviceMotion(sampleRate = 10) {
           y: gyroData.y,
           z: gyroData.z,
         };
-        setRotation(lastGyroRef.current);
+        // Throttle state update
+        const now = Date.now();
+        if (now - lastGyroStateUpdateRef.current >= STATE_THROTTLE_MS) {
+          setRotation(lastGyroRef.current);
+          lastGyroStateUpdateRef.current = now;
+        }
       });
 
       setIsTracking(true);
@@ -101,6 +121,11 @@ export default function useDeviceMotion(sampleRate = 10) {
     };
 
     dataRef.current.push(dataPoint);
+
+    // Keep a rolling window to bound memory during long rides
+    if (dataRef.current.length > DATA_WINDOW) {
+      dataRef.current = dataRef.current.slice(-DATA_WINDOW);
+    }
 
     // Update state periodically (every 10 samples)
     if (dataRef.current.length % 10 === 0) {
