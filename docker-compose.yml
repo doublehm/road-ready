@@ -12,11 +12,14 @@ services:
       - ./roadready.db:/app/roadready.db
       # Persist user uploads (license images)
       - ./app/static/uploads:/app/app/static/uploads
+      # Live-mount source code so uvicorn --reload picks up changes instantly
+      - ./app:/app/app
     environment:
       - DATABASE_URL=sqlite:///./roadready.db
       - MONGODB_URL=mongodb://mongodb:27017/roadready
       # Add your Stripe keys here later, e.g.:
       # - STRIPE_API_KEY=sk_test_...
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   mongodb:
     image: mongo:latest
