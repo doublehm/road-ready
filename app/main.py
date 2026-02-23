@@ -51,11 +51,23 @@ def _run_migrations():
             "speed_limit_data": "TEXT",
             "heading_data": "TEXT",
             "human_feedback": "TEXT",
+            "nosql_ref": "TEXT",
         }
         with database.engine.connect() as conn:
             for col_name, col_type in new_columns.items():
                 if col_name not in existing:
                     conn.execute(text(f"ALTER TABLE diagnostic_rides ADD COLUMN {col_name} {col_type}"))
+            conn.commit()
+
+    if "instructor_profiles" in inspector.get_table_names():
+        existing_ip = {col["name"] for col in inspector.get_columns("instructor_profiles")}
+        ip_columns = {
+            "certification_image": "TEXT",
+        }
+        with database.engine.connect() as conn:
+            for col_name, col_type in ip_columns.items():
+                if col_name not in existing_ip:
+                    conn.execute(text(f"ALTER TABLE instructor_profiles ADD COLUMN {col_name} {col_type}"))
             conn.commit()
 
 _run_migrations()
