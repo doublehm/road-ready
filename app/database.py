@@ -24,9 +24,10 @@ Base = declarative_base()
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017/roadready")
 mongodb_client = AsyncIOMotorClient(
     MONGODB_URL,
-    serverSelectionTimeoutMS=2000,
-    connectTimeoutMS=2000,
-    socketTimeoutMS=2000,
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=5000,
+    socketTimeoutMS=10000,
+    maxIdleTimeMS=30000,
 )
 nosql_db = mongodb_client.get_default_database()
 

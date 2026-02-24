@@ -3,17 +3,12 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional, Dict
 import json
+import logging
 from datetime import datetime
 from app import models, schemas, database
 from app.api import deps
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Query, WebSocket, WebSocketDisconnect
-from pydantic import BaseModel
-from sqlalchemy.orm import Session, joinedload
-from typing import List, Optional, Dict
-import json
-from datetime import datetime
-from app import models, schemas, database
-from app.api import deps
+
+logger = logging.getLogger(__name__)
 from app.services.nosql_repo import NoSQLRepository
 from app.services.diagnostic_evaluator import DiagnosticEvaluator
 from app.services.speed_limit_service import get_speed_limit
@@ -99,8 +94,7 @@ class ConnectionManager:
                 await nosql_repo.save_event(ride_id, data)
                 
         except Exception as e:
-            # Log error but don't crash the WebSocket loop
-            pass
+            logger.error("persist_data failed for ride %s: %s", ride_id, e)
 
 manager = ConnectionManager()
 
@@ -203,7 +197,8 @@ async def websocket_endpoint(websocket: WebSocket):
             
     except WebSocketDisconnect:
         manager.disconnect(websocket, ride_id, client_type)
-    except Exception:
+    except Exception as e:
+        logger.error("WebSocket error for ride %s (client=%s): %s", ride_id, client_type, e)
         manager.disconnect(websocket, ride_id, client_type)
 
 
