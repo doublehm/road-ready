@@ -94,7 +94,7 @@ class DiagnosticEvaluator:
             return None
 
         # 1. Find Gravity Vector (average acceleration over calibration window)
-        accels = np.array([[p.get('x', 0), p.get('y', 0), p.get('z', 0)] for p in acceleration_data])
+        accels = np.array([[p.get('x') or 0, p.get('y') or 0, p.get('z') or 0] for p in acceleration_data])
         avg_accel = np.mean(accels, axis=0)
         
         # Unit vector for UP (against gravity)
@@ -112,7 +112,7 @@ class DiagnosticEvaluator:
                 ts = speed_data[i].get('timestamp', 0)
                 matching = [p for p in acceleration_data if abs(p.get('timestamp', 0) - ts) < 200]
                 for m in matching:
-                    forward_samples.append([m.get('x', 0), m.get('y', 0), m.get('z', 0)])
+                    forward_samples.append([m.get('x') or 0, m.get('y') or 0, m.get('z') or 0])
 
         if len(forward_samples) > 5:
             f_raw = np.mean(forward_samples, axis=0)
@@ -154,8 +154,8 @@ class DiagnosticEvaluator:
             dt = (p2.get('timestamp', 0) - p1.get('timestamp', 0)) / 1000.0
             if dt <= 0: continue
             
-            a1 = np.array([p1.get('x', 0), p1.get('y', 0), p1.get('z', 0)])
-            a2 = np.array([p2.get('x', 0), p2.get('y', 0), p2.get('z', 0)])
+            a1 = np.array([p1.get('x') or 0, p1.get('y') or 0, p1.get('z') or 0])
+            a2 = np.array([p2.get('x') or 0, p2.get('y') or 0, p2.get('z') or 0])
             
             jerk = np.linalg.norm(a2 - a1) / dt
             jerk_values.append(jerk)
@@ -235,8 +235,8 @@ class DiagnosticEvaluator:
         speed_limit_data = json.loads(ride_data.get('speed_limit_data', '[]'))
         human_feedback = json.loads(ride_data.get('human_feedback', '[]'))
 
-        duration_minutes = ride_data.get('duration_minutes', 0)
-        distance_km = ride_data.get('distance_km', 0)
+        duration_minutes = ride_data.get('duration_minutes') or 0
+        distance_km = ride_data.get('distance_km') or 0
 
         # 1. Calibrate Orientation (first 5 minutes / 3000 samples approx)
         calibration_samples = acceleration_data[:3000]
@@ -426,7 +426,7 @@ class DiagnosticEvaluator:
         last_harsh_braking_ts = None
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
-            accel_vector = np.array([point.get('x', 0), point.get('y', 0), point.get('z', 0)])
+            accel_vector = np.array([point.get('x') or 0, point.get('y') or 0, point.get('z') or 0])
             
             if orientation_matrix is not None:
                 # Transform to Vehicle Frame: Y=Forward, Z=Up
@@ -903,7 +903,7 @@ class DiagnosticEvaluator:
         
         last_event_ts = None
         for p in acceleration_data:
-            accel_vector = np.array([p.get('x', 0), p.get('y', 0), p.get('z', 0)])
+            accel_vector = np.array([p.get('x') or 0, p.get('y') or 0, p.get('z') or 0])
             
             if orientation_matrix is not None:
                 # In calibrated frame, Z is always vertical (Up)
