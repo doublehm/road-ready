@@ -5,10 +5,10 @@
 - [x] Task 1: Implement Automated Device Orientation Calibration (Virtual Frame). a3ccf2c
 - [x] Task 2: Implement Jerk ($da/dt$) calculation and scoring. a3ccf2c
 
-## Phase 2: Combined Dynamics [checkpoint: TBD]
+## Phase 2: Combined Dynamics [checkpoint: 3e44d0b]
 
-- [ ] Task 3: Implement Friction Circle (Combined Forces) logic.
-- [ ] Task 4: Implement Dynamic Speed-Dependent Cornering thresholds.
+- [x] Task 3: Implement Friction Circle (Combined Forces) logic. 6d00267
+- [x] Task 4: Implement Dynamic Speed-Dependent Cornering thresholds. 6d00267
 
 ## Phase 3: Environmental Awareness [checkpoint: TBD]
 
