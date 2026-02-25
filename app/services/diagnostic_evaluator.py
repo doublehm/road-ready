@@ -1,6 +1,7 @@
 import json
 from typing import Dict, List, Optional, Tuple
 import math
+import numpy as np
 from app.services.nosql_repo import NoSQLRepository
 
 class DiagnosticEvaluator:
@@ -40,6 +41,11 @@ class DiagnosticEvaluator:
     SMOOTH_BRAKING_MIN = 0.1  # g minimum for smooth braking bonus
     SMOOTH_BRAKING_MAX = 0.4  # g maximum for smooth braking bonus
 
+    # Jerk thresholds (m/s³)
+    # Smooth driving is < 2 m/s³, uncomfortable is > 5 m/s³, dangerous is > 10 m/s³
+    JERK_SMOOTH_THRESHOLD = 2.0
+    JERK_HARSH_THRESHOLD = 6.0
+
     # Cornering thresholds
     # 0.45g = aggressive lane change / sharp turn; normal city corners are ~0.2-0.3g
     SHARP_TURN_LATERAL_THRESHOLD = 0.45  # g lateral acceleration
@@ -67,6 +73,92 @@ class DiagnosticEvaluator:
 
     def __init__(self):
         self.nosql_repo = NoSQLRepository()
+
+    def _calibrate_orientation(self, acceleration_data: List[Dict], speed_data: List[Dict]) -> np.ndarray:
+        """
+        Calculates a 3x3 rotation matrix to align sensor data with the vehicle frame.
+        Vehicle Frame: Y = Forward, Z = Up (Gravity), X = Right.
+        """
+        if not acceleration_data or len(acceleration_data) < 20:
+            return np.eye(3)
+
+        # 1. Find Gravity Vector (average acceleration over calibration window)
+        accels = np.array([[p.get('x', 0), p.get('y', 0), p.get('z', 0)] for p in acceleration_data])
+        avg_accel = np.mean(accels, axis=0)
+        
+        # Unit vector for UP (against gravity)
+        # Note: Sensor sees +9.81 m/s^2 on the axis pointing UP when at rest.
+        z_basis = avg_accel / np.linalg.norm(avg_accel)
+
+        # 2. Find Forward Vector
+        # Look for a window where GPS speed is increasing (acceleration > 0.5 m/s^2)
+        forward_samples = []
+        for i in range(1, len(speed_data)):
+            dv = speed_data[i].get('speed', 0) - speed_data[i-1].get('speed', 0)
+            dt = (speed_data[i].get('timestamp', 0) - speed_data[i-1].get('timestamp', 0)) / 1000.0
+            if dt > 0 and (dv / dt) / 3.6 > 0.5: # > 0.5 m/s^2
+                # Find corresponding accel samples
+                ts = speed_data[i].get('timestamp', 0)
+                matching = [p for p in acceleration_data if abs(p.get('timestamp', 0) - ts) < 200]
+                for m in matching:
+                    forward_samples.append([m.get('x', 0), m.get('y', 0), m.get('z', 0)])
+
+        if len(forward_samples) > 5:
+            f_raw = np.mean(forward_samples, axis=0)
+            # Remove gravity component from forward vector
+            f_raw = f_raw - np.dot(f_raw, z_basis) * z_basis
+            y_basis = f_raw / np.linalg.norm(f_raw)
+        else:
+            # Fallback: assume phone is mounted roughly upright/facing forward
+            # if no acceleration window found.
+            temp_x = np.array([1, 0, 0])
+            y_basis = np.cross(z_basis, temp_x)
+            y_basis /= np.linalg.norm(y_basis)
+
+        # 3. Calculate Right Vector
+        x_basis = np.cross(y_basis, z_basis)
+        x_basis /= np.linalg.norm(x_basis)
+
+        # 4. Refine Forward to ensure perfect orthogonality
+        y_basis = np.cross(z_basis, x_basis)
+
+        # Rotation Matrix (columns are the sensor axes in vehicle frame)
+        # We want Sensor -> Vehicle.
+        # R * v_sensor = v_vehicle
+        # The rows of R should be the basis vectors of the vehicle frame in sensor coords.
+        return np.array([x_basis, y_basis, z_basis])
+
+    def _calculate_jerk_score(self, acceleration_data: List[Dict]) -> float:
+        """
+        Calculates a smoothness score based on Jerk (da/dt).
+        """
+        if len(acceleration_data) < 2:
+            return 100.0
+
+        jerk_values = []
+        for i in range(1, len(acceleration_data)):
+            p1 = acceleration_data[i-1]
+            p2 = acceleration_data[i]
+            
+            dt = (p2.get('timestamp', 0) - p1.get('timestamp', 0)) / 1000.0
+            if dt <= 0: continue
+            
+            a1 = np.array([p1.get('x', 0), p1.get('y', 0), p1.get('z', 0)])
+            a2 = np.array([p2.get('x', 0), p2.get('y', 0), p2.get('z', 0)])
+            
+            jerk = np.linalg.norm(a2 - a1) / dt
+            jerk_values.append(jerk)
+
+        if not jerk_values:
+            return 100.0
+
+        # Penalize values above smooth threshold
+        avg_jerk = np.mean(jerk_values)
+        high_jerk_ratio = len([j for j in jerk_values if j > self.JERK_HARSH_THRESHOLD]) / len(jerk_values)
+        
+        # Scoring: 100 - (avg_jerk * 5) - (high_jerk_ratio * 100)
+        score = 100.0 - (avg_jerk * 2) - (high_jerk_ratio * 50)
+        return max(0, min(100, score))
 
     async def evaluate(self, ride_id: str, ride_data: Dict) -> Dict:
         """
