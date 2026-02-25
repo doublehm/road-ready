@@ -51,6 +51,13 @@ class DiagnosticEvaluator:
     SHARP_TURN_LATERAL_THRESHOLD = 0.45  # g lateral acceleration
     SMOOTH_TURN_THRESHOLD = 0.2  # Below this is smooth
 
+    # Speed-dependent cornering scaling
+    # At 100 km/h, the threshold should be lower than at 20 km/h
+    CORNERING_SPEED_SENSITIVITY = 0.002 # g reduction per km/h
+
+    # Friction Circle Threshold (Total Grip)
+    FRICTION_CIRCLE_THRESHOLD = 0.6 # g total vector magnitude
+
     # Minimum milliseconds between two events of the same type.
     # Prevents consecutive sensor samples from one braking/cornering action
     # being counted as dozens of separate events.
@@ -635,6 +642,7 @@ class DiagnosticEvaluator:
         return score, feedback
 
     def _evaluate_cornering(self, acceleration_data: List[Dict], rotation_data: List[Dict],
+                            speed_data: Optional[List[Dict]] = None,
                             heading_data: Optional[List[Dict]] = None) -> Tuple[float, Dict]:
         """Evaluate cornering quality."""
         score = 100.0
@@ -658,20 +666,31 @@ class DiagnosticEvaluator:
             point = acceleration_data[i]
             x_accel = point.get('x') or 0
             lateral_g = abs(x_accel) / self.GRAVITY
-            y_accel = point.get('y') or 0
-            y_lateral_g = abs(y_accel) / self.GRAVITY
-            if y_lateral_g > lateral_g and lateral_g < 0.05:
-                lateral_g = y_lateral_g
+            
+            # Dynamic threshold based on speed if available
+            current_threshold = self.SHARP_TURN_LATERAL_THRESHOLD
+            speed_kmh = 0
+            if speed_data:
+                # Find closest speed point
+                ts = point.get('timestamp', 0)
+                closest_speed = min(speed_data, key=lambda p: abs(p.get('timestamp', 0) - ts))
+                speed_kmh = closest_speed.get('speed', 0)
+                # Lower threshold as speed increases
+                # e.g. at 100km/h, threshold = 0.45 - (100 * 0.002) = 0.25g
+                current_threshold -= (speed_kmh * self.CORNERING_SPEED_SENSITIVITY)
+                current_threshold = max(0.15, current_threshold)
 
             try:
                 ts = float(point.get('timestamp') or 0)
             except (ValueError, TypeError):
                 ts = 0
 
-            if lateral_g > self.SHARP_TURN_LATERAL_THRESHOLD:
+            if lateral_g > current_threshold:
                 if last_sharp_turn_ts is None or (ts - last_sharp_turn_ts) >= self.EVENT_COOLDOWN_MS:
                     sharp_turn_count += 1
-                    score -= 8
+                    # Penalty is higher at high speeds
+                    severity_multiplier = 1.0 + (speed_kmh / 50.0)
+                    score -= 8 * severity_multiplier
                     last_sharp_turn_ts = ts
                     events.append({
                         'type': 'sharp_turn',
@@ -679,8 +698,10 @@ class DiagnosticEvaluator:
                         'lat': point.get('latitude'),
                         'lng': point.get('longitude'),
                         'value': round(lateral_g, 2),
-                        'severity': 'high' if lateral_g > 0.65 else 'medium',
-                        'description': f'Sharp turn at {round(lateral_g, 2)}g'
+                        'limit': round(current_threshold, 2),
+                        'speed': round(speed_kmh, 1),
+                        'severity': 'high' if lateral_g > (current_threshold + 0.2) or speed_kmh > 80 else 'medium',
+                        'description': f'Sharp turn at {round(lateral_g, 2)}g (Speed: {round(speed_kmh, 0)} km/h)'
                     })
             elif lateral_g < self.SMOOTH_TURN_THRESHOLD and lateral_g > 0.02:
                 smooth_turn_count += 1
@@ -707,6 +728,62 @@ class DiagnosticEvaluator:
             feedback['tips'].append('Brake BEFORE the turn.')
         else:
             feedback['notes'].append('Excellent cornering!')
+
+        return score, feedback
+
+    def _evaluate_combined_dynamics(self, acceleration_data: List[Dict]) -> Tuple[float, Dict]:
+        """
+        Evaluates the Friction Circle (combined longitudinal and lateral forces).
+        Detects dangerous maneuvers where a student is using too much of the 
+        available grip for combined actions (e.g. trail braking too deep into a corner).
+        """
+        score = 100.0
+        violations = 0
+        max_total_g = 0
+        events = []
+
+        last_event_ts = None
+        for p in acceleration_data:
+            x_accel = p.get('x') or 0
+            y_accel = p.get('y') or 0
+            
+            # Vector magnitude in g-force
+            total_g = math.sqrt(x_accel**2 + y_accel**2) / self.GRAVITY
+            
+            if total_g > max_total_g:
+                max_total_g = total_g
+
+            try:
+                ts = float(p.get('timestamp') or 0)
+            except (ValueError, TypeError):
+                ts = 0
+
+            if total_g > self.FRICTION_CIRCLE_THRESHOLD:
+                if last_event_ts is None or (ts - last_event_ts) >= self.EVENT_COOLDOWN_MS:
+                    violations += 1
+                    score -= 12
+                    last_event_ts = ts
+                    events.append({
+                        'type': 'friction_circle_violation',
+                        'timestamp': p.get('timestamp'),
+                        'lat': p.get('latitude'),
+                        'lng': p.get('longitude'),
+                        'value': round(total_g, 2),
+                        'severity': 'high' if total_g > 0.8 else 'medium',
+                        'description': f'Combined forces exceeded grip limit: {round(total_g, 2)}g'
+                    })
+
+        feedback = {
+            'violations': violations,
+            'max_total_g': round(max_total_g, 2),
+            'events': events,
+            'notes': [],
+            'tips': []
+        }
+
+        if violations > 0:
+            feedback['notes'].append(f'Dangerous combined maneuvers detected ({violations}).')
+            feedback['tips'].append('Avoid heavy braking while turning. Complete your braking in a straight line before entering a corner.')
 
         return score, feedback
 

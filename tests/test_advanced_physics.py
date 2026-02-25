@@ -90,3 +90,56 @@ def test_jerk_calculation():
     stab_jerk_score = evaluator._calculate_jerk_score(stab_data)
     
     assert smooth_jerk_score > stab_jerk_score
+
+def test_friction_circle_penalty():
+    """
+    Test that combined lateral and longitudinal forces are penalized.
+    Case: 0.45g braking AND 0.45g cornering.
+    Individual: Below thresholds (0.6g braking, 0.45g cornering).
+    Combined: sqrt(0.45^2 + 0.45^2) ≈ 0.64g -> Exceeds 0.6g total grip threshold.
+    """
+    evaluator = DiagnosticEvaluator()
+    
+    # 0.45g on Y (Forward/Braking) and 0.45g on X (Lateral)
+    # Using the calibrated frame for this test
+    # (Simplified for the internal method check)
+    accel = -0.45 * 9.81
+    data = [
+        {'timestamp': 1000, 'x': accel, 'y': accel, 'z': -9.81},
+        {'timestamp': 1100, 'x': accel, 'y': accel, 'z': -9.81}
+    ]
+    
+    # We expect a penalty even though braking is 0.45g (< 0.6g)
+    # and cornering is 0.45g (<= 0.45g).
+    # The new friction circle method should flag this.
+    score, feedback = evaluator._evaluate_combined_dynamics(data)
+    
+    assert score < 100
+    assert any(e['type'] == 'friction_circle_violation' for e in feedback['events'])
+    assert feedback['max_total_g'] > 0.6
+
+def test_dynamic_cornering_thresholds():
+    """
+    Test that cornering thresholds are speed-sensitive.
+    Case: 0.35g lateral acceleration.
+    At 20 km/h: Safe (below default 0.45g threshold).
+    At 100 km/h: Dangerous (threshold should lower to ~0.25g).
+    """
+    evaluator = DiagnosticEvaluator()
+    
+    # 0.35g lateral acceleration
+    accel = 0.35 * 9.81
+    accel_data = [{'timestamp': 1000, 'x': accel, 'y': 0, 'z': -9.81}]
+    
+    # 1. Test at low speed (20 km/h)
+    speed_low = [{'timestamp': 1000, 'speed': 20}]
+    score_low, feedback_low = evaluator._evaluate_cornering(accel_data, [], speed_data=speed_low)
+    
+    # 2. Test at high speed (100 km/h)
+    speed_high = [{'timestamp': 1000, 'speed': 100}]
+    score_high, feedback_high = evaluator._evaluate_cornering(accel_data, [], speed_data=speed_high)
+    
+    # High speed should have penalty, low speed should not
+    assert feedback_low['sharp_turns'] == 0
+    assert feedback_high['sharp_turns'] > 0
+    assert score_high < score_low
