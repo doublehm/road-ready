@@ -58,6 +58,9 @@ class DiagnosticEvaluator:
     # Friction Circle Threshold (Total Grip)
     FRICTION_CIRCLE_THRESHOLD = 0.6 # g total vector magnitude
 
+    # Vertical Impact Threshold (Z-axis variance)
+    VERTICAL_IMPACT_THRESHOLD = 0.4 # g variance from gravity
+
     # Minimum milliseconds between two events of the same type.
     # Prevents consecutive sensor samples from one braking/cornering action
     # being counted as dozens of separate events.
@@ -317,7 +320,56 @@ class DiagnosticEvaluator:
             ],
         }
 
-    def _evaluate_braking(self, acceleration_data: List[Dict], speed_data: List[Dict]) -> Tuple[float, Dict]:
+    def _get_incline_at(self, timestamp: float, gps_data: List[Dict]) -> float:
+        """
+        Estimates the incline (sin of the angle) at a given timestamp using GPS altitude.
+        Returns sin(theta) = rise / run.
+        """
+        if not gps_data or len(gps_data) < 2:
+            return 0.0
+            
+        # Find the two GPS points that bracket this timestamp
+        sorted_gps = sorted(gps_data, key=lambda x: float(x.get('timestamp', 0)))
+        
+        idx = 0
+        for i in range(len(sorted_gps)):
+            if float(sorted_gps[i].get('timestamp', 0)) > timestamp:
+                idx = i
+                break
+        else:
+            idx = len(sorted_gps) - 1
+            
+        p1 = sorted_gps[max(0, idx - 1)]
+        p2 = sorted_gps[idx]
+        
+        if p1 == p2:
+            return 0.0
+            
+        alt1 = p1.get('altitude')
+        alt2 = p2.get('altitude')
+        
+        if alt1 is None or alt2 is None:
+            return 0.0
+            
+        # Calculate horizontal distance (run)
+        lat1, lon1 = p1.get('latitude', 0), p1.get('longitude', 0)
+        lat2, lon2 = p2.get('latitude', 0), p2.get('longitude', 0)
+        
+        # Approx distance in meters (using 111.1km per degree)
+        d_lat = (lat2 - lat1) * 111139
+        d_lon = (lon2 - lon1) * 111139 * math.cos(math.radians(lat1))
+        run = math.sqrt(d_lat**2 + d_lon**2)
+        
+        if run < 2.0: # Avoid noise/division by zero
+            return 0.0
+            
+        rise = alt2 - alt1
+        # sin(theta) = rise / slope_distance, but for small angles run ≈ slope_distance
+        return rise / run
+
+    def _evaluate_braking(self, acceleration_data: List[Dict], speed_data: List[Dict],
+                          gps_data: Optional[List[Dict]] = None,
+                          orientation_matrix: Optional[np.ndarray] = None) -> Tuple[float, Dict]:
         """Evaluate braking performance based on acceleration and speed data."""
         score = 100.0
         harsh_braking_count = 0
@@ -338,22 +390,40 @@ class DiagnosticEvaluator:
             return 50.0, {'notes': ['Insufficient acceleration data for evaluation'], 'events': [], 'tips': []}
 
         # Analyze acceleration data for harsh braking.
-        # Use a cooldown so that consecutive samples from the same braking action
-        # are grouped into a single event rather than each sample being counted separately.
         last_harsh_braking_ts = None
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
-            y_accel = point.get('y') or 0
-            z_accel = point.get('z') or 0
-
-            y_decel_g = abs(y_accel) / self.GRAVITY if y_accel < 0 else 0
-            z_decel_g = abs(z_accel) / self.GRAVITY if z_accel < 0 else 0
-            deceleration_g = max(y_decel_g, z_decel_g)
+            accel_vector = np.array([point.get('x', 0), point.get('y', 0), point.get('z', 0)])
+            
+            if orientation_matrix is not None:
+                # Transform to Vehicle Frame: Y=Forward, Z=Up
+                vehicle_accel = np.dot(orientation_matrix, accel_vector)
+                y_accel = vehicle_accel[1]
+                # z_accel = vehicle_accel[2]
+            else:
+                y_accel = point.get('y') or 0
+                z_accel = point.get('z') or 0
 
             try:
                 ts = float(point.get('timestamp') or 0)
             except (ValueError, TypeError):
                 ts = 0
+
+            # Gravity Compensation
+            incline_sin = self._get_incline_at(ts, gps_data) if gps_data else 0.0
+            # True Forward Accel = Measured Y + g*sin(theta)
+            # Uphill (theta > 0): Gravity pulls backward (-g*sin), so Measured Y = True Y - g*sin
+            # -> True Y = Measured Y + g*sin
+            true_y_accel = y_accel + (self.GRAVITY * incline_sin)
+
+            y_decel_g = abs(true_y_accel) / self.GRAVITY if true_y_accel < 0 else 0
+            
+            if orientation_matrix is None:
+                # Legacy heuristic for uncalibrated phones
+                z_decel_g = abs(z_accel) / self.GRAVITY if z_accel < 0 else 0
+                deceleration_g = max(y_decel_g, z_decel_g)
+            else:
+                deceleration_g = y_decel_g
 
             if deceleration_g > self.HARSH_BRAKING_THRESHOLD:
                 # Skip if within cooldown window of the last event (same braking action)
@@ -367,8 +437,9 @@ class DiagnosticEvaluator:
                         'lat': point.get('latitude'),
                         'lng': point.get('longitude'),
                         'value': round(deceleration_g, 2),
+                        'incline': round(incline_sin * 100, 1), # as percentage
                         'severity': 'high' if deceleration_g > 0.8 else 'medium',
-                        'description': f'Harsh braking at {round(deceleration_g, 2)}g force'
+                        'description': f'Harsh braking at {round(deceleration_g, 2)}g force' + (f' ({round(incline_sin*100,0)}% grade)' if abs(incline_sin) > 0.02 else '')
                     })
             elif deceleration_g >= self.SMOOTH_BRAKING_MIN and deceleration_g <= self.SMOOTH_BRAKING_MAX:
                 smooth_braking_count += 1
@@ -784,6 +855,68 @@ class DiagnosticEvaluator:
         if violations > 0:
             feedback['notes'].append(f'Dangerous combined maneuvers detected ({violations}).')
             feedback['tips'].append('Avoid heavy braking while turning. Complete your braking in a straight line before entering a corner.')
+
+        return score, feedback
+
+    def _evaluate_vertical_impacts(self, acceleration_data: List[Dict],
+                                  orientation_matrix: Optional[np.ndarray] = None) -> Tuple[float, Dict]:
+        """
+        Detects vertical impacts (potholes, speed bumps) on the Z-axis.
+        """
+        score = 100.0
+        impact_count = 0
+        max_z_g = 0
+        events = []
+        
+        last_event_ts = None
+        for p in acceleration_data:
+            accel_vector = np.array([p.get('x', 0), p.get('y', 0), p.get('z', 0)])
+            
+            if orientation_matrix is not None:
+                # In calibrated frame, Z is always vertical (Up)
+                vehicle_accel = np.dot(orientation_matrix, accel_vector)
+                z_accel = vehicle_accel[2]
+            else:
+                z_accel = p.get('z') or 0
+                
+            # Relative to 1g gravity (9.81 m/s^2)
+            # Normal driving sees ~1.0g on Z.
+            z_variance_g = abs(z_accel - self.GRAVITY) / self.GRAVITY
+            
+            if z_variance_g > max_z_g:
+                max_z_g = z_variance_g
+                
+            try:
+                ts = float(p.get('timestamp') or 0)
+            except (ValueError, TypeError):
+                ts = 0
+
+            if z_variance_g > self.VERTICAL_IMPACT_THRESHOLD:
+                if last_event_ts is None or (ts - last_event_ts) >= 1000: # 1s cooldown
+                    impact_count += 1
+                    score -= 5
+                    last_event_ts = ts
+                    events.append({
+                        'type': 'vertical_impact',
+                        'timestamp': p.get('timestamp'),
+                        'lat': p.get('latitude'),
+                        'lng': p.get('longitude'),
+                        'value': round(z_variance_g, 2),
+                        'severity': 'high' if z_variance_g > 0.8 else 'medium',
+                        'description': f'Vertical impact detected: {round(z_variance_g, 2)}g variance'
+                    })
+
+        feedback = {
+            'impact_count': impact_count,
+            'max_z_g': round(max_z_g, 2),
+            'events': events,
+            'notes': [],
+            'tips': []
+        }
+
+        if impact_count > 3:
+            feedback['notes'].append(f'Multiple vertical impacts detected ({impact_count}).')
+            feedback['tips'].append('Slow down for speed bumps and keep a better lookout for potholes to avoid vehicle damage.')
 
         return score, feedback
 
