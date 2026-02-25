@@ -691,6 +691,7 @@ async def evaluate_diagnostic_ride(
         ride.braking_score = evaluation_result['braking_score']
         ride.speed_score = evaluation_result['speed_score']
         ride.cornering_score = evaluation_result['cornering_score']
+        ride.smoothness_score = evaluation_result['smoothness_score']
         ride.overall_score = evaluation_result['overall_score']
         ride.passed = evaluation_result['passed']
         ride.evaluation_result = evaluation_result['evaluation_result']

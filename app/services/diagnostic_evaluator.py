@@ -21,9 +21,10 @@ class DiagnosticEvaluator:
     """
 
     # Scoring weights
-    BRAKING_WEIGHT = 0.4
-    SPEED_WEIGHT = 0.35
-    CORNERING_WEIGHT = 0.25
+    BRAKING_WEIGHT = 0.3
+    SPEED_WEIGHT = 0.3
+    CORNERING_WEIGHT = 0.2
+    SMOOTHNESS_WEIGHT = 0.2 # Jerk analysis
 
     # Pass thresholds
     OVERALL_PASS_THRESHOLD = 75
@@ -84,13 +85,13 @@ class DiagnosticEvaluator:
     def __init__(self):
         self.nosql_repo = NoSQLRepository()
 
-    def _calibrate_orientation(self, acceleration_data: List[Dict], speed_data: List[Dict]) -> np.ndarray:
+    def _calibrate_orientation(self, acceleration_data: List[Dict], speed_data: List[Dict]) -> Optional[np.ndarray]:
         """
         Calculates a 3x3 rotation matrix to align sensor data with the vehicle frame.
         Vehicle Frame: Y = Forward, Z = Up (Gravity), X = Right.
         """
         if not acceleration_data or len(acceleration_data) < 20:
-            return np.eye(3)
+            return None
 
         # 1. Find Gravity Vector (average acceleration over calibration window)
         accels = np.array([[p.get('x', 0), p.get('y', 0), p.get('z', 0)] for p in acceleration_data])
@@ -237,22 +238,45 @@ class DiagnosticEvaluator:
         duration_minutes = ride_data.get('duration_minutes', 0)
         distance_km = ride_data.get('distance_km', 0)
 
-        # Calculate individual scores
-        braking_score, braking_feedback = self._evaluate_braking(acceleration_data, speed_data)
+        # 1. Calibrate Orientation (first 5 minutes / 3000 samples approx)
+        calibration_samples = acceleration_data[:3000]
+        orientation_matrix = self._calibrate_orientation(calibration_samples, speed_data)
+
+        # 2. Calculate individual scores with high-fidelity physics
+        braking_score, braking_feedback = self._evaluate_braking(
+            acceleration_data, speed_data, gps_data=speed_data, orientation_matrix=orientation_matrix
+        )
         speed_score, speed_feedback = self._evaluate_speed(
             speed_data, duration_minutes, speed_limit_data=speed_limit_data
         )
         cornering_score, cornering_feedback = self._evaluate_cornering(
-            acceleration_data, rotation_data, heading_data=heading_data
+            acceleration_data, rotation_data, speed_data=speed_data, heading_data=heading_data
+        )
+        
+        # 3. New Advanced Metrics
+        smoothness_score = self._calculate_jerk_score(acceleration_data)
+        combined_score, combined_feedback = self._evaluate_combined_dynamics(acceleration_data)
+        impact_score, impact_feedback = self._evaluate_vertical_impacts(
+            acceleration_data, orientation_matrix=orientation_matrix
         )
 
-        # Calculate overall score
-        overall_score = self._calculate_overall(braking_score, speed_score, cornering_score)
+        # Incorporate Friction Circle and Vertical Impacts as penalties into scores
+        braking_score = max(0, braking_score - combined_feedback['violations'] * 5)
+        cornering_score = max(0, cornering_score - combined_feedback['violations'] * 5)
+        smoothness_score = max(0, smoothness_score - impact_feedback['impact_count'] * 10)
+
+        # Calculate overall score with new weights
+        overall_score = (
+            braking_score * self.BRAKING_WEIGHT +
+            speed_score * self.SPEED_WEIGHT +
+            cornering_score * self.CORNERING_WEIGHT +
+            smoothness_score * self.SMOOTHNESS_WEIGHT
+        )
 
         # Determine pass/fail
         passed, pass_feedback = self._determine_pass(
             overall_score, braking_score, speed_score, cornering_score,
-            duration_minutes, distance_km
+            duration_minutes, distance_km, smoothness_score=smoothness_score
         )
 
         # Aggregate all events
@@ -260,6 +284,8 @@ class DiagnosticEvaluator:
         all_events.extend(braking_feedback.get('events', []))
         all_events.extend(speed_feedback.get('events', []))
         all_events.extend(cornering_feedback.get('events', []))
+        all_events.extend(combined_feedback.get('events', []))
+        all_events.extend(impact_feedback.get('events', []))
         
         # Add NoSQL system events
         for e in nosql_events:
@@ -293,13 +319,14 @@ class DiagnosticEvaluator:
             'braking': braking_feedback,
             'speed': speed_feedback,
             'cornering': cornering_feedback,
+            'smoothness': {'score': smoothness_score},
             'overall': pass_feedback,
             'events': all_events,
             'route_segments': route_segments,
             'human_feedback': human_feedback,
             'summary': self._generate_summary(
                 passed, overall_score, braking_score, speed_score, cornering_score,
-                speed_feedback
+                speed_feedback, smoothness_score=smoothness_score
             )
         }
 
@@ -307,6 +334,7 @@ class DiagnosticEvaluator:
             'braking_score': round(braking_score, 2),
             'speed_score': round(speed_score, 2),
             'cornering_score': round(cornering_score, 2),
+            'smoothness_score': round(smoothness_score, 2),
             'overall_score': round(overall_score, 2),
             'passed': passed,
             'evaluation_result': json.dumps(evaluation_result),
@@ -328,8 +356,13 @@ class DiagnosticEvaluator:
         if not gps_data or len(gps_data) < 2:
             return 0.0
             
+        # Only use points with altitude
+        valid_gps = [p for p in gps_data if p.get('altitude') is not None]
+        if len(valid_gps) < 2:
+            return 0.0
+
         # Find the two GPS points that bracket this timestamp
-        sorted_gps = sorted(gps_data, key=lambda x: float(x.get('timestamp', 0)))
+        sorted_gps = sorted(valid_gps, key=lambda x: float(x.get('timestamp', 0)))
         
         idx = 0
         for i in range(len(sorted_gps)):
@@ -960,14 +993,16 @@ class DiagnosticEvaluator:
         return (braking_score * self.BRAKING_WEIGHT + speed_score * self.SPEED_WEIGHT + cornering_score * self.CORNERING_WEIGHT)
 
     def _determine_pass(self, overall_score: float, braking_score: float, speed_score: float, cornering_score: float,
-                        duration_minutes: float, distance_km: float) -> Tuple[bool, Dict]:
+                        duration_minutes: float, distance_km: float, 
+                        smoothness_score: float = 100.0) -> Tuple[bool, Dict]:
         feedback = {'criteria_met': [], 'criteria_failed': []}
         passed = True
         for score, threshold, label in [
             (overall_score, self.OVERALL_PASS_THRESHOLD, "Overall score"),
             (braking_score, self.CATEGORY_PASS_THRESHOLD, "Braking score"),
             (speed_score, self.CATEGORY_PASS_THRESHOLD, "Speed score"),
-            (cornering_score, self.CATEGORY_PASS_THRESHOLD, "Cornering score")
+            (cornering_score, self.CATEGORY_PASS_THRESHOLD, "Cornering score"),
+            (smoothness_score, self.CATEGORY_PASS_THRESHOLD, "Smoothness score")
         ]:
             if score >= threshold: feedback['criteria_met'].append(f'{label}: {score:.1f}/100')
             else:
@@ -987,7 +1022,7 @@ class DiagnosticEvaluator:
         return passed, feedback
 
     def _generate_summary(self, passed: bool, overall_score: float, braking_score: float, speed_score: float, cornering_score: float,
-                        speed_feedback: Optional[Dict] = None) -> str:
+                        speed_feedback: Optional[Dict] = None, smoothness_score: float = 100.0) -> str:
         if passed:
-            return f"Congratulations! You passed with {overall_score:.1f}/100."
-        return f"You did not pass (overall score: {overall_score:.1f}/100)."
+            return f"Congratulations! You passed with {overall_score:.1f}/100. (Braking: {braking_score:.0f}, Speed: {speed_score:.0f}, Cornering: {cornering_score:.0f}, Smoothness: {smoothness_score:.0f})"
+        return f"You did not pass (overall score: {overall_score:.1f}/100). Review your category scores: Braking: {braking_score:.0f}, Speed: {speed_score:.0f}, Cornering: {cornering_score:.0f}, Smoothness: {smoothness_score:.0f}."

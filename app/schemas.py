@@ -395,6 +395,7 @@ class DiagnosticRideEvaluation(BaseModel):
     braking_score: float
     speed_score: float
     cornering_score: float
+    smoothness_score: float
     overall_score: float
     passed: bool
     evaluation_result: str # JSON string with detailed feedback
@@ -426,6 +427,7 @@ class DiagnosticRide(DiagnosticRideBase):
     braking_score: Optional[float] = None
     speed_score: Optional[float] = None
     cornering_score: Optional[float] = None
+    smoothness_score: Optional[float] = None
     overall_score: Optional[float] = None
     passed: Optional[bool] = None
     evaluation_result: Optional[str] = None

@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import json
 from app.services.diagnostic_evaluator import DiagnosticEvaluator
 
 def test_calibrate_orientation_simple_rotation():
@@ -143,6 +144,74 @@ def test_dynamic_cornering_thresholds():
     assert feedback_low['sharp_turns'] == 0
     assert feedback_high['sharp_turns'] > 0
     assert score_high < score_low
+
+@pytest.mark.asyncio
+async def test_full_physics_integration_pipeline():
+    """
+    Test the integrated pipeline with a complex scenario.
+    1. Calibration window (accel in straight line)
+    2. Uphill section (compensate gravity)
+    3. High-jerk "stab" braking
+    4. Combined braking/turning (friction circle)
+    """
+    evaluator = DiagnosticEvaluator()
+    
+    # 1. Calibration: 25 points of 1 m/s^2 forward accel
+    accel_data = []
+    speed_data = []
+    for i in range(25):
+        ts = i * 100
+        # Phone mounted sideways: Forward is Sensor X
+        accel_data.append({'timestamp': ts, 'x': 1.0, 'y': 0, 'z': 9.81})
+        speed_data.append({'timestamp': ts, 'speed': (i * 0.36)}) # 3.6 km/h per second = 1 m/s^2
+        
+    # 2. Uphill (10% grade) + 0.65g Sensor Braking (should be ~0.55g true)
+    # Sensor X was forward. 0.65g braking means -0.65*9.81 on Sensor X.
+    ts_hill = 3000
+    accel_data.append({'timestamp': ts_hill, 'x': -0.65 * 9.81, 'y': 0, 'z': 9.81})
+    speed_data.append({'timestamp': ts_hill, 'speed': 20, 'altitude': 100, 'latitude': 49.0, 'longitude': -123.0})
+    # Add a point before for incline calc
+    speed_data.insert(-1, {'timestamp': 2000, 'speed': 25, 'altitude': 90, 'latitude': 48.9991, 'longitude': -123.0})
+
+    # 3. High Jerk "Stab" braking
+    # 0 to 0.5g in 100ms
+    accel_data.append({'timestamp': 4000, 'x': 0, 'y': 0, 'z': 9.81})
+    accel_data.append({'timestamp': 4100, 'x': -0.5 * 9.81, 'y': 0, 'z': 9.81})
+    
+    # 4. Friction Circle violation: 0.45g braking AND 0.45g turning
+    ts_combined = 6000
+    accel_data.append({'timestamp': ts_combined, 'x': -0.45 * 9.81, 'y': 0.45 * 9.81, 'z': 9.81})
+    
+    ride_data = {
+        'duration_minutes': 25,
+        'distance_km': 10,
+        # Sensors handled by evaluator internally via mock injection or JSON
+        'acceleration_data': json.dumps(accel_data),
+        'speed_data': json.dumps(speed_data),
+        'rotation_data': '[]'
+    }
+    
+    # We await the main evaluate method
+    result = await evaluator.evaluate("test_ride_id", ride_data)
+    eval_dict = json.loads(result['evaluation_result'])
+    
+    # VERIFICATIONS
+    
+    # 1. Calibration should have happened (result uses orientation_matrix)
+    # 2. Harsh braking at 3000ms should be GONE (compensated)
+    harsh_braking_events = [e for e in eval_dict['events'] if e['type'] == 'harsh_braking']
+    # If compensation worked, the 0.65g sensor reading became ~0.55g true.
+    assert len(harsh_braking_events) == 0
+    
+    # 3. Friction Circle violation should be present
+    friction_events = [e for e in eval_dict['events'] if e['type'] == 'friction_circle_violation']
+    assert len(friction_events) > 0
+    
+    # 4. Smoothness score should be impacted by the "Stab"
+    assert result['smoothness_score'] < 100
+    
+    # 5. Overall score should be a weighted combination
+    assert 0 < result['overall_score'] < 100
 
 def test_gravity_compensation_on_hill():
     """

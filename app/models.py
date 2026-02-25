@@ -279,6 +279,7 @@ class DiagnosticRide(Base):
     braking_score = Column(Float, nullable=True) # 0-100
     speed_score = Column(Float, nullable=True) # 0-100
     cornering_score = Column(Float, nullable=True) # 0-100
+    smoothness_score = Column(Float, nullable=True) # 0-100
     overall_score = Column(Float, nullable=True) # 0-100
     passed = Column(Boolean, nullable=True)
 
