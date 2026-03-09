@@ -178,9 +178,11 @@ async def test_full_physics_integration_pipeline():
     accel_data.append({'timestamp': 4000, 'x': 0, 'y': 0, 'z': 9.81})
     accel_data.append({'timestamp': 4100, 'x': -0.5 * 9.81, 'y': 0, 'z': 9.81})
     
-    # 4. Friction Circle violation: 0.45g braking AND 0.45g turning
-    ts_combined = 6000
-    accel_data.append({'timestamp': ts_combined, 'x': -0.45 * 9.81, 'y': 0.45 * 9.81, 'z': 9.81})
+    # 4. Friction Circle violation: sustained 0.45g braking AND 0.45g turning
+    # Multiple samples needed so the median filter doesn't smooth it away.
+    for j in range(6):
+        ts_combined = 6000 + j * 100
+        accel_data.append({'timestamp': ts_combined, 'x': -0.45 * 9.81, 'y': 0.45 * 9.81, 'z': 9.81})
     
     ride_data = {
         'duration_minutes': 25,

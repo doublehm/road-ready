@@ -32,6 +32,8 @@ export default function useDeviceMotion(sampleRate = 10) {
   const lastGyroRef = useRef({ x: 0, y: 0, z: 0 });
   const lastAccelStateUpdateRef = useRef(0);
   const lastGyroStateUpdateRef = useRef(0);
+  // Ring buffer for 3-sample moving average to pre-filter accelerometer noise
+  const accelRingRef = useRef([]);
 
   useEffect(() => {
     return () => {
@@ -58,6 +60,7 @@ export default function useDeviceMotion(sampleRate = 10) {
 
       // Clear previous data
       dataRef.current = [];
+      accelRingRef.current = [];
       setData([]);
 
       // Subscribe to Accelerometer
@@ -74,11 +77,24 @@ export default function useDeviceMotion(sampleRate = 10) {
         };
 
         // User acceleration = total acceleration - gravity
-        lastUserAccelRef.current = {
+        const rawUserAccel = {
           x: (accelData.x - gravityRef.current.x) * 9.81,
           y: (accelData.y - gravityRef.current.y) * 9.81,
           z: (accelData.z - gravityRef.current.z) * 9.81,
         };
+
+        // 3-sample moving average to pre-filter noise spikes (potholes, vibration)
+        const ring = accelRingRef.current;
+        ring.push(rawUserAccel);
+        if (ring.length > 3) ring.shift();
+
+        const smoothed = {
+          x: ring.reduce((s, p) => s + p.x, 0) / ring.length,
+          y: ring.reduce((s, p) => s + p.y, 0) / ring.length,
+          z: ring.reduce((s, p) => s + p.z, 0) / ring.length,
+        };
+
+        lastUserAccelRef.current = smoothed;
         
         // Throttle state update to avoid excessive re-renders at high sample rates
         const now = Date.now();

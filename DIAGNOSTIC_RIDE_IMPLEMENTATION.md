@@ -161,9 +161,10 @@ deceleration_g = max(y_decel_g, z_decel_g)
 
 | G-Force Range | Classification | Scoring Impact |
 |---------------|---------------|----------------|
-| 0.1 - 0.3g | Smooth braking | +2 pts bonus per event (max +20) |
-| 0.4 - 0.6g | Harsh braking | -10 pts per event, severity: `medium` |
-| > 0.6g | Severe braking | -10 pts per event, severity: `high` |
+| 0.1 - 0.4g | Smooth braking | +2 pts bonus per event (max +20) |
+| > 0.6g | Harsh braking | -10 pts per event, severity: `medium` or `high` |
+
+> **Noise filtering:** A 5-sample sliding median filter is applied to all accelerometer data before evaluation. Single-sample spikes from potholes or vibration are suppressed. Additionally, samples with Z-axis deviation from gravity exceeding 0.4g are excluded from braking analysis (these indicate vertical impacts, not braking).
 
 **Real-world reference:**
 
@@ -212,10 +213,13 @@ if y_lateral_g > lateral_g and lateral_g < 0.05:
 
 | G-Force Range | Classification | Scoring Impact |
 |---------------|---------------|----------------|
-| 0.02 - 0.15g | Smooth turn | +2 pts bonus per event (max +20) |
-| 0.15 - 0.3g | Normal turn | No penalty |
-| 0.3 - 0.5g | Sharp turn | -8 pts per event, severity: `medium` |
-| > 0.5g | Very sharp turn | -8 pts per event, severity: `high` |
+| 0.02 - 0.20g | Smooth turn | +2 pts bonus per event (max +20) |
+| 0.20 - 0.45g | Normal turn | No penalty |
+| > 0.45g (dynamic) | Sharp turn | -8 pts per event × speed multiplier |
+
+> **Dynamic threshold:** The sharp turn threshold decreases with speed: `threshold = 0.45 - (speed_kmh × 0.0015)`, with a **floor of 0.25g** (was 0.15g). At 100 km/h the threshold is 0.30g.
+>
+> **GPS heading cross-check:** Before flagging a sharp turn, the system verifies that GPS heading changed by at least 5° within a ±2 second window. This prevents road vibration and phone jitter from being misclassified as cornering events on straight roads.
 
 **Real-world reference:**
 
@@ -270,10 +274,10 @@ Sensor events detected during live evaluation are automatically mapped to unifie
 
 | Event Type | F-Code | Label | Triggered By |
 |-----------|--------|-------|-------------|
-| `harsh_braking` | F1 | Harsh Braking | Deceleration > 0.4g |
-| `speeding` | F2 | Speeding | Speed > posted limit + 5 km/h |
-| `sharp_turn` | F3 | Sharp Turn | Lateral force > 0.3g |
-| `sudden_stop` | F4 | Sudden Stop | Speed drop > 5 km/h in 1.5s |
+| `harsh_braking` | F1 | Harsh Braking | Deceleration > 0.6g (Y-axis only) |
+| `speeding` | F2 | Speeding | Speed > posted limit + 5 km/h tolerance (sustained) |
+| `sharp_turn` | F3 | Sharp Turn | Lateral force > dynamic threshold + GPS heading confirms turn |
+| `sudden_stop` | F4 | Sudden Stop | Speed drop > 10 km/h in sampling window |
 
 These F-codes appear alongside human-flagged criteria (A1-E4) in the unified feedback report.
 

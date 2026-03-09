@@ -397,6 +397,9 @@ async def live_evaluate(
     speed_data = [p.dict() for p in request.speed_window]
     rotation_data = [p.dict() for p in request.rotation_window]
 
+    # Pre-filter acceleration to remove noise spikes (potholes, vibration)
+    acceleration_data = evaluator._median_filter(acceleration_data)
+
     # Run sub-evaluations
     _, braking_feedback = evaluator._evaluate_braking(acceleration_data, speed_data)
     _, speed_feedback = evaluator._evaluate_speed(speed_data, 1) # dummy duration

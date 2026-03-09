@@ -54,7 +54,10 @@ class DiagnosticEvaluator:
 
     # Speed-dependent cornering scaling
     # At 100 km/h, the threshold should be lower than at 20 km/h
-    CORNERING_SPEED_SENSITIVITY = 0.002 # g reduction per km/h
+    CORNERING_SPEED_SENSITIVITY = 0.0015 # g reduction per km/h (was 0.002)
+
+    # Minimum floor for dynamic cornering threshold regardless of speed
+    CORNERING_THRESHOLD_FLOOR = 0.25  # g (was 0.15)
 
     # Friction Circle Threshold (Total Grip)
     FRICTION_CIRCLE_THRESHOLD = 0.6 # g total vector magnitude
@@ -82,8 +85,80 @@ class DiagnosticEvaluator:
     HEADING_VARIANCE_THRESHOLD = 3.0  # degrees - high variance when driving straight
     WEAVING_THRESHOLD = 5.0  # degrees - sudden heading change at speed
 
+    # Speed tolerance — accounts for GPS jitter and speedometer variance
+    SPEED_TOLERANCE_KMH = 5  # km/h buffer before penalizing
+    SCHOOL_ZONE_SPEED_TOLERANCE_KMH = 2  # stricter in school zones
+
+    # Heading change required to confirm a cornering event (degrees)
+    CORNERING_HEADING_CHANGE_MIN = 5.0
+    # Time window (ms) around an acceleration event to check for heading change
+    CORNERING_HEADING_WINDOW_MS = 2000
+
+    # Backend speed limit smoothing — consecutive readings needed to accept a dramatic change
+    SPEED_LIMIT_SMOOTH_CONSECUTIVE = 3
+    SPEED_LIMIT_SMOOTH_CHANGE_THRESHOLD = 20  # km/h
+
     def __init__(self):
         self.nosql_repo = NoSQLRepository()
+
+    @staticmethod
+    def _median_filter(data: List[Dict], window: int = 5) -> List[Dict]:
+        """
+        Apply a sliding-window median filter to acceleration data.
+        Filters X, Y, Z independently to remove single-sample spikes
+        (potholes, vibration) while preserving sustained forces.
+        """
+        if len(data) <= window:
+            return data
+
+        half = window // 2
+        filtered = []
+        for i in range(len(data)):
+            lo = max(0, i - half)
+            hi = min(len(data), i + half + 1)
+            window_slice = data[lo:hi]
+
+            filtered_point = dict(data[i])
+            for axis in ('x', 'y', 'z'):
+                vals = [p.get(axis) or 0 for p in window_slice]
+                vals.sort()
+                filtered_point[axis] = vals[len(vals) // 2]
+            filtered.append(filtered_point)
+
+        return filtered
+
+    def _heading_changed(self, timestamp: float, heading_data: List[Dict],
+                         speed_data: Optional[List[Dict]] = None) -> bool:
+        """
+        Check whether GPS heading changed significantly around the given timestamp,
+        confirming an actual turn is in progress (not just vibration).
+        """
+        if not heading_data or len(heading_data) < 2:
+            return True  # no heading data — can't disprove, assume real
+
+        window_ms = self.CORNERING_HEADING_WINDOW_MS
+        nearby = [h for h in heading_data
+                  if abs((h.get('timestamp') or 0) - timestamp) <= window_ms]
+
+        if len(nearby) < 2:
+            # If no heading data near this timestamp, fall back to checking
+            # speed — at very low speeds even small steering produces lateral g.
+            if speed_data:
+                closest = min(speed_data, key=lambda p: abs((p.get('timestamp') or 0) - timestamp))
+                if (closest.get('speed') or 0) < 15:
+                    return True  # low-speed manoeuvres are always plausible
+            return True  # can't disprove
+
+        headings = [h.get('heading') or 0 for h in nearby]
+        # Handle wrap-around at 360°
+        max_change = 0
+        for i in range(1, len(headings)):
+            diff = abs(headings[i] - headings[i - 1])
+            if diff > 180:
+                diff = 360 - diff
+            max_change = max(max_change, diff)
+
+        return max_change >= self.CORNERING_HEADING_CHANGE_MIN
 
     def _calibrate_orientation(self, acceleration_data: List[Dict], speed_data: List[Dict]) -> Optional[np.ndarray]:
         """
@@ -237,6 +312,9 @@ class DiagnosticEvaluator:
 
         duration_minutes = ride_data.get('duration_minutes') or 0
         distance_km = ride_data.get('distance_km') or 0
+
+        # 0. Pre-filter: median filter removes single-sample spikes (potholes, vibration)
+        acceleration_data = self._median_filter(acceleration_data)
 
         # 1. Calibrate Orientation (first 5 minutes / 3000 samples approx)
         calibration_samples = acceleration_data[:3000]
@@ -427,15 +505,22 @@ class DiagnosticEvaluator:
         for i in range(len(acceleration_data)):
             point = acceleration_data[i]
             accel_vector = np.array([point.get('x') or 0, point.get('y') or 0, point.get('z') or 0])
-            
+
+            # Skip samples that look like vertical impacts (potholes, speed bumps).
+            # High Z-axis deviation from gravity means the phone is bouncing, not braking.
+            raw_z = point.get('z') or 0
+            z_variance_from_gravity = abs(abs(raw_z) - self.GRAVITY) / self.GRAVITY
+            if z_variance_from_gravity > self.VERTICAL_IMPACT_THRESHOLD:
+                continue
+
             if orientation_matrix is not None:
                 # Transform to Vehicle Frame: Y=Forward, Z=Up
                 vehicle_accel = np.dot(orientation_matrix, accel_vector)
                 y_accel = vehicle_accel[1]
-                # z_accel = vehicle_accel[2]
             else:
+                # Uncalibrated fallback: use only Y-axis for braking.
+                # Z-axis is gravity-aligned and catches potholes — unreliable for braking.
                 y_accel = point.get('y') or 0
-                z_accel = point.get('z') or 0
 
             try:
                 ts = float(point.get('timestamp') or 0)
@@ -450,13 +535,7 @@ class DiagnosticEvaluator:
             true_y_accel = y_accel + (self.GRAVITY * incline_sin)
 
             y_decel_g = abs(true_y_accel) / self.GRAVITY if true_y_accel < 0 else 0
-            
-            if orientation_matrix is None:
-                # Legacy heuristic for uncalibrated phones
-                z_decel_g = abs(z_accel) / self.GRAVITY if z_accel < 0 else 0
-                deceleration_g = max(y_decel_g, z_decel_g)
-            else:
-                deceleration_g = y_decel_g
+            deceleration_g = y_decel_g
 
             if deceleration_g > self.HARSH_BRAKING_THRESHOLD:
                 # Skip if within cooldown window of the last event (same braking action)
@@ -622,6 +701,11 @@ class DiagnosticEvaluator:
         CONSECUTIVE_SPEEDING_REQUIRED = 3
         consecutive_over = 0  # how many consecutive points have been over the limit
 
+        # Backend speed limit smoothing: carry-forward until confirmed
+        smoothed_limit = None
+        pending_new_limit = None
+        pending_count = 0
+
         for i in range(len(speed_data)):
             point = speed_data[i]
             speed = point.get('speed', 0)
@@ -643,7 +727,30 @@ class DiagnosticEvaluator:
             if inline_limit and inline_limit > 0:
                 speed_limit = inline_limit
 
-            excess = speed - speed_limit
+            # Apply backend speed limit smoothing: require consecutive readings
+            # to confirm a dramatic limit change (filters OSM glitches).
+            if smoothed_limit is None:
+                smoothed_limit = speed_limit
+            elif abs(speed_limit - smoothed_limit) > self.SPEED_LIMIT_SMOOTH_CHANGE_THRESHOLD:
+                if pending_new_limit is not None and abs(speed_limit - pending_new_limit) <= 10:
+                    pending_count += 1
+                    if pending_count >= self.SPEED_LIMIT_SMOOTH_CONSECUTIVE:
+                        smoothed_limit = speed_limit
+                        pending_new_limit = None
+                        pending_count = 0
+                else:
+                    pending_new_limit = speed_limit
+                    pending_count = 1
+                speed_limit = smoothed_limit
+            else:
+                smoothed_limit = speed_limit
+                pending_new_limit = None
+                pending_count = 0
+
+            # Apply speed tolerance — accounts for GPS jitter and speedometer variance
+            is_school = zone_type == "school"
+            tolerance = self.SCHOOL_ZONE_SPEED_TOLERANCE_KMH if is_school else self.SPEED_TOLERANCE_KMH
+            excess = speed - (speed_limit + tolerance)
 
             try:
                 ts = float(point.get('timestamp', 0))
@@ -655,7 +762,6 @@ class DiagnosticEvaluator:
                 speeding_time += time_duration
                 if excess > max_excess_kmh:
                     max_excess_kmh = excess
-                is_school = zone_type == "school"
                 if is_school:
                     school_zone_violations += 1
 
@@ -674,8 +780,12 @@ class DiagnosticEvaluator:
                 # Only emit an event after sustained speeding (or immediately in school zones).
                 # This filters out single-point OSM glitches where a nearby road
                 # tag briefly lowers the detected limit.
+                # Note: excess already includes the tolerance buffer, so > 0 means
+                # the driver is meaningfully over the limit.
                 sustained = consecutive_over >= CONSECUTIVE_SPEEDING_REQUIRED
-                if excess > 5 and (sustained or is_school) and (i % 5 == 0 or is_school):
+                if excess > 0 and (sustained or is_school) and (i % 5 == 0 or is_school):
+                    # Show actual excess over posted limit (not tolerance-adjusted) in the description
+                    actual_excess = speed - speed_limit
                     events.append({
                         'type': 'speeding',
                         'timestamp': ts,
@@ -683,13 +793,13 @@ class DiagnosticEvaluator:
                         'lng': point.get('longitude'),
                         'value': round(speed, 1),
                         'limit': speed_limit,
-                        'excess': round(excess, 1),
+                        'excess': round(actual_excess, 1),
                         'zone_type': zone_type,
-                        'severity': 'high' if excess > 15 or is_school else 'medium',
+                        'severity': 'high' if actual_excess > 15 or is_school else 'medium',
                         'description': (
                             f'{"SCHOOL ZONE: " if is_school else ""}'
                             f'{round(speed, 0)} km/h in a {speed_limit} km/h zone '
-                            f'({round(excess, 0)} km/h over)'
+                            f'({round(actual_excess, 0)} km/h over)'
                         ),
                     })
             else:
@@ -780,9 +890,9 @@ class DiagnosticEvaluator:
                 closest_speed = min(speed_data, key=lambda p: abs(p.get('timestamp', 0) - ts))
                 speed_kmh = closest_speed.get('speed', 0)
                 # Lower threshold as speed increases
-                # e.g. at 100km/h, threshold = 0.45 - (100 * 0.002) = 0.25g
+                # e.g. at 100km/h, threshold = 0.45 - (100 * 0.0015) = 0.30g
                 current_threshold -= (speed_kmh * self.CORNERING_SPEED_SENSITIVITY)
-                current_threshold = max(0.15, current_threshold)
+                current_threshold = max(self.CORNERING_THRESHOLD_FLOOR, current_threshold)
 
             try:
                 ts = float(point.get('timestamp') or 0)
@@ -790,6 +900,11 @@ class DiagnosticEvaluator:
                 ts = 0
 
             if lateral_g > current_threshold:
+                # Cross-check with GPS heading: only flag if the vehicle is actually turning.
+                # Vibration and road roughness can produce lateral g-force without a real turn.
+                if not self._heading_changed(ts, heading_data, speed_data):
+                    continue
+
                 if last_sharp_turn_ts is None or (ts - last_sharp_turn_ts) >= self.EVENT_COOLDOWN_MS:
                     sharp_turn_count += 1
                     # Penalty is higher at high speeds
