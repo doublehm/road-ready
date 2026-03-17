@@ -72,10 +72,7 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const response = await client.post('/auth/login', 
-        new URLSearchParams({
-          username: email,
-          password: password,
-        }), {
+        `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`, {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         }
       );

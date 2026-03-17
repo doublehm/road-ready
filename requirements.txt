@@ -34,3 +34,4 @@ PyJWT
 markdown
 fpdf2
 motor==3.7.1
+numpy
