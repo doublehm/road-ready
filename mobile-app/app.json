@@ -17,7 +17,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["location", "fetch"],
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ],
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Road Ready tracks your GPS route during a diagnostic ride, even when the app is in the background.",
         "NSLocationAlwaysUsageDescription": "Road Ready tracks your GPS route during a diagnostic ride, even when the app is in the background."
       }
@@ -41,7 +44,10 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      "expo-asset",
+      "expo-secure-store"
     ]
   }
 }
