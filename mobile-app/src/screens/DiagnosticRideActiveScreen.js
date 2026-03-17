@@ -16,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, Surface, IconButton, FAB, Portal, Dialog, Button, Badge } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import OSMMap from '../components/OSMMap';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import useGPSTracking from '../hooks/useGPSTracking';
 import useDeviceMotion from '../hooks/useDeviceMotion';
 import useSpeedLimit from '../hooks/useSpeedLimit';

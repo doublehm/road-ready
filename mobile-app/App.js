@@ -7,7 +7,7 @@ import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper';
 
 // Screens
