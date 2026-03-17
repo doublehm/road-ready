@@ -54,6 +54,9 @@ def _run_migrations():
             "heading_data": "TEXT",
             "human_feedback": "TEXT",
             "nosql_ref": "TEXT",
+            "booking_id": "INTEGER",
+            "smoothness_score": "REAL",
+            "criteria_results": "TEXT",
         }
         with database.engine.connect() as conn:
             for col_name, col_type in new_columns.items():
