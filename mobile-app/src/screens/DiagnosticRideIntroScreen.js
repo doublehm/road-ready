@@ -201,7 +201,7 @@ const DiagnosticRideIntroScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#0B1326',
   },
   scrollContent: {
     padding: 20,
@@ -215,12 +215,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   section: {
     marginBottom: 24,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 12,
   },
   step: {
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#007bff',
+    backgroundColor: '#3B82F6',
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
@@ -253,12 +253,12 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 4,
   },
   stepText: {
     fontSize: 14,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   requirement: {
     flexDirection: 'row',
@@ -267,17 +267,17 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     fontSize: 18,
-    color: '#28a745',
+    color: '#15803D',
     marginRight: 8,
     fontWeight: 'bold',
   },
   requirementText: {
     fontSize: 14,
-    color: '#1a1a1a',
+    color: '#E2E8F0',
   },
   criteriaText: {
     fontSize: 14,
-    color: '#1a1a1a',
+    color: '#E2E8F0',
     marginBottom: 6,
     marginLeft: 8,
   },
@@ -291,15 +291,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
   },
   parentButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#3B82F6',
   },
   instructorButton: {
-    backgroundColor: '#6610f2',
+    backgroundColor: '#8B5CF6',
   },
   buttonTitle: {
     fontSize: 18,
@@ -319,24 +319,24 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     borderRadius: 20,
     padding: 24,
     width: '100%',
     maxHeight: '80%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 5,
   },
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginTop: 12,
   },
   disclaimerScroll: {
@@ -355,14 +355,14 @@ const styles = StyleSheet.create({
   },
   disclaimerText: {
     fontSize: 15,
-    color: '#2d3436',
+    color: '#CBD5E1',
     lineHeight: 22,
   },
   bold: {
     fontWeight: 'bold',
   },
   confirmButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#15803D',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalCancelText: {
-    color: '#6c757d',
+    color: '#94A3B8',
     fontSize: 16,
   },
 });

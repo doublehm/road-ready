@@ -56,6 +56,7 @@ const DiagnosticRideSetupScreen = ({ route, navigation }) => {
             <TextInput
               style={styles.input}
               placeholder="Parent/Guardian Name"
+              placeholderTextColor="#64748B"
               value={parentName}
               onChangeText={setParentName}
             />
@@ -138,7 +139,7 @@ const DiagnosticRideSetupScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#0B1326',
   },
   scrollContent: {
     padding: 20,
@@ -152,12 +153,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   section: {
     marginBottom: 24,
@@ -165,33 +166,34 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 12,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#dee2e6',
+    borderColor: '#1E293B',
+    color: '#fff',
   },
   infoText: {
     fontSize: 14,
-    color: '#6c757d',
+    color: '#94A3B8',
     marginBottom: 12,
     lineHeight: 20,
   },
   costText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#6610f2',
+    color: '#8B5CF6',
   },
   checklistItem: {
     flexDirection: 'row',
@@ -201,12 +203,12 @@ const styles = StyleSheet.create({
   checkbox: {
     fontSize: 20,
     marginRight: 8,
-    color: '#007bff',
+    color: '#3B82F6',
   },
   checklistText: {
     flex: 1,
     fontSize: 14,
-    color: '#1a1a1a',
+    color: '#E2E8F0',
     lineHeight: 20,
   },
   termsContainer: {
@@ -216,18 +218,18 @@ const styles = StyleSheet.create({
   termsText: {
     flex: 1,
     fontSize: 14,
-    color: '#1a1a1a',
+    color: '#E2E8F0',
     lineHeight: 20,
   },
   button: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#15803D',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
   },
   buttonDisabled: {
-    backgroundColor: '#adb5bd',
+    backgroundColor: '#1E293B',
   },
   buttonText: {
     fontSize: 18,
@@ -241,7 +243,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
 });
 

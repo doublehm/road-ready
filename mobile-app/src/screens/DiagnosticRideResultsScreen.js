@@ -47,7 +47,7 @@ const CategoryCard = ({ title, icon, score, notes = [], tips = [], events = [], 
 
       {eventCount > 0 && (
         <View style={styles.eventCountRow}>
-          <Ionicons name="alert-circle" size={14} color="#6c757d" />
+          <Ionicons name="alert-circle" size={14} color="#94A3B8" />
           <Text style={styles.eventCountText}>
             {eventCount} event{eventCount !== 1 ? 's' : ''} detected
           </Text>
@@ -111,7 +111,7 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#3B82F6" />
         <Text style={styles.loadingText}>Loading results...</Text>
       </View>
     );
@@ -267,19 +267,19 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
         {/* Ride Stats */}
         <View style={styles.rideStatsRow}>
           <View style={styles.rideStat}>
-            <Ionicons name="time" size={18} color="#6c757d" />
+            <Ionicons name="time" size={18} color="#94A3B8" />
             <Text style={styles.rideStatValue}>
               {ride.duration_minutes ? `${Math.round(ride.duration_minutes)} min` : '--'}
             </Text>
           </View>
           <View style={styles.rideStat}>
-            <Ionicons name="navigate" size={18} color="#6c757d" />
+            <Ionicons name="navigate" size={18} color="#94A3B8" />
             <Text style={styles.rideStatValue}>
               {ride.distance_km ? `${ride.distance_km.toFixed(1)} km` : '--'}
             </Text>
           </View>
           <View style={styles.rideStat}>
-            <Ionicons name="alert-circle" size={18} color="#6c757d" />
+            <Ionicons name="alert-circle" size={18} color="#94A3B8" />
             <Text style={styles.rideStatValue}>
               {allEvents.length} events
             </Text>
@@ -289,7 +289,7 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
         {/* Speed Violation Summary */}
         {speedFeedback.school_zone_violations > 0 && (
           <View style={styles.violationCard}>
-            <Ionicons name="warning" size={20} color="#ff9800" />
+            <Ionicons name="warning" size={20} color="#F59E0B" />
             <View style={styles.violationContent}>
               <Text style={styles.violationTitle}>School Zone Violations</Text>
               <Text style={styles.violationText}>
@@ -460,7 +460,7 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#0B1326',
   },
   scrollContent: {
     padding: 16,
@@ -470,16 +470,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#0B1326',
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   errorText: {
     fontSize: 16,
-    color: '#dc3545',
+    color: '#EF4444',
     marginBottom: 16,
   },
   header: {
@@ -490,12 +490,12 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#6c757d',
+    color: '#94A3B8',
     textAlign: 'center',
   },
   scoresContainer: {
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
   scoreCircle: {
     borderRadius: 1000,
     borderWidth: 8,
-    borderColor: '#e9ecef',
+    borderColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   scoreLabel: {
-    color: '#6c757d',
+    color: '#94A3B8',
     marginTop: 4,
   },
   smallScoresRow: {
@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     gap: 24,
     marginBottom: 20,
     paddingVertical: 12,
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 12,
   },
   rideStat: {
@@ -538,18 +538,18 @@ const styles = StyleSheet.create({
   },
   rideStatValue: {
     fontSize: 14,
-    color: '#495057',
+    color: '#CBD5E1',
     fontWeight: '600',
   },
   violationCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff3cd',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     gap: 12,
     borderLeftWidth: 4,
-    borderLeftColor: '#ff9800',
+    borderLeftColor: '#F59E0B',
   },
   violationContent: {
     flex: 1,
@@ -557,16 +557,16 @@ const styles = StyleSheet.create({
   violationTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#F59E0B',
     marginBottom: 4,
   },
   violationText: {
     fontSize: 13,
-    color: '#856404',
+    color: '#FBBF24',
     lineHeight: 18,
   },
   speedSummaryCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
   speedSummaryTitle: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 12,
   },
   speedSummaryRow: {
@@ -587,11 +587,11 @@ const styles = StyleSheet.create({
   speedSummaryValue: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
   },
   speedSummaryLabel: {
     fontSize: 11,
-    color: '#6c757d',
+    color: '#94A3B8',
     marginTop: 2,
   },
   sectionContainer: {
@@ -600,11 +600,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
     marginBottom: 12,
   },
   categoryCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
   },
   categoryScoreBadge: {
     borderRadius: 8,
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
   },
   eventCountText: {
     fontSize: 12,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   extraInfoRow: {
     flexDirection: 'row',
@@ -653,35 +653,35 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: '#1E293B',
   },
   extraInfoItem: {
     alignItems: 'center',
   },
   extraInfoLabel: {
     fontSize: 10,
-    color: '#adb5bd',
+    color: '#64748B',
     textTransform: 'uppercase',
   },
   extraInfoValue: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#495057',
+    color: '#CBD5E1',
     marginTop: 2,
   },
   feedbackText: {
     fontSize: 13,
-    color: '#6c757d',
+    color: '#94A3B8',
     marginBottom: 4,
     lineHeight: 18,
   },
   notesCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
+    borderLeftColor: '#3B82F6',
   },
   noteIcon: {
     marginRight: 10,
@@ -690,20 +690,20 @@ const styles = StyleSheet.create({
   notesText: {
     flex: 1,
     fontSize: 14,
-    color: '#495057',
+    color: '#CBD5E1',
     lineHeight: 20,
     fontStyle: 'italic',
   },
   tipsContainer: {
     marginTop: 8,
-    backgroundColor: '#fff9e6',
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
     borderRadius: 8,
     padding: 12,
   },
   tipsHeader: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#F59E0B',
     marginBottom: 6,
     textTransform: 'uppercase',
   },
@@ -715,18 +715,18 @@ const styles = StyleSheet.create({
   tipText: {
     flex: 1,
     fontSize: 12,
-    color: '#856404',
+    color: '#FBBF24',
     lineHeight: 17,
   },
   summaryCard: {
-    backgroundColor: '#e7f3ff',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
   },
   summaryText: {
     fontSize: 14,
-    color: '#1a1a1a',
+    color: '#E2E8F0',
     lineHeight: 20,
   },
   buttonContainer: {
@@ -739,12 +739,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#3B82F6',
   },
   secondaryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderWidth: 2,
-    borderColor: '#007bff',
+    borderColor: '#3B82F6',
   },
   buttonText: {
     fontSize: 16,
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   secondaryButtonText: {
-    color: '#007bff',
+    color: '#3B82F6',
   },
   cancelButton: {
     marginTop: 8,
@@ -761,7 +761,7 @@ const styles = StyleSheet.create({
   },
   cancelButtonText: {
     fontSize: 16,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
 });
 

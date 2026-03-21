@@ -151,13 +151,13 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
 
           <View style={styles.rideStats}>
             <View style={styles.rideStatItem}>
-              <Ionicons name="time-outline" size={14} color="#6c757d" />
+              <Ionicons name="time-outline" size={14} color="#94A3B8" />
               <Text style={styles.rideStatText}>
                 {item.duration_minutes ? `${Math.round(item.duration_minutes)} min` : '--'}
               </Text>
             </View>
             <View style={styles.rideStatItem}>
-              <Ionicons name="navigate-outline" size={14} color="#6c757d" />
+              <Ionicons name="navigate-outline" size={14} color="#94A3B8" />
               <Text style={styles.rideStatText}>
                 {item.distance_km ? `${item.distance_km.toFixed(1)} km` : '--'}
               </Text>
@@ -176,14 +176,14 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
             <MiniScoreBar label="C" score={item.cornering_score} />
             {flagCount > 0 && (
               <View style={styles.flagBadge}>
-                <Ionicons name="flag" size={10} color="#e17055" />
+                <Ionicons name="flag" size={10} color="#F59E0B" />
                 <Text style={styles.flagBadgeText}>{flagCount}</Text>
               </View>
             )}
           </View>
         </View>
 
-        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        <Ionicons name="chevron-forward" size={20} color="#475569" />
       </TouchableOpacity>
     );
   };
@@ -191,7 +191,7 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#3B82F6" />
         <Text style={styles.loadingText}>Loading ride history...</Text>
       </View>
     );
@@ -202,7 +202,7 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Ride History</Text>
         <View style={{ width: 24 }} />
@@ -250,7 +250,7 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
 
           {trends.improvement_areas.length > 0 && (
             <View style={styles.improvementRow}>
-              <Ionicons name="trending-up" size={16} color="#007bff" />
+              <Ionicons name="trending-up" size={16} color="#3B82F6" />
               <Text style={styles.improvementText}>
                 Focus area: {trends.improvement_areas.join(', ')}
               </Text>
@@ -285,7 +285,7 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="car-outline" size={48} color="#ccc" />
+            <Ionicons name="car-outline" size={48} color="#475569" />
             <Text style={styles.emptyText}>
               {filter === 'All' ? 'No diagnostic rides yet' : `No ${filter.toLowerCase()} rides`}
             </Text>
@@ -314,35 +314,35 @@ const MiniScoreBar = ({ label, score }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#0B1326',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#0B1326',
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
   },
   summaryCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     margin: 16,
     marginBottom: 8,
     borderRadius: 12,
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 3,
   },
   summaryRow: {
@@ -363,11 +363,11 @@ const styles = StyleSheet.create({
   summaryValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
   },
   summaryLabel: {
     fontSize: 11,
-    color: '#6c757d',
+    color: '#94A3B8',
     marginTop: 2,
   },
   categoryStats: {
@@ -383,16 +383,16 @@ const styles = StyleSheet.create({
   catStatLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#495057',
+    color: '#94A3B8',
   },
   catStatValue: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#fff',
   },
   catStatTrack: {
     height: 6,
-    backgroundColor: '#e9ecef',
+    backgroundColor: '#1E293B',
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -407,11 +407,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: '#1E293B',
   },
   improvementText: {
     fontSize: 13,
-    color: '#007bff',
+    color: '#3B82F6',
     fontWeight: '500',
   },
   filterRow: {
@@ -424,17 +424,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderWidth: 1,
-    borderColor: '#dee2e6',
+    borderColor: '#1E293B',
   },
   filterButtonActive: {
-    backgroundColor: '#007bff',
-    borderColor: '#007bff',
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
   },
   filterText: {
     fontSize: 13,
-    color: '#6c757d',
+    color: '#94A3B8',
     fontWeight: '500',
   },
   filterTextActive: {
@@ -447,14 +447,14 @@ const styles = StyleSheet.create({
   rideCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.2,
     shadowRadius: 2,
   },
   rideCardLeft: {
@@ -484,13 +484,13 @@ const styles = StyleSheet.create({
   rideStudentName: {
     fontSize: 15,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 4,
   },
   rideDate: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a1a',
+    color: '#E2E8F0',
   },
   passBadge: {
     borderRadius: 4,
@@ -514,11 +514,11 @@ const styles = StyleSheet.create({
   },
   rideStatText: {
     fontSize: 12,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   rideType: {
     fontSize: 12,
-    color: '#6c757d',
+    color: '#94A3B8',
     fontStyle: 'italic',
   },
   miniScores: {
@@ -533,14 +533,14 @@ const styles = StyleSheet.create({
   },
   miniScoreLabel: {
     fontSize: 9,
-    color: '#adb5bd',
+    color: '#64748B',
     fontWeight: 'bold',
     width: 10,
   },
   miniScoreTrack: {
     flex: 1,
     height: 4,
-    backgroundColor: '#e9ecef',
+    backgroundColor: '#1E293B',
     borderRadius: 2,
   },
   miniScoreFill: {
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   },
   miniScoreValue: {
     fontSize: 9,
-    color: '#6c757d',
+    color: '#94A3B8',
     width: 18,
     textAlign: 'right',
   },
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    backgroundColor: '#fff3e0',
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
   flagBadgeText: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#e17055',
+    color: '#F59E0B',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: '#adb5bd',
+    color: '#64748B',
     marginTop: 12,
   },
 });

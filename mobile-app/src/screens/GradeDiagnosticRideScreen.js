@@ -84,15 +84,15 @@ const GradeDiagnosticRideScreen = ({ navigation }) => {
       onPress={() => setSelectedRide(item)}
     >
       <View style={styles.rideRow}>
-        <View style={[styles.iconBg, {backgroundColor: '#e3f2fd'}]}>
-            <Ionicons name="car-outline" size={30} color="#007bff" />
+        <View style={[styles.iconBg, {backgroundColor: 'rgba(59, 130, 246, 0.15)'}]}>
+            <Ionicons name="car-outline" size={30} color="#3B82F6" />
         </View>
         <View style={{marginLeft: 15, flex: 1}}>
           <Text style={styles.cardTitle}>{item.student?.full_name || `Student #${item.student_id}`}</Text>
           <Text style={styles.cardSub}>Scheduled: {item.start_time.split('T')[0]}</Text>
           <Text style={styles.cardType}>{item.ride_type.replace('_', ' ').toUpperCase()}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+        <Ionicons name="chevron-forward" size={20} color="#475569" />
       </View>
     </TouchableOpacity>
   );
@@ -104,7 +104,7 @@ const GradeDiagnosticRideScreen = ({ navigation }) => {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.headerContainer}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={24} color="#333" />
+                <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.header}>Pending Diagnostic Rides</Text>
         </View>
@@ -115,7 +115,7 @@ const GradeDiagnosticRideScreen = ({ navigation }) => {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-                <Ionicons name="checkmark-done-circle-outline" size={80} color="#ccc" />
+                <Ionicons name="checkmark-done-circle-outline" size={80} color="#475569" />
                 <Text style={styles.emptyText}>All diagnostic rides are completed!</Text>
             </View>
           }
@@ -128,7 +128,7 @@ const GradeDiagnosticRideScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => setSelectedRide(null)}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Grading Ride #{selectedRide.id}</Text>
         <View style={{width: 24}} />
@@ -165,6 +165,7 @@ const GradeDiagnosticRideScreen = ({ navigation }) => {
                 value={overallScore}
                 onChangeText={setOverallScore}
                 placeholder="e.g. 85"
+                placeholderTextColor="#64748B"
             />
         </View>
 
@@ -213,12 +214,13 @@ const GradeDiagnosticRideScreen = ({ navigation }) => {
                 multiline
                 numberOfLines={4}
                 placeholder="Add your evaluation notes here..."
+                placeholderTextColor="#64748B"
                 value={notes}
                 onChangeText={setNotes}
             />
         </View>
 
-        <TouchableOpacity style={[styles.submitButton, {backgroundColor: passed ? '#28a745' : '#007bff'}]} onPress={submitResults}>
+        <TouchableOpacity style={[styles.submitButton, {backgroundColor: passed ? '#15803D' : '#3B82F6'}]} onPress={submitResults}>
           <Text style={styles.submitButtonText}>Save Results</Text>
         </TouchableOpacity>
         <View style={{height: 50}} />
@@ -228,48 +230,48 @@ const GradeDiagnosticRideScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  headerContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: 'white' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  headerContainer: { flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#131B2E' },
   backBtn: { padding: 10 },
-  header: { fontSize: 20, fontWeight: 'bold', marginLeft: 10 },
+  header: { fontSize: 20, fontWeight: 'bold', marginLeft: 10, color: '#fff' },
   list: { padding: 15 },
   card: {
-    backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 15,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2,
-    borderWidth: 1, borderColor: '#eee'
+    backgroundColor: '#131B2E', padding: 15, borderRadius: 12, marginBottom: 15,
+    shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 5, elevation: 2,
+    borderWidth: 1, borderColor: '#1E293B'
   },
   rideRow: { flexDirection: 'row', alignItems: 'center' },
   iconBg: { width: 50, height: 50, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  cardTitle: { fontSize: 17, fontWeight: 'bold', color: '#333' },
-  cardSub: { fontSize: 13, color: '#666', marginTop: 2 },
-  cardType: { fontSize: 11, fontWeight: 'bold', color: '#007bff', marginTop: 5, letterSpacing: 0.5 },
+  cardTitle: { fontSize: 17, fontWeight: 'bold', color: '#fff' },
+  cardSub: { fontSize: 13, color: '#94A3B8', marginTop: 2 },
+  cardType: { fontSize: 11, fontWeight: 'bold', color: '#3B82F6', marginTop: 5, letterSpacing: 0.5 },
   emptyContainer: { alignItems: 'center', marginTop: 100 },
-  emptyText: { textAlign: 'center', marginTop: 20, color: '#999', fontSize: 16 },
+  emptyText: { textAlign: 'center', marginTop: 20, color: '#64748B', fontSize: 16 },
 
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: '#131B2E', borderBottomWidth: 1, borderBottomColor: '#1E293B' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   
   formScroll: { padding: 20 },
-  studentInfo: { marginBottom: 25, backgroundColor: '#e3f2fd', padding: 15, borderRadius: 10 },
-  studentName: { fontSize: 20, fontWeight: 'bold', color: '#0056b3' },
-  rideDate: { fontSize: 14, color: '#666', marginTop: 5 },
+  studentInfo: { marginBottom: 25, backgroundColor: 'rgba(59, 130, 246, 0.15)', padding: 15, borderRadius: 10 },
+  studentName: { fontSize: 20, fontWeight: 'bold', color: '#3B82F6' },
+  rideDate: { fontSize: 14, color: '#94A3B8', marginTop: 5 },
 
   section: { marginBottom: 25 },
-  sectionHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#444' },
+  sectionHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#CBD5E1' },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   
   passFailContainer: { flexDirection: 'row', alignItems: 'center' },
   passFailText: { fontSize: 18, fontWeight: '900', marginRight: 10 },
   
-  scoreInput: { backgroundColor: 'white', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', fontSize: 20, fontWeight: 'bold', textAlign: 'center', width: 100 },
+  scoreInput: { backgroundColor: '#131B2E', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#1E293B', fontSize: 20, fontWeight: 'bold', textAlign: 'center', width: 100, color: '#fff' },
   
-  criteriaList: { backgroundColor: 'white', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#eee' },
-  criteriaItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#f5f5f5' },
-  criteriaLabel: { fontSize: 16, marginLeft: 15, color: '#333' },
+  criteriaList: { backgroundColor: '#131B2E', borderRadius: 10, padding: 10, borderWidth: 1, borderColor: '#1E293B' },
+  criteriaItem: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#1E293B' },
+  criteriaLabel: { fontSize: 16, marginLeft: 15, color: '#E2E8F0' },
 
-  input: { backgroundColor: 'white', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#ddd', textAlignVertical: 'top', fontSize: 16, minHeight: 100 },
+  input: { backgroundColor: '#131B2E', padding: 15, borderRadius: 10, borderWidth: 1, borderColor: '#1E293B', textAlignVertical: 'top', fontSize: 16, minHeight: 100, color: '#fff' },
   
-  submitButton: { padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 10, elevation: 3, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10 },
+  submitButton: { padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 10, elevation: 3, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 10 },
   submitButtonText: { color: 'white', fontWeight: 'bold', fontSize: 18 }
 });
 
