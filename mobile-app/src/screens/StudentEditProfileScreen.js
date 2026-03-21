@@ -1,5 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, ScrollView, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import client, { SERVER_URL } from '../api/client';
 import { AuthContext } from '../context/AuthContext';
 
@@ -192,38 +196,38 @@ const StudentEditProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#F6FAFE' },
   scroll: { padding: 20 },
-  header: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, color: '#333' },
-  sectionHeader: { fontSize: 18, fontWeight: 'bold', marginTop: 10, marginBottom: 15, color: '#007bff' },
-  label: { fontWeight: '600', marginBottom: 5, color: '#555' },
+  header: { fontSize: 24, fontWeight: '800', marginBottom: 20, color: '#1E293B' },
+  sectionHeader: { fontSize: 18, fontWeight: '800', marginTop: 10, marginBottom: 15, color: '#15803D' },
+  label: { fontWeight: '600', marginBottom: 5, color: '#64748B' },
   input: { 
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 8, 
-    padding: 12, fontSize: 16, backgroundColor: '#f9f9f9', marginBottom: 15 
+    borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, 
+    padding: 12, fontSize: 16, backgroundColor: 'white', marginBottom: 15 
   },
   dateBtn: { 
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      backgroundColor: '#f9f9f9', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#eee'
+      backgroundColor: 'white', padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0'
   },
-  dateText: { fontSize: 16 },
+  dateText: { fontSize: 16, color: '#1E293B' },
   cameraBtn: { marginBottom: 10, alignItems: 'center' },
   cameraPlaceholder: {
-    width: '100%', height: 200, backgroundColor: '#f0f0f0', borderRadius: 10,
-    justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#ddd', borderStyle: 'dashed'
+    width: '100%', height: 200, backgroundColor: '#F1F5F9', borderRadius: 16,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#E2E8F0', borderStyle: 'dashed'
   },
-  preview: { width: '100%', height: 200, borderRadius: 10, resizeMode: 'cover' },
-  cameraText: { marginTop: 10, color: '#666' },
-  hint: { textAlign: 'center', color: '#999', marginBottom: 20 },
-  warningText: { color: '#856404', backgroundColor: '#fff3cd', padding: 10, borderRadius: 5, marginBottom: 20, fontSize: 14 },
+  preview: { width: '100%', height: 200, borderRadius: 16, resizeMode: 'cover' },
+  cameraText: { marginTop: 10, color: '#64748B' },
+  hint: { textAlign: 'center', color: '#94A3B8', marginBottom: 20 },
+  warningText: { color: '#92400E', backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 20, fontSize: 14 },
   
   legalBtn: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#eee', marginBottom: 10
+    paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', marginBottom: 10
   },
-  legalBtnText: { fontSize: 16, color: '#333' },
+  legalBtnText: { fontSize: 16, color: '#1E293B' },
 
-  saveBtn: { backgroundColor: '#007bff', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 40 },
-  saveText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
+  saveBtn: { backgroundColor: '#15803D', padding: 15, borderRadius: 12, alignItems: 'center', marginBottom: 40 },
+  saveText: { color: 'white', fontWeight: '800', fontSize: 16 }
 });
 
 export default StudentEditProfileScreen;
