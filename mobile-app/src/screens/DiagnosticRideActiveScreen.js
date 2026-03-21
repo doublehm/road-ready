@@ -24,6 +24,7 @@ import useSpeedLimit from '../hooks/useSpeedLimit';
 import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
 import FeedbackPanel from '../components/FeedbackPanel';
+import GForceOverlay from '../components/GForceOverlay';
 import { DEVICE_EVENT_TO_CODE } from '../data/faults';
 
 const DiagnosticRideActiveScreen = ({ route, navigation }) => {
@@ -858,6 +859,11 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           {canComplete ? 'COMPLETE RIDE' : 'MINIMUM REQUIREMENTS'}
         </Button>
       </View>
+
+      <GForceOverlay
+        acceleration={deviceMotion.acceleration}
+        isActive={!!startTime}
+      />
 
       <FeedbackPanel
         visible={feedbackPanelVisible}
