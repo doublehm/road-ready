@@ -219,27 +219,27 @@ def test_gravity_compensation_on_hill():
     """
     Test that gravity is compensated on hills.
     Case: Steep uphill grade (10% or ~5.7 degrees).
-    Driver brakes at 0.55g (safe). 
-    Sensor sees 0.55g + (g * sin(5.7)) ≈ 0.65g (harsh).
+    Driver brakes at 0.45g (safe under 0.5g threshold).
+    Sensor sees 0.45g + (g * sin(5.7)) ≈ 0.55g (harsh).
     Compensation should subtract the gravity leak and avoid penalty.
     """
     evaluator = DiagnosticEvaluator()
     
-    # Sensor sees 0.65g deceleration on an uphill
-    # (Vehicle Forward Y = -0.65g)
-    sensor_accel = -0.65 * 9.81
+    # Sensor sees 0.55g deceleration on an uphill
+    # (Vehicle Forward Y = -0.55g)
+    sensor_accel = -0.55 * 9.81
     # Z should be +9.81 for a level phone (pointing up)
     accel_data = [{'timestamp': 1000, 'x': 0, 'y': sensor_accel, 'z': 9.81}]
     
     # 1. Test WITHOUT compensation (baseline)
-    # This should trigger harsh braking since 0.65g > 0.6g
+    # This should trigger harsh braking since 0.55g > 0.5g
     score_raw, feedback_raw = evaluator._evaluate_braking(accel_data, [])
     assert feedback_raw['harsh_braking_events'] == 1
     
     # 2. Test WITH compensation
     # We provide GPS altitude data showing a 10m gain over 100m distance (10% grade)
     # sin(theta) = 10/100 = 0.1
-    # a_true = -0.65g + 0.1g = -0.55g (safe!)
+    # a_true = -0.55g + 0.1g = -0.45g (safe!)
     gps_data = [
         {'timestamp': 0, 'latitude': 49.0, 'longitude': -123.0, 'altitude': 90, 'speed': 50},
         {'timestamp': 1000, 'latitude': 49.0009, 'longitude': -123.0, 'altitude': 100, 'speed': 30}

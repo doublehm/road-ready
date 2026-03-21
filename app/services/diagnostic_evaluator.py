@@ -36,9 +36,9 @@ class DiagnosticEvaluator:
     GRAVITY = 9.81  # m/s²
 
     # Braking thresholds
-    # 0.6g = genuine hard braking; lower values are normal deceleration / road vibration
-    HARSH_BRAKING_THRESHOLD = 0.6  # g
-    SUDDEN_STOP_SPEED_DROP = 10  # km/h drop within the sampling window
+    # 0.5g = firm braking; lower values are normal deceleration
+    HARSH_BRAKING_THRESHOLD = 0.5  # g
+    SUDDEN_STOP_SPEED_DROP = 8  # km/h drop within the sampling window
     SMOOTH_BRAKING_MIN = 0.1  # g minimum for smooth braking bonus
     SMOOTH_BRAKING_MAX = 0.4  # g maximum for smooth braking bonus
 
@@ -54,10 +54,10 @@ class DiagnosticEvaluator:
 
     # Speed-dependent cornering scaling
     # At 100 km/h, the threshold should be lower than at 20 km/h
-    CORNERING_SPEED_SENSITIVITY = 0.0015 # g reduction per km/h (was 0.002)
+    CORNERING_SPEED_SENSITIVITY = 0.002 # g reduction per km/h (restored from 0.0015)
 
     # Minimum floor for dynamic cornering threshold regardless of speed
-    CORNERING_THRESHOLD_FLOOR = 0.25  # g (was 0.15)
+    CORNERING_THRESHOLD_FLOOR = 0.18  # g (lowered from 0.25)
 
     # Friction Circle Threshold (Total Grip)
     FRICTION_CIRCLE_THRESHOLD = 0.6 # g total vector magnitude
@@ -90,13 +90,19 @@ class DiagnosticEvaluator:
     SCHOOL_ZONE_SPEED_TOLERANCE_KMH = 2  # stricter in school zones
 
     # Heading change required to confirm a cornering event (degrees)
-    CORNERING_HEADING_CHANGE_MIN = 5.0
+    CORNERING_HEADING_CHANGE_MIN = 3.0
     # Time window (ms) around an acceleration event to check for heading change
-    CORNERING_HEADING_WINDOW_MS = 2000
+    CORNERING_HEADING_WINDOW_MS = 3000
 
     # Backend speed limit smoothing — consecutive readings needed to accept a dramatic change
     SPEED_LIMIT_SMOOTH_CONSECUTIVE = 3
     SPEED_LIMIT_SMOOTH_CHANGE_THRESHOLD = 20  # km/h
+
+    # Erratic driving thresholds
+    HARSH_ACCELERATION_THRESHOLD = 0.4  # g - aggressive forward acceleration
+    SPEED_OSCILLATION_WINDOW = 10  # data points to analyze for patterns
+    SPEED_OSCILLATION_MIN_CHANGES = 4  # accel/decel direction changes for erratic flag
+    SPEED_OSCILLATION_AMPLITUDE = 5  # km/h minimum speed range in window
 
     def __init__(self):
         self.nosql_repo = NoSQLRepository()
@@ -338,10 +344,23 @@ class DiagnosticEvaluator:
             acceleration_data, orientation_matrix=orientation_matrix
         )
 
+        # 4. New: Erratic driving & lane discipline
+        erratic_penalty, erratic_feedback = self._evaluate_erratic_driving(
+            acceleration_data, speed_data, gps_data=speed_data,
+            orientation_matrix=orientation_matrix
+        )
+        lane_penalty, lane_feedback = self._evaluate_lane_discipline(
+            heading_data, speed_data
+        )
+
         # Incorporate Friction Circle and Vertical Impacts as penalties into scores
         braking_score = max(0, braking_score - combined_feedback['violations'] * 5)
         cornering_score = max(0, cornering_score - combined_feedback['violations'] * 5)
         smoothness_score = max(0, smoothness_score - impact_feedback['impact_count'] * 10)
+        # Erratic driving penalties reduce smoothness score
+        smoothness_score = max(0, smoothness_score - erratic_penalty)
+        # Lane discipline penalties reduce cornering score
+        cornering_score = max(0, cornering_score - lane_penalty)
 
         # Calculate overall score with new weights
         overall_score = (
@@ -364,6 +383,8 @@ class DiagnosticEvaluator:
         all_events.extend(cornering_feedback.get('events', []))
         all_events.extend(combined_feedback.get('events', []))
         all_events.extend(impact_feedback.get('events', []))
+        all_events.extend(erratic_feedback.get('events', []))
+        all_events.extend(lane_feedback.get('events', []))
         
         # Add NoSQL system events
         for e in nosql_events:
@@ -398,6 +419,8 @@ class DiagnosticEvaluator:
             'speed': speed_feedback,
             'cornering': cornering_feedback,
             'smoothness': {'score': smoothness_score},
+            'erratic_driving': erratic_feedback,
+            'lane_discipline': lane_feedback,
             'overall': pass_feedback,
             'events': all_events,
             'route_segments': route_segments,
@@ -1067,6 +1090,203 @@ class DiagnosticEvaluator:
             feedback['tips'].append('Slow down for speed bumps and keep a better lookout for potholes to avoid vehicle damage.')
 
         return score, feedback
+
+    def _evaluate_erratic_driving(self, acceleration_data: List[Dict],
+                                   speed_data: List[Dict],
+                                   gps_data: Optional[List[Dict]] = None,
+                                   orientation_matrix: Optional[np.ndarray] = None) -> Tuple[float, Dict]:
+        """
+        Detects erratic driving patterns:
+        1. Harsh acceleration — aggressive forward acceleration bursts
+        2. Speed oscillation — repeated acceleration/deceleration cycles (hunting for speed)
+        """
+        events = []
+        harsh_accel_count = 0
+        erratic_count = 0
+        penalty = 0.0
+
+        # --- Harsh Acceleration Detection (mirror of braking logic) ---
+        last_accel_ts = None
+        for point in acceleration_data:
+            accel_vector = np.array([point.get('x') or 0, point.get('y') or 0, point.get('z') or 0])
+
+            raw_z = point.get('z') or 0
+            z_variance_from_gravity = abs(abs(raw_z) - self.GRAVITY) / self.GRAVITY
+            if z_variance_from_gravity > self.VERTICAL_IMPACT_THRESHOLD:
+                continue
+
+            if orientation_matrix is not None:
+                vehicle_accel = np.dot(orientation_matrix, accel_vector)
+                y_accel = vehicle_accel[1]
+            else:
+                y_accel = point.get('y') or 0
+
+            try:
+                ts = float(point.get('timestamp') or 0)
+            except (ValueError, TypeError):
+                ts = 0
+
+            incline_sin = self._get_incline_at(ts, gps_data) if gps_data else 0.0
+            true_y_accel = y_accel + (self.GRAVITY * incline_sin)
+
+            # Positive Y = forward acceleration
+            accel_g = true_y_accel / self.GRAVITY if true_y_accel > 0 else 0
+
+            if accel_g > self.HARSH_ACCELERATION_THRESHOLD:
+                if last_accel_ts is None or (ts - last_accel_ts) >= self.EVENT_COOLDOWN_MS:
+                    harsh_accel_count += 1
+                    penalty += 8
+                    last_accel_ts = ts
+                    events.append({
+                        'type': 'harsh_acceleration',
+                        'timestamp': point.get('timestamp'),
+                        'lat': point.get('latitude'),
+                        'lng': point.get('longitude'),
+                        'value': round(accel_g, 2),
+                        'severity': 'high' if accel_g > 0.6 else 'medium',
+                        'description': f'Harsh acceleration at {round(accel_g, 2)}g'
+                    })
+
+        # --- Speed Oscillation Detection ---
+        if len(speed_data) >= self.SPEED_OSCILLATION_WINDOW:
+            window = self.SPEED_OSCILLATION_WINDOW
+            last_erratic_ts = None
+
+            for start in range(0, len(speed_data) - window + 1, window // 2):
+                window_data = speed_data[start:start + window]
+                speeds = [p.get('speed', 0) for p in window_data]
+
+                if max(speeds) < 10:
+                    continue
+
+                direction_changes = 0
+                for j in range(2, len(speeds)):
+                    prev_delta = speeds[j - 1] - speeds[j - 2]
+                    curr_delta = speeds[j] - speeds[j - 1]
+                    if abs(prev_delta) > 1 and abs(curr_delta) > 1:
+                        if (prev_delta > 0 and curr_delta < 0) or (prev_delta < 0 and curr_delta > 0):
+                            direction_changes += 1
+
+                speed_range = max(speeds) - min(speeds)
+
+                try:
+                    ts = float(window_data[0].get('timestamp') or 0)
+                except (ValueError, TypeError):
+                    ts = 0
+
+                if (direction_changes >= self.SPEED_OSCILLATION_MIN_CHANGES and
+                        speed_range >= self.SPEED_OSCILLATION_AMPLITUDE):
+                    if last_erratic_ts is None or (ts - last_erratic_ts) >= self.EVENT_COOLDOWN_MS * 2:
+                        erratic_count += 1
+                        penalty += 5
+                        last_erratic_ts = ts
+                        events.append({
+                            'type': 'erratic_speed',
+                            'timestamp': ts,
+                            'lat': window_data[0].get('latitude'),
+                            'lng': window_data[0].get('longitude'),
+                            'value': round(speed_range, 1),
+                            'direction_changes': direction_changes,
+                            'severity': 'medium' if direction_changes < 6 else 'high',
+                            'description': (
+                                f'Erratic speed: {direction_changes} direction changes, '
+                                f'{round(speed_range, 1)} km/h range'
+                            )
+                        })
+
+        feedback = {
+            'harsh_acceleration_count': harsh_accel_count,
+            'erratic_count': erratic_count,
+            'penalty': penalty,
+            'events': events,
+            'notes': [],
+            'tips': []
+        }
+
+        if harsh_accel_count > 0:
+            feedback['notes'].append(f'Harsh acceleration detected ({harsh_accel_count} events).')
+            feedback['tips'].append('Apply throttle gradually. Smooth acceleration improves safety and fuel economy.')
+
+        if erratic_count > 0:
+            feedback['notes'].append(f'Erratic speed pattern detected ({erratic_count} instances).')
+            feedback['tips'].append('Maintain a steady speed. Frequent speed changes indicate poor throttle control.')
+
+        return penalty, feedback
+
+    def _evaluate_lane_discipline(self, heading_data: List[Dict],
+                                   speed_data: List[Dict]) -> Tuple[float, Dict]:
+        """
+        Detects lane discipline issues using heading data:
+        1. Weaving — sudden heading changes at speed indicating unsafe lane behaviour
+        Uses HEADING_VARIANCE_THRESHOLD and WEAVING_THRESHOLD constants.
+        """
+        events = []
+        weaving_count = 0
+        penalty = 0.0
+
+        if not heading_data or len(heading_data) < 5:
+            return 0, {'weaving_count': 0, 'penalty': 0, 'events': [], 'notes': [], 'tips': []}
+
+        WINDOW_SIZE = 10
+        last_event_ts = None
+
+        for start in range(0, len(heading_data) - WINDOW_SIZE + 1, WINDOW_SIZE // 2):
+            window = heading_data[start:start + WINDOW_SIZE]
+            headings = [h.get('heading', 0) for h in window]
+
+            avg_ts = sum(float(h.get('timestamp') or 0) for h in window) / len(window)
+            speed_at = 0
+            if speed_data:
+                closest = min(speed_data, key=lambda p: abs((p.get('timestamp') or 0) - avg_ts))
+                speed_at = closest.get('speed', 0)
+
+            if speed_at < 30:
+                continue
+
+            changes = []
+            for j in range(1, len(headings)):
+                diff = abs(headings[j] - headings[j - 1])
+                if diff > 180:
+                    diff = 360 - diff
+                changes.append(diff)
+
+            if not changes:
+                continue
+
+            max_change = max(changes)
+
+            try:
+                ts = float(window[0].get('timestamp') or 0)
+            except (ValueError, TypeError):
+                ts = 0
+
+            if max_change > self.WEAVING_THRESHOLD and speed_at > 40:
+                if last_event_ts is None or (ts - last_event_ts) >= self.EVENT_COOLDOWN_MS:
+                    weaving_count += 1
+                    penalty += 5
+                    last_event_ts = ts
+                    events.append({
+                        'type': 'lane_weaving',
+                        'timestamp': ts,
+                        'value': round(max_change, 1),
+                        'speed': round(speed_at, 1),
+                        'severity': 'high' if max_change > 10 else 'medium',
+                        'description': f'Lane weaving: {round(max_change, 1)}° heading change at {round(speed_at, 0)} km/h'
+                    })
+
+        feedback = {
+            'weaving_count': weaving_count,
+            'penalty': penalty,
+            'events': events,
+            'notes': [],
+            'tips': []
+        }
+
+        if weaving_count > 0:
+            feedback['notes'].append(f'Lane weaving detected ({weaving_count} instances).')
+            feedback['tips'].append('Keep your eyes focused further ahead and make small, smooth steering adjustments.')
+
+        return penalty, feedback
 
     def _build_route_segments(self, speed_data: List[Dict],
                               speed_limit_data: Optional[List[Dict]],

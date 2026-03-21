@@ -193,3 +193,113 @@ def test_gps_jitter_does_not_flag_speeding():
         f"Expected 0 speeding events from GPS jitter, got {len(feedback['events'])}"
     # Score should be high — no meaningful speeding
     assert score > 80, f"Score too low for GPS jitter scenario: {score}"
+
+
+def test_harsh_acceleration_detection():
+    """Aggressive forward acceleration should trigger harsh_acceleration events."""
+    evaluator = DiagnosticEvaluator()
+
+    # Two bursts of harsh acceleration (positive Y > 0.4g = 3.92 m/s²) spaced > 3s
+    acceleration_data = [
+        {'timestamp': 1000, 'x': 0, 'y': 5.0, 'z': -9.81, 'latitude': 49.2, 'longitude': -123.1},
+        {'timestamp': 5000, 'x': 0, 'y': 4.5, 'z': -9.81, 'latitude': 49.2, 'longitude': -123.1},
+        {'timestamp': 9000, 'x': 0, 'y': 0.5, 'z': -9.81, 'latitude': 49.2, 'longitude': -123.1},
+    ]
+    speed_data = [
+        {'timestamp': 1000, 'speed': 20, 'latitude': 49.2, 'longitude': -123.1},
+        {'timestamp': 5000, 'speed': 40, 'latitude': 49.2, 'longitude': -123.1},
+        {'timestamp': 9000, 'speed': 50, 'latitude': 49.2, 'longitude': -123.1},
+    ]
+
+    penalty, feedback = evaluator._evaluate_erratic_driving(acceleration_data, speed_data)
+
+    assert feedback['harsh_acceleration_count'] == 2
+    assert penalty >= 16  # 8 per event
+    assert all(e['type'] == 'harsh_acceleration' for e in feedback['events'])
+
+
+def test_erratic_speed_oscillation():
+    """Repeatedly speeding up and slowing down should trigger erratic_speed events."""
+    evaluator = DiagnosticEvaluator()
+
+    # Oscillating speed pattern: 40→50→40→50→40→50→40→50→40→50 km/h
+    speed_data = [
+        {'timestamp': 1000 + i * 1000, 'speed': 40 + (i % 2) * 10,
+         'latitude': 49.2, 'longitude': -123.1}
+        for i in range(12)
+    ]
+
+    penalty, feedback = evaluator._evaluate_erratic_driving([], speed_data)
+
+    assert feedback['erratic_count'] >= 1
+    assert any(e['type'] == 'erratic_speed' for e in feedback['events'])
+
+
+def test_steady_speed_no_erratic_flag():
+    """Constant speed should not trigger erratic events."""
+    evaluator = DiagnosticEvaluator()
+
+    speed_data = [
+        {'timestamp': 1000 + i * 1000, 'speed': 60, 'latitude': 49.2, 'longitude': -123.1}
+        for i in range(15)
+    ]
+
+    penalty, feedback = evaluator._evaluate_erratic_driving([], speed_data)
+
+    assert feedback['erratic_count'] == 0
+    assert penalty == 0
+
+
+def test_lane_weaving_detection():
+    """Sudden heading changes at speed should trigger lane_weaving events."""
+    evaluator = DiagnosticEvaluator()
+
+    # Heading oscillates > 5° at 60 km/h
+    heading_data = [
+        {'timestamp': 1000 + i * 500, 'heading': 90 + ((-1) ** i) * 8}
+        for i in range(12)
+    ]
+    speed_data = [
+        {'timestamp': 1000 + i * 500, 'speed': 60, 'latitude': 49.2, 'longitude': -123.1}
+        for i in range(12)
+    ]
+
+    penalty, feedback = evaluator._evaluate_lane_discipline(heading_data, speed_data)
+
+    assert feedback['weaving_count'] >= 1
+    assert any(e['type'] == 'lane_weaving' for e in feedback['events'])
+
+
+def test_stable_heading_no_weaving():
+    """Stable heading at speed should not trigger weaving."""
+    evaluator = DiagnosticEvaluator()
+
+    heading_data = [
+        {'timestamp': 1000 + i * 500, 'heading': 90.0}
+        for i in range(12)
+    ]
+    speed_data = [
+        {'timestamp': 1000 + i * 500, 'speed': 60, 'latitude': 49.2, 'longitude': -123.1}
+        for i in range(12)
+    ]
+
+    penalty, feedback = evaluator._evaluate_lane_discipline(heading_data, speed_data)
+
+    assert feedback['weaving_count'] == 0
+    assert penalty == 0
+
+
+def test_lower_braking_threshold_catches_moderate_braking():
+    """With threshold at 0.5g, braking at 0.55g should now be detected."""
+    evaluator = DiagnosticEvaluator()
+
+    # 0.55g = 5.4 m/s² — was below old 0.6g threshold, now above 0.5g
+    acceleration_data = [
+        {'timestamp': 1000, 'x': 0, 'y': -5.4, 'z': -9.81, 'latitude': 49.2, 'longitude': -123.1},
+    ]
+    speed_data = []
+
+    score, feedback = evaluator._evaluate_braking(acceleration_data, speed_data)
+
+    assert feedback['harsh_braking_events'] == 1, \
+        f"0.55g braking should be detected with 0.5g threshold, got {feedback['harsh_braking_events']}"

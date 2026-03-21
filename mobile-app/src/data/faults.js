@@ -82,6 +82,9 @@ export const FAULT_CATEGORIES = [
       { code: 'F2', label: 'Speeding' },
       { code: 'F3', label: 'Sharp Turn' },
       { code: 'F4', label: 'Sudden Stop' },
+      { code: 'F5', label: 'Harsh Acceleration' },
+      { code: 'F6', label: 'Erratic Speed' },
+      { code: 'F7', label: 'Lane Weaving' },
     ]
   }
 ];
@@ -102,4 +105,7 @@ export const DEVICE_EVENT_TO_CODE = {
   speeding: { code: 'F2', label: 'Speeding', category: 'F' },
   sharp_turn: { code: 'F3', label: 'Sharp Turn', category: 'F' },
   sudden_stop: { code: 'F4', label: 'Sudden Stop', category: 'F' },
+  harsh_acceleration: { code: 'F5', label: 'Harsh Acceleration', category: 'F' },
+  erratic_speed: { code: 'F6', label: 'Erratic Speed', category: 'F' },
+  lane_weaving: { code: 'F7', label: 'Lane Weaving', category: 'F' },
 };
