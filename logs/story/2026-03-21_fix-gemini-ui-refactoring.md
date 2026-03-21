@@ -36,3 +36,60 @@ Restored all original functionality while keeping Gemini's dark theme:
 ## Test Results
 - Backend: **40 passed** (was 39 failed, 24 passed before fixes)
 - Mobile: Pre-existing test failures unchanged (2 suites, unrelated to this change)
+
+## Additional Fix: Settings/Profile Screen Crash
+
+### Problem
+Tapping the Settings (gear) icon on StudentHomeScreen crashed the app because `StudentEditProfileScreen.js` (and `EditProfileScreen.js`) were missing critical imports: `SafeAreaView`, `Ionicons`, `ImagePicker`, and `DateTimePicker`.
+
+### Root Cause
+These files were written referencing components that were never imported at the top. Pre-existing bug, not caused by Gemini.
+
+### Fix
+- Added missing imports to both `StudentEditProfileScreen.js` and `EditProfileScreen.js`
+- Updated `StudentEditProfileScreen` styles to match the new navy/green theme
+
+---
+
+## Fix 3: Learning Tab Crash (EducationHomeScreen, ModulesScreen)
+
+### Problem
+Navigating to the Learn tab crashed — `Ionicons` used but not imported. Same Gemini pattern.
+
+### Fix
+- Added `import Ionicons from '@expo/vector-icons/Ionicons'` to both files.
+
+---
+
+## Fix 4: Evaluator Sensitivity & New Detection Features
+
+### Problem
+Automatic driving flags were not sensitive enough — cornering and stop detection thresholds had been raised too high. User also requested new detection capabilities for erratic/inconsistent driving patterns.
+
+### Threshold Tuning (More Sensitive)
+| Constant | Old | New | Effect |
+|---|---|---|---|
+| `HARSH_BRAKING_THRESHOLD` | 0.6g | 0.5g | Catches firm braking earlier |
+| `SUDDEN_STOP_SPEED_DROP` | 10 km/h | 8 km/h | Catches less dramatic stops |
+| `CORNERING_THRESHOLD_FLOOR` | 0.25g | 0.18g | Detects gentler sharp turns at high speed |
+| `CORNERING_SPEED_SENSITIVITY` | 0.0015 | 0.002 | Threshold drops faster with speed |
+| `CORNERING_HEADING_CHANGE_MIN` | 5.0° | 3.0° | Smaller heading change confirms real turn |
+| `CORNERING_HEADING_WINDOW_MS` | 2000ms | 3000ms | Wider window finds heading confirmation |
+
+### New Detection: Erratic Driving (`_evaluate_erratic_driving`)
+- **Harsh Acceleration (F5)**: Flags aggressive forward acceleration > 0.4g. Uses same orientation matrix and incline compensation as braking detection. Penalty: -8 points per event.
+- **Speed Oscillation (F6)**: Detects repeated acceleration/deceleration cycles (speed hunting). Analyzes sliding windows of 10 data points for ≥4 direction changes with ≥5 km/h amplitude. Penalty: -5 per instance.
+
+### New Detection: Lane Discipline (`_evaluate_lane_discipline`)
+- **Lane Weaving (F7)**: Detects sudden heading changes > 5° at speeds above 40 km/h. Uses existing `WEAVING_THRESHOLD` constant (previously defined but unused). Penalty: -5 per event.
+
+### Scoring Integration
+- Erratic driving penalties reduce the **smoothness score**
+- Lane discipline penalties reduce the **cornering score**
+- 6 new tests added; all 46 backend tests pass
+
+### Files Changed
+- `app/services/diagnostic_evaluator.py` — thresholds + 2 new methods + integration
+- `mobile-app/src/data/faults.js` — new F5/F6/F7 fault codes
+- `tests/test_diagnostic_evaluator_v2.py` — 6 new tests
+- `tests/test_advanced_physics.py` — updated hill compensation test for new threshold
