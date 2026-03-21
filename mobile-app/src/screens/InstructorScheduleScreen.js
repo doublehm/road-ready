@@ -46,36 +46,45 @@ const InstructorScheduleScreen = ({ navigation }) => {
   const renderItem = ({ item }) => (
     <View style={[styles.card, activeTab === 'history' && styles.cardHistory]}>
       <View style={styles.cardHeader}>
-        <Text style={styles.date}>{item.date}</Text>
-        <Text style={[
-          styles.status, 
+        <Text style={styles.date}>{new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+        <View style={[
+          styles.statusBadge, 
           item.status === 'accepted' ? styles.statusActive : 
           item.status === 'completed' ? styles.statusCompleted : 
           styles.statusInactive
         ]}>
-          {item.status.toUpperCase()}
-        </Text>
+          <Text style={[
+            styles.statusText,
+            item.status === 'accepted' ? styles.statusActiveText : 
+            item.status === 'completed' ? styles.statusCompletedText : 
+            styles.statusInactiveText
+          ]}>
+            {item.status.toUpperCase()}
+          </Text>
+        </View>
       </View>
       
-      <View style={styles.row}>
-        <Ionicons name="time-outline" size={16} color="#666" />
-        <Text style={styles.info}>{item.time} ({item.duration}h)</Text>
-      </View>
-      
-      <View style={styles.row}>
-        <Ionicons name="person-outline" size={16} color="#666" />
-        <Text style={styles.info}>{item.student?.full_name || `Student #${item.student_id}`}</Text>
-      </View>
+      <View style={styles.infoGrid}>
+        <View style={styles.row}>
+          <Ionicons name="time-sharp" size={16} color="#94A3B8" />
+          <Text style={styles.info}>{item.time} ({item.duration}h)</Text>
+        </View>
+        
+        <View style={styles.row}>
+          <Ionicons name="person-sharp" size={16} color="#94A3B8" />
+          <Text style={styles.info}>{item.student?.full_name || `Student #${item.student_id}`}</Text>
+        </View>
 
-      <View style={styles.row}>
-        <Ionicons name="location-outline" size={16} color="#666" />
-        <Text style={styles.info} numberOfLines={1}>{item.pickup_address}</Text>
+        <View style={styles.row}>
+          <Ionicons name="location-sharp" size={16} color="#94A3B8" />
+          <Text style={styles.info} numberOfLines={1}>{item.pickup_address}</Text>
+        </View>
       </View>
 
       {item.notes && item.notes.includes('Diagnostic Ride') ? (
-        <View style={[styles.noteBox, { backgroundColor: '#e0d9f7' }]}>
-          <Ionicons name="speedometer" size={14} color="#6610f2" />
-          <Text style={[styles.noteText, { color: '#6610f2', fontStyle: 'normal', fontWeight: 'bold', marginLeft: 5 }]}>Diagnostic Ride Session</Text>
+        <View style={styles.diagNoteBox}>
+          <Ionicons name="speedometer" size={16} color="#4338CA" />
+          <Text style={styles.diagNoteText}>DIAGNOSTIC TELEMETRY SESSION</Text>
         </View>
       ) : item.notes ? (
         <View style={styles.noteBox}>
@@ -83,50 +92,57 @@ const InstructorScheduleScreen = ({ navigation }) => {
         </View>
       ) : null}
 
-      {/* Message Button */}
-      {activeTab === 'upcoming' && (
-        <TouchableOpacity
-          style={styles.messageBtn}
-          onPress={() => navigation.navigate('Chat', {
-            recipientId: item.student_id,
-            name: item.student?.full_name || 'Student'
-          })}
-        >
-          <Ionicons name="chatbubble-outline" size={16} color="#007bff" style={{marginRight: 5}} />
-          <Text style={styles.messageBtnText}>Message Student</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.cardActions}>
+        {activeTab === 'upcoming' && (
+          <TouchableOpacity
+            style={styles.messageBtn}
+            onPress={() => navigation.navigate('Chat', {
+              recipientId: item.student_id,
+              name: item.student?.full_name || 'Student'
+            })}
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={18} color="#1E293B" />
+            <Text style={styles.messageBtnText}>Message</Text>
+          </TouchableOpacity>
+        )}
 
-      {/* Start Diagnostic Ride Button — only for accepted diagnostic ride bookings */}
-      {activeTab === 'upcoming' && item.status === 'accepted' && item.notes && item.notes.includes('Diagnostic Ride') && (
-        <TouchableOpacity
-          style={styles.startRideBtn}
-          onPress={() => navigation.navigate('SupervisorHandoff', {
-            rideParams: {
-              rideType: 'instructor',
-              parentName: null,
-              instructorId: userInfo?.instructor_profile?.id,
-              bookingId: item.id,
-              studentId: item.student_id,
-            }
-          })}
-        >
-          <Ionicons name="speedometer" size={18} color="#fff" style={{marginRight: 8}} />
-          <Text style={styles.startRideBtnText}>Start Diagnostic Ride</Text>
-        </TouchableOpacity>
-      )}
+        {activeTab === 'upcoming' && item.status === 'accepted' && item.notes && item.notes.includes('Diagnostic Ride') && (
+          <TouchableOpacity
+            style={styles.startRideBtn}
+            onPress={() => navigation.navigate('SupervisorHandoff', {
+              rideParams: {
+                rideType: 'instructor',
+                parentName: null,
+                instructorId: userInfo?.instructor_profile?.id,
+                bookingId: item.id,
+                studentId: item.student_id,
+              }
+            })}
+          >
+            <Ionicons name="play-circle" size={18} color="#fff" />
+            <Text style={styles.startRideBtnText}>Start Diagnostic</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 
   if (loading) {
-    return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#1E293B" />
+      </View>
+    );
   }
 
   const data = getFilteredBookings();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <Text style={styles.header}>My Schedule</Text>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Operational Schedule</Text>
+        <Text style={styles.headerSubtitle}>MISSION LOGS</Text>
+      </View>
       
       {/* Tabs */}
       <View style={styles.tabContainer}>
@@ -149,11 +165,12 @@ const InstructorScheduleScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-clear-outline" size={50} color="#ccc" />
+            <Ionicons name="calendar-outline" size={64} color="#CBD5E1" />
             <Text style={styles.emptyText}>
-              {activeTab === 'upcoming' ? "No upcoming lessons." : "No lesson history."}
+              {activeTab === 'upcoming' ? "No upcoming mission parameters." : "No historical mission logs."}
             </Text>
           </View>
         }
@@ -163,71 +180,94 @@ const InstructorScheduleScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { fontSize: 24, fontWeight: 'bold', padding: 20, backgroundColor: 'white' },
+  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  header: { padding: 24, backgroundColor: 'white' },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  headerSubtitle: { fontSize: 11, fontWeight: '800', color: '#15803D', letterSpacing: 2, marginTop: 4 },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F6FAFE' },
   
-  tabContainer: { flexDirection: 'row', backgroundColor: 'white', paddingHorizontal: 20, paddingBottom: 10 },
-  tab: { marginRight: 20, paddingBottom: 8 },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: '#007bff' },
-  tabText: { fontSize: 16, color: '#666', fontWeight: '500' },
-  activeTabText: { color: '#007bff' },
+  tabContainer: { 
+    flexDirection: 'row', 
+    backgroundColor: 'white', 
+    paddingHorizontal: 24, 
+    paddingBottom: 4,
+    gap: 24
+  },
+  tab: { paddingBottom: 12 },
+  activeTab: { borderBottomWidth: 3, borderBottomColor: '#1E293B' },
+  tabText: { fontSize: 15, color: '#94A3B8', fontWeight: '700' },
+  activeTabText: { color: '#1E293B' },
 
-  list: { padding: 16 },
+  list: { padding: 24, paddingBottom: 100 },
   card: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.04,
+    shadowRadius: 15,
     elevation: 2,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007bff'
   },
-  cardHistory: { borderLeftColor: '#6c757d', opacity: 0.8 },
+  cardHistory: { opacity: 0.7 },
   
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  date: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  date: { fontSize: 18, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
   
-  status: { fontSize: 12, fontWeight: 'bold', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, overflow: 'hidden' },
-  statusActive: { backgroundColor: '#e3f2fd', color: '#007bff' },
-  statusCompleted: { backgroundColor: '#d4edda', color: '#28a745' },
-  statusInactive: { backgroundColor: '#f8f9fa', color: '#666' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
+  statusText: { fontSize: 10, fontWeight: '900' },
+  statusActive: { backgroundColor: '#DCFCE7' },
+  statusActiveText: { color: '#15803D' },
+  statusCompleted: { backgroundColor: '#F1F5F9' },
+  statusCompletedText: { color: '#64748B' },
+  statusInactive: { backgroundColor: '#FEE2E2' },
+  statusInactiveText: { color: '#EF4444' },
 
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  info: { fontSize: 15, color: '#555', marginLeft: 8 },
+  infoGrid: { gap: 10, marginBottom: 20 },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  info: { fontSize: 15, color: '#64748B', marginLeft: 10, fontWeight: '600' },
   
-  noteBox: { flexDirection: 'row', alignItems: 'center', marginTop: 10, backgroundColor: '#fff3cd', padding: 8, borderRadius: 6 },
-  noteText: { fontStyle: 'italic', color: '#856404', fontSize: 13 },
+  diagNoteBox: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    backgroundColor: '#E0E7FF', 
+    padding: 12, 
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 16
+  },
+  diagNoteText: { color: '#4338CA', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+  
+  noteBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, marginBottom: 16 },
+  noteText: { fontStyle: 'italic', color: '#64748B', fontSize: 14, fontWeight: '500' },
 
+  cardActions: { flexDirection: 'row', gap: 12 },
   messageBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 10,
-    marginTop: 15,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#007bff',
-    backgroundColor: '#fff'
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#F1F5F9',
+    gap: 8
   },
-  messageBtnText: { color: '#007bff', fontWeight: 'bold', fontSize: 14 },
+  messageBtnText: { color: '#1E293B', fontWeight: '800', fontSize: 14 },
 
   startRideBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    marginTop: 10,
-    borderRadius: 8,
-    backgroundColor: '#6610f2',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#1E293B',
+    gap: 8
   },
-  startRideBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  startRideBtnText: { color: '#fff', fontWeight: '800', fontSize: 14 },
 
-  emptyContainer: { alignItems: 'center', marginTop: 50 },
-  emptyText: { marginTop: 10, fontSize: 16, color: '#999' }
+  emptyContainer: { alignItems: 'center', marginTop: 80 },
+  emptyText: { marginTop: 16, fontSize: 15, color: '#94A3B8', fontWeight: '600', textAlign: 'center' }
 });
 
 export default InstructorScheduleScreen;

@@ -421,6 +421,66 @@ async def live_evaluate(
     }
 
 
+@router.post("/evaluate-chunk")
+async def evaluate_chunk(
+    request: schemas.ChunkEvaluationRequest,
+):
+    """
+    Evaluates a specific chunk of sensor data from the mobile app.
+    Used for real-time coaching feedback.
+    """
+    evaluator = DiagnosticEvaluator()
+    
+    # Format data for evaluator
+    # Evaluator expects list of dicts with 'timestamp', 'x', 'y', 'z', 'latitude', 'longitude'
+    accel_data = []
+    lat = request.location.get('latitude') if request.location else None
+    lon = request.location.get('longitude') if request.location else None
+
+    for p in request.acceleration_data:
+        accel_data.append({
+            'timestamp': p.get('timestamp') or request.timestamp,
+            'x': p.get('x', 0),
+            'y': p.get('y', 0),
+            'z': p.get('z', 0),
+            'latitude': lat,
+            'longitude': lon
+        })
+    
+    speed_data = [{
+        'timestamp': request.timestamp,
+        'speed': request.speed,
+        'latitude': lat,
+        'longitude': lon
+    }]
+
+    # Pre-filter
+    accel_data = evaluator._median_filter(accel_data)
+
+    # Evaluate
+    speed_limit_data = []
+    if request.current_speed_limit:
+        speed_limit_data = [{
+            'timestamp': request.timestamp,
+            'speed_limit': request.current_speed_limit,
+            'zone_type': request.zone_type or "regular"
+        }]
+
+    _, braking_feedback = evaluator._evaluate_braking(accel_data, speed_data)
+    _, speed_feedback = evaluator._evaluate_speed(speed_data, 1, speed_limit_data=speed_limit_data)
+    _, cornering_feedback = evaluator._evaluate_cornering(accel_data, [], speed_data=speed_data)
+
+    events = []
+    events.extend(braking_feedback.get('events', []))
+    events.extend(speed_feedback.get('events', []))
+    events.extend(cornering_feedback.get('events', []))
+
+    return {
+        "events": events,
+        "timestamp": datetime.now().isoformat()
+    }
+
+
 @router.get("/", response_model=List[schemas.DiagnosticRide])
 async def list_diagnostic_rides(
     current_user: models.User = Depends(deps.get_current_user),

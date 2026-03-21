@@ -201,113 +201,101 @@ const QuizScreen = () => {
 
 
     return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <Text style={styles.progressText}>QUESTION {currentIndex + 1}/{questions.length}</Text>
+            <Text style={styles.scoreText}>SCORE: {score}</Text>
+          </View>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${((currentIndex + 1) / questions.length) * 100}%` }]} />
+          </View>
+        </View>
 
-    <View style={styles.container}>
+        <View style={styles.card}>
+          {question.image_path && (
+            <Image 
+              key={question.image_path}
+              source={{ uri: `${serverUrl}/static/${question.image_path}` }}
+              style={styles.questionImage}
+              resizeMode="contain"
+            />
+          )}
+          <Text style={styles.questionText}>{question.question_text}</Text>
 
-      <View style={styles.header}>
-
-         <Text style={styles.score}>Question: {currentIndex + 1}/{questions.length}</Text>
-
-         <Text style={styles.streak}>Score: {score}</Text>
-
-      </View>
-
-
-
-            <View style={styles.card}>
-
-
-
-              {question.image_path && (
-
-
-
-                <Image 
-
-
-
-                  key={question.image_path}
-
-
-
-                  source={{ uri: `${serverUrl}/static/${question.image_path}` }}
-
-
-
-                  style={styles.questionImage}
-
-
-
-                  resizeMode="contain"
-
-
-
-                />
-
-
-
-              )}
-
-        <Text style={styles.questionText}>{question.question_text}</Text>
-        
-        <View style={styles.optionsContainer}>
-          {['A', 'B', 'C', 'D'].map((opt) => (
-            <TouchableOpacity 
-              key={opt} 
-              style={styles.optionButton} 
-              onPress={() => handleAnswer(opt)}
-            >
-              <Text style={styles.optionText}>
-                <Text style={styles.optionLabel}>{opt}. </Text>
-                {question[`option_${opt.toLowerCase()}`]}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          <View style={styles.optionsContainer}>
+            {['A', 'B', 'C', 'D'].map((opt) => (
+              <TouchableOpacity 
+                key={opt} 
+                style={styles.optionButton} 
+                onPress={() => handleAnswer(opt)}
+              >
+                <View style={styles.optionLabelContainer}>
+                  <Text style={styles.optionLabel}>{opt}</Text>
+                </View>
+                <Text style={styles.optionText}>
+                  {question[`option_${opt.toLowerCase()}`]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
-    </View>
-  );
-};
+    );
+    };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f2f5', padding: 20, justifyContent: 'center' },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, position: 'absolute', top: 50, left: 20, right: 20, zIndex: 1 },
-  score: { fontSize: 20, fontWeight: 'bold', color: '#333' },
-  streak: { fontSize: 20, fontWeight: 'bold', color: '#FF5864' },
-  finishTitle: { fontSize: 32, fontWeight: 'bold', color: '#333', textAlign: 'center', marginBottom: 20 },
-  finishScore: { fontSize: 24, color: '#666', textAlign: 'center', marginBottom: 40 },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 10,
-    minHeight: 400,
-    justifyContent: 'center',
-  },
-  questionImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 20,
-    backgroundColor: '#fff',
-  },
-  questionText: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 30, color: '#333' },
-  optionsContainer: { width: '100%' },
-  optionButton: {
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  optionText: { fontSize: 16, color: '#495057' },
-  optionLabel: { fontWeight: 'bold', color: '#FF5864' },
-});
+    const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#F6FAFE', padding: 20, justifyContent: 'center' },
+    loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F6FAFE' },
+    header: { position: 'absolute', top: 60, left: 20, right: 20, zIndex: 1 },
+    headerTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+    progressText: { fontSize: 12, fontWeight: '800', color: '#64748B', letterSpacing: 1 },
+    scoreText: { fontSize: 12, fontWeight: '800', color: '#15803D', letterSpacing: 1 },
+    progressTrack: { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
+    progressFill: { height: '100%', backgroundColor: '#15803D', borderRadius: 4 },
+
+    finishTitle: { fontSize: 32, fontWeight: '800', color: '#1E293B', textAlign: 'center', marginBottom: 12, letterSpacing: -1 },
+    finishScore: { fontSize: 18, color: '#64748B', textAlign: 'center', marginBottom: 40, fontWeight: '600' },
+    finishCard: { backgroundColor: 'white', borderRadius: 24, padding: 32, alignItems: 'center', shadowColor: '#1E293B', shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 },
+
+    card: {
+      backgroundColor: 'white',
+      borderRadius: 24,
+      padding: 24,
+      shadowColor: '#1E293B',
+      shadowOpacity: 0.06,
+      shadowRadius: 20,
+      elevation: 4,
+      minHeight: 450,
+    },
+    questionImage: {
+      width: '100%',
+      height: 180,
+      borderRadius: 16,
+      marginBottom: 24,
+      backgroundColor: '#F8FAFC',
+    },
+    questionText: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 32, color: '#1E293B', letterSpacing: -0.5, lineHeight: 28 },
+    optionsContainer: { width: '100%' },
+    optionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#F8FAFC',
+      padding: 16,
+      borderRadius: 16,
+      marginBottom: 12,
+    },
+    optionLabelContainer: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      backgroundColor: '#1E293B',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    },
+    optionLabel: { fontWeight: '800', color: 'white', fontSize: 14 },
+    optionText: { fontSize: 16, color: '#1E293B', fontWeight: '600', flex: 1 },
+    });
 
 export default QuizScreen;

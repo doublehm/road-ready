@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, validator
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 import re
 
 # --- Shared Schemas ---
@@ -371,7 +371,7 @@ class DiagnosticRideBase(BaseModel):
     instructor_id: Optional[int] = None
 
 class DiagnosticRideCreate(DiagnosticRideBase):
-    start_time: str
+    start_time: Optional[str] = None
     end_time: Optional[str] = None
     booking_id: Optional[int] = None
     duration_minutes: Optional[float] = None
@@ -386,10 +386,22 @@ class DiagnosticRideCreate(DiagnosticRideBase):
     evaluator_notes: Optional[str] = None # coach notes from during ride
     human_feedback: Optional[str] = None # JSON: [{code, label, category, count, timestamps}]
 
+    class Config:
+        extra = "allow"
+
 class LiveEvaluationRequest(BaseModel):
     acceleration_window: List[SensorDataPoint]
     speed_window: List[SensorDataPoint]
     rotation_window: List[SensorDataPoint]
+
+class ChunkEvaluationRequest(BaseModel):
+    ride_id: Optional[int] = None
+    location: Optional[Dict[str, Any]] = None
+    speed: float
+    acceleration_data: List[Dict[str, Any]]
+    current_speed_limit: Optional[float] = None
+    zone_type: Optional[str] = "regular"
+    timestamp: float
 
 class DiagnosticRideEvaluation(BaseModel):
     braking_score: float

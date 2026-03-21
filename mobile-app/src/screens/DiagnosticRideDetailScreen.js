@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -14,25 +15,26 @@ import client from '../api/client';
 import RouteReplayMap from '../components/RouteReplayMap';
 import SpeedGraph from '../components/SpeedGraph';
 import EventTimeline from '../components/EventTimeline';
-import HumanFeedbackSection from '../components/HumanFeedbackSection';
 
-const ScoreCircle = ({ score, label, size = 80 }) => {
-  const color = score >= 80 ? '#28a745' : score >= 60 ? '#ffc107' : '#dc3545';
+const { width } = Dimensions.get('window');
 
+const TelemetryGauge = ({ score, label, size = 100, isMain = false }) => {
+  const color = score >= 80 ? '#15803D' : score >= 60 ? '#F59E0B' : '#EF4444';
+  
   return (
-    <View style={[styles.scoreCircle, { width: size, height: size }]}>
-      <Text style={[styles.scoreValue, { color, fontSize: size * 0.3 }]}>
-        {score}
-      </Text>
-      <Text style={[styles.scoreLabel, { fontSize: size * 0.12 }]}>{label}</Text>
+    <View style={[styles.gaugeContainer, { width: size }]}>
+      <View style={[styles.gaugeOuter, { width: size, height: size, borderColor: '#1E293B' }]}>
+        <View style={[styles.gaugeTrack, { width: size - 12, height: size - 12, borderColor: 'rgba(255,255,255,0.05)' }]} />
+        <Text style={[styles.gaugeValue, { color, fontSize: isMain ? 32 : 20 }]}>{score}</Text>
+        <Text style={styles.gaugePercent}>%</Text>
+      </View>
+      <Text style={styles.gaugeLabel}>{label.toUpperCase()}</Text>
     </View>
   );
 };
 
 const DiagnosticRideDetailScreen = ({ route, navigation }) => {
   const { rideId } = route.params;
-  const { userToken } = useContext(AuthContext);
-
   const [ride, setRide] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -51,561 +53,211 @@ const DiagnosticRideDetailScreen = ({ route, navigation }) => {
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-CA', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
-        <Text style={styles.loadingText}>Loading ride details...</Text>
+        <ActivityIndicator size="large" color="#15803D" />
+        <Text style={styles.loadingText}>INITIALIZING TELEMETRY...</Text>
       </View>
     );
   }
 
-  if (!ride) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.errorText}>Failed to load ride details</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  if (!ride) return null;
 
-  const evaluationResult = ride.evaluation_result
-    ? JSON.parse(ride.evaluation_result)
-    : null;
-
+  const evaluationResult = ride.evaluation_result ? JSON.parse(ride.evaluation_result) : null;
   const routeSegments = evaluationResult?.route_segments || [];
   const allEvents = evaluationResult?.events || [];
-  const speedFeedback = evaluationResult?.speed || {};
-  const brakingFeedback = evaluationResult?.braking || {};
-  const corneringFeedback = evaluationResult?.cornering || {};
-
+  
   let routeCoords = [];
-  try {
-    if (ride.route_coords) routeCoords = JSON.parse(ride.route_coords);
-  } catch (e) {}
+  try { if (ride.route_coords) routeCoords = JSON.parse(ride.route_coords); } catch (e) {}
 
   let speedData = [];
-  try {
-    if (ride.speed_data) speedData = JSON.parse(ride.speed_data);
-  } catch (e) {}
+  try { if (ride.speed_data) speedData = JSON.parse(ride.speed_data); } catch (e) {}
 
   let speedLimitData = [];
-  try {
-    if (ride.speed_limit_data) speedLimitData = JSON.parse(ride.speed_limit_data);
-  } catch (e) {}
-
-  let humanFeedback = [];
-  try {
-    if (ride.human_feedback) {
-      humanFeedback = JSON.parse(ride.human_feedback);
-    } else if (evaluationResult?.human_feedback) {
-      humanFeedback = evaluationResult.human_feedback;
-    }
-  } catch (e) {}
-
-  const startTimestamp = speedData.length > 0 ? speedData[0].timestamp : 0;
-
-  const getTimelineEvents = () => {
-    // allEvents now includes human flags from backend
-    const combined = [...allEvents];
-
-    // Check if human flags are already in combined (to avoid duplicates if backend updated)
-    const hasHumanFlags = combined.some(e => e.type === 'human_flag');
-
-    if (!hasHumanFlags && humanFeedback.length > 0) {
-      // Add human flags manually if not present (for older rides)
-      humanFeedback.forEach(flag => {
-        if (flag.timestamps) {
-          flag.timestamps.forEach(t => {
-            combined.push({
-              type: 'human_flag',
-              timestamp: t.ts,
-              severity: 'human',
-              label: flag.label,
-              code: flag.code,
-            });
-          });
-        }
-      });
-    }
-
-    // Add coach notes manually (usually just text in ride.evaluator_notes)
-    if (ride.evaluator_notes) {
-      const noteLines = ride.evaluator_notes.split('\n');
-      noteLines.forEach(line => {
-        const match = line.match(/^\[(\d+):(\d+)\]\s*(.*)/);
-        if (match) {
-          const mins = parseInt(match[1]);
-          const secs = parseInt(match[2]);
-          const elapsedMs = (mins * 60 + secs) * 1000;
-          combined.push({
-            type: 'coach_note',
-            timestamp: startTimestamp + elapsedMs,
-            severity: 'note',
-            text: match[3],
-          });
-        }
-      });
-    }
-
-    return combined.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-  };
-
-  const timelineEvents = getTimelineEvents();
+  try { if (ride.speed_limit_data) speedLimitData = JSON.parse(ride.speed_limit_data); } catch (e) {}
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#1a1a1a" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backCircle}>
+          <Ionicons name="chevron-back" size={24} color="white" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ride Detail</Text>
-        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>DIAGNOSTIC REPORT</Text>
+        <View style={{ width: 44 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Date & Pass/Fail */}
-        <View style={styles.dateRow}>
-          <Text style={styles.dateText}>{formatDate(ride.created_at)}</Text>
-          {ride.passed !== null && (
-            <View style={[
-              styles.passBadge,
-              { backgroundColor: ride.passed ? '#28a745' : '#dc3545' }
-            ]}>
-              <Text style={styles.passBadgeText}>
-                {ride.passed ? 'PASSED' : 'FAILED'}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Scores */}
-        <View style={styles.scoresRow}>
-          <ScoreCircle score={Math.round(ride.overall_score || 0)} label="Overall" size={100} />
-          <View style={styles.smallScoresColumn}>
-            <ScoreCircle score={Math.round(ride.braking_score || 0)} label="Braking" size={70} />
-            <ScoreCircle score={Math.round(ride.speed_score || 0)} label="Speed" size={70} />
-            <ScoreCircle score={Math.round(ride.cornering_score || 0)} label="Cornering" size={70} />
-          </View>
-        </View>
-
-        {/* Ride Stats */}
-        <View style={styles.statsCard}>
-          <View style={styles.statItem}>
-            <Ionicons name="time-outline" size={20} color="#007bff" />
-            <Text style={styles.statValue}>
-              {ride.duration_minutes ? `${Math.round(ride.duration_minutes)} min` : '--'}
-            </Text>
-            <Text style={styles.statLabel}>Duration</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="navigate-outline" size={20} color="#007bff" />
-            <Text style={styles.statValue}>
-              {ride.distance_km ? `${ride.distance_km.toFixed(1)} km` : '--'}
-            </Text>
-            <Text style={styles.statLabel}>Distance</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="alert-circle-outline" size={20} color="#007bff" />
-            <Text style={styles.statValue}>{allEvents.length}</Text>
-            <Text style={styles.statLabel}>Events</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="person-outline" size={20} color="#007bff" />
-            <Text style={styles.statValue}>
-              {ride.ride_type === 'parent_supervised' ? 'Parent' : 'Instructor'}
-            </Text>
-            <Text style={styles.statLabel}>Supervisor</Text>
-          </View>
-        </View>
-
-        {/* Speed Violation Summary */}
-        {speedFeedback.max_excess_kmh > 0 && (
-          <View style={styles.violationSummary}>
-            <Text style={styles.sectionTitle}>Speed Violations</Text>
-            <View style={styles.violationRow}>
-              <View style={styles.violationItem}>
-                <Text style={styles.violationValue}>{speedFeedback.speeding_percentage}%</Text>
-                <Text style={styles.violationLabel}>Time over limit</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        
+        {/* Hero Score Card */}
+        <View style={styles.heroCard}>
+          <View style={styles.heroMain}>
+            <TelemetryGauge score={Math.round(ride.overall_score || 0)} label="Safety Score" size={140} isMain />
+            <View style={styles.badgeContainer}>
+              <View style={[styles.passBadge, { backgroundColor: ride.passed ? '#15803D' : '#EF4444' }]}>
+                <Text style={styles.passBadgeText}>{ride.passed ? 'PASS' : 'FAIL'}</Text>
               </View>
-              <View style={styles.violationItem}>
-                <Text style={[styles.violationValue, { color: '#dc3545' }]}>
-                  +{Math.round(speedFeedback.max_excess_kmh)} km/h
-                </Text>
-                <Text style={styles.violationLabel}>Max excess</Text>
-              </View>
-              {speedFeedback.school_zone_violations > 0 && (
-                <View style={styles.violationItem}>
-                  <Text style={[styles.violationValue, { color: '#ff9800' }]}>
-                    {speedFeedback.school_zone_violations}s
-                  </Text>
-                  <Text style={styles.violationLabel}>School zone</Text>
-                </View>
-              )}
+              <Text style={styles.dateText}>{new Date(ride.created_at).toLocaleDateString()}</Text>
             </View>
+          </View>
+          
+          <View style={styles.subGauges}>
+            <TelemetryGauge score={Math.round(ride.braking_score || 0)} label="Braking" size={80} />
+            <TelemetryGauge score={Math.round(ride.speed_score || 0)} label="Speed" size={80} />
+            <TelemetryGauge score={Math.round(ride.cornering_score || 0)} label="Cornering" size={80} />
+          </View>
+        </View>
+
+        {/* Map Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>ROUTE ANALYSIS</Text>
+          <View style={styles.mapContainer}>
+            <RouteReplayMap
+              routeSegments={routeSegments}
+              events={allEvents}
+              routeCoords={routeCoords}
+              height={280}
+            />
+            <View style={styles.mapOverlay}>
+              <View style={styles.mapStat}>
+                <Text style={styles.mapStatValue}>{ride.distance_km?.toFixed(1)}</Text>
+                <Text style={styles.mapStatLabel}>KM</Text>
+              </View>
+              <View style={styles.mapStatDivider} />
+              <View style={styles.mapStat}>
+                <Text style={styles.mapStatValue}>{Math.round(ride.duration_minutes)}</Text>
+                <Text style={styles.mapStatLabel}>MIN</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Telemetry Graph */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>VELOCITY TELEMETRY</Text>
+          <View style={styles.chartCard}>
+            <SpeedGraph
+              speedData={speedData}
+              speedLimitData={speedLimitData}
+              routeSegments={routeSegments}
+              height={180}
+            />
+          </View>
+        </View>
+
+        {/* Detailed Feedback Cards */}
+        <Text style={styles.sectionTitle}>SYSTEM FEEDBACK</Text>
+        
+        {evaluationResult?.speed?.notes?.length > 0 && (
+          <View style={styles.feedbackCard}>
+            <View style={styles.feedbackHeader}>
+              <Ionicons name="speedometer-outline" size={20} color="#15803D" />
+              <Text style={styles.feedbackTitle}>Speed Compliance</Text>
+            </View>
+            <Text style={styles.feedbackText}>{evaluationResult.speed.notes[0]}</Text>
           </View>
         )}
 
-        {/* Route Map */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Route Map</Text>
-          <RouteReplayMap
-            routeSegments={routeSegments}
-            events={allEvents}
-            routeCoords={routeCoords}
-            height={250}
-          />
-        </View>
-
-        {/* Speed Graph */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Speed vs. Limit</Text>
-          <SpeedGraph
-            speedData={speedData}
-            speedLimitData={speedLimitData}
-            routeSegments={routeSegments}
-            height={180}
-          />
-        </View>
-
-        {/* Feedback Sections */}
-        {evaluationResult && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Feedback</Text>
-
-            {/* Braking */}
-            <View style={styles.feedbackCard}>
-              <View style={styles.feedbackHeader}>
-                <Ionicons name="hand-left" size={16} color="#495057" />
-                <Text style={styles.feedbackTitle}>Braking</Text>
-              </View>
-              {brakingFeedback.notes?.map((note, i) => (
-                <Text key={i} style={styles.feedbackText}>{note}</Text>
-              ))}
-              {brakingFeedback.tips?.map((tip, i) => (
-                <View key={`tip-${i}`} style={styles.tipRow}>
-                  <Ionicons name="bulb" size={12} color="#ffc107" />
-                  <Text style={styles.tipText}>{tip}</Text>
-                </View>
-              ))}
+        {evaluationResult?.braking?.notes?.length > 0 && (
+          <View style={styles.feedbackCard}>
+            <View style={styles.feedbackHeader}>
+              <Ionicons name="disc-outline" size={20} color="#15803D" />
+              <Text style={styles.feedbackTitle}>Braking Precision</Text>
             </View>
-
-            {/* Speed */}
-            <View style={styles.feedbackCard}>
-              <View style={styles.feedbackHeader}>
-                <Ionicons name="speedometer" size={16} color="#495057" />
-                <Text style={styles.feedbackTitle}>Speed Control</Text>
-              </View>
-              {speedFeedback.notes?.map((note, i) => (
-                <Text key={i} style={styles.feedbackText}>{note}</Text>
-              ))}
-              {speedFeedback.tips?.map((tip, i) => (
-                <View key={`tip-${i}`} style={styles.tipRow}>
-                  <Ionicons name="bulb" size={12} color="#ffc107" />
-                  <Text style={styles.tipText}>{tip}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* Cornering */}
-            <View style={styles.feedbackCard}>
-              <View style={styles.feedbackHeader}>
-                <Ionicons name="git-compare" size={16} color="#495057" />
-                <Text style={styles.feedbackTitle}>Cornering</Text>
-              </View>
-              {corneringFeedback.notes?.map((note, i) => (
-                <Text key={i} style={styles.feedbackText}>{note}</Text>
-              ))}
-              {corneringFeedback.tips?.map((tip, i) => (
-                <View key={`tip-${i}`} style={styles.tipRow}>
-                  <Ionicons name="bulb" size={12} color="#ffc107" />
-                  <Text style={styles.tipText}>{tip}</Text>
-                </View>
-              ))}
-            </View>
+            <Text style={styles.feedbackText}>{evaluationResult.braking.notes[0]}</Text>
           </View>
         )}
 
         {/* Event Timeline */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Event Timeline</Text>
-          <EventTimeline
-            events={timelineEvents}
-            startTime={startTimestamp}
-            humanFeedback={humanFeedback}
-          />
+        <View style={[styles.section, { marginBottom: 60 }]}>
+          <Text style={styles.sectionTitle}>EVENT LOG</Text>
+          <View style={styles.timelineCard}>
+            <EventTimeline
+              events={allEvents.sort((a,b) => a.timestamp - b.timestamp)}
+              startTime={speedData[0]?.timestamp || 0}
+            />
+          </View>
         </View>
 
-        {/* Summary */}
-        {evaluationResult?.summary && (
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryText}>{evaluationResult.summary}</Text>
-          </View>
-        )}
-
-        {/* Back Button */}
-        <TouchableOpacity
-          style={styles.backButtonLarge}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={20} color="#007bff" />
-          <Text style={styles.backButtonLargeText}>Back to History</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B1326' },
+  loadingText: { color: '#94A3B8', marginTop: 16, fontWeight: '800', letterSpacing: 1 },
+  header: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 20,
+    paddingVertical: 15
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  headerTitle: { color: 'white', fontSize: 14, fontWeight: '900', letterSpacing: 2 },
+  backCircle: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: 'rgba(255,255,255,0.05)', 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  scroll: { paddingBottom: 100 },
+  heroCard: {
+    backgroundColor: '#131B2E',
+    margin: 20,
+    borderRadius: 32,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10
+  },
+  heroMain: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+  badgeContainer: { alignItems: 'flex-end' },
+  passBadge: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 12, marginBottom: 8 },
+  passBadgeText: { color: 'white', fontWeight: '900', fontSize: 16 },
+  dateText: { color: '#64748B', fontSize: 13, fontWeight: '600' },
+  subGauges: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 20, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' },
+  gaugeContainer: { alignItems: 'center' },
+  gaugeOuter: { 
+    borderRadius: 100, 
+    borderWidth: 4, 
+    justifyContent: 'center', 
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(255,255,255,0.02)'
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#6c757d',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#dc3545',
-    marginBottom: 16,
-  },
-  header: {
+  gaugeTrack: { position: 'absolute', borderRadius: 100, borderWidth: 1 },
+  gaugeValue: { fontWeight: '900' },
+  gaugePercent: { position: 'absolute', bottom: '20%', fontSize: 10, color: '#64748B', fontWeight: '700' },
+  gaugeLabel: { color: '#94A3B8', fontSize: 10, fontWeight: '800', marginTop: 12, letterSpacing: 1 },
+  section: { paddingHorizontal: 20, marginBottom: 32 },
+  sectionTitle: { color: '#94A3B8', fontSize: 12, fontWeight: '900', letterSpacing: 2, marginBottom: 16, paddingLeft: 4 },
+  mapContainer: { borderRadius: 24, overflow: 'hidden', backgroundColor: '#131B2E' },
+  mapOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(11, 19, 38, 0.85)',
+    borderRadius: 16,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    backdropBlur: 20
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
-  scrollContent: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  dateText: {
-    fontSize: 14,
-    color: '#6c757d',
-    flex: 1,
-  },
-  passBadge: {
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  passBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  scoresRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 20,
-    marginBottom: 16,
-  },
-  smallScoresColumn: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  scoreCircle: {
-    borderRadius: 1000,
-    borderWidth: 6,
-    borderColor: '#e9ecef',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scoreValue: {
-    fontWeight: 'bold',
-  },
-  scoreLabel: {
-    color: '#6c757d',
-    marginTop: 2,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  statValue: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#6c757d',
-  },
-  violationSummary: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  violationRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 8,
-  },
-  violationItem: {
-    alignItems: 'center',
-  },
-  violationValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-  },
-  violationLabel: {
-    fontSize: 11,
-    color: '#6c757d',
-    marginTop: 2,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 10,
-  },
-  feedbackCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 10,
-  },
-  feedbackHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
-  },
-  feedbackTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#1a1a1a',
-  },
-  feedbackText: {
-    fontSize: 13,
-    color: '#6c757d',
-    marginBottom: 4,
-    lineHeight: 18,
-  },
-  notesCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    flexDirection: 'row',
-    borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
-  },
-  noteIcon: {
-    marginRight: 10,
-    marginTop: 2,
-  },
-  notesText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#495057',
-    lineHeight: 20,
-    fontStyle: 'italic',
-  },
-  tipRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 4,
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 12,
-    color: '#856404',
-    lineHeight: 17,
-  },
-  summaryCard: {
-    backgroundColor: '#e7f3ff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-  },
-  summaryText: {
-    fontSize: 14,
-    color: '#1a1a1a',
-    lineHeight: 20,
-  },
-  backButton: {
-    padding: 12,
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: '#007bff',
-    fontSize: 16,
-  },
-  backButtonLarge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#007bff',
-  },
-  backButtonLargeText: {
-    color: '#007bff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  mapStat: { flex: 1, alignItems: 'center' },
+  mapStatValue: { color: 'white', fontSize: 20, fontWeight: '800' },
+  mapStatLabel: { color: '#64748B', fontSize: 10, fontWeight: '700', marginTop: 2 },
+  mapStatDivider: { width: 1, height: '100%', backgroundColor: 'rgba(255,255,255,0.1)' },
+  chartCard: { backgroundColor: '#131B2E', padding: 16, borderRadius: 24 },
+  feedbackCard: { backgroundColor: '#131B2E', marginHorizontal: 20, marginBottom: 12, padding: 20, borderRadius: 20 },
+  feedbackHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  feedbackTitle: { color: 'white', fontSize: 15, fontWeight: '700' },
+  feedbackText: { color: '#94A3B8', fontSize: 14, lineHeight: 20 },
+  timelineCard: { backgroundColor: '#131B2E', padding: 20, borderRadius: 24 }
 });
 
 export default DiagnosticRideDetailScreen;

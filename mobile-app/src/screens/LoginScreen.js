@@ -25,27 +25,33 @@ const LoginScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.content}>
-        <Text style={styles.title}>Road Ready</Text>
-        <Text style={styles.subtitle}>Log in to start driving</Text>
+        <View style={styles.header}>
+          <Text style={styles.title}>Road Ready</Text>
+          <Text style={styles.subtitle}>GUARDIAN DRIVE SYSTEM</Text>
+        </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            placeholderTextColor="#94A3B8"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#94A3B8"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
 
         <TouchableOpacity 
           style={styles.button} 
@@ -55,7 +61,7 @@ const LoginScreen = ({ navigation }) => {
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Log In</Text>
+            <Text style={styles.buttonText}>Sign In</Text>
           )}
         </TouchableOpacity>
 
@@ -63,7 +69,9 @@ const LoginScreen = ({ navigation }) => {
           style={styles.registerLink} 
           onPress={() => navigation.navigate('Register')}
         >
-          <Text style={styles.registerText}>Don't have an account? Sign Up</Text>
+          <Text style={styles.registerText}>
+            Don't have an account? <Text style={styles.registerTextBold}>Join the fleet</Text>
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -73,60 +81,83 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F6FAFE',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 48,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
+    fontSize: 40,
+    fontWeight: '800',
+    color: '#1E293B',
+    letterSpacing: -1.5,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 40,
-    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#15803D',
+    letterSpacing: 2,
+    marginTop: 4,
+  },
+  inputContainer: {
+    marginBottom: 24,
   },
   input: {
-    height: 50,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
+    height: 60,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    marginBottom: 16,
     fontSize: 16,
+    color: '#1E293B',
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.06,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   button: {
-    backgroundColor: '#007bff',
-    height: 50,
-    borderRadius: 8,
+    backgroundColor: '#1E293B',
+    height: 60,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 8,
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
   buttonText: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   error: {
-    color: 'red',
-    marginBottom: 10,
+    color: '#EF4444',
+    marginBottom: 20,
     textAlign: 'center',
+    fontWeight: '600',
   },
   registerLink: {
-    marginTop: 20,
+    marginTop: 32,
     alignItems: 'center',
   },
   registerText: {
-    color: '#007bff',
-    fontSize: 16,
+    color: '#64748B',
+    fontSize: 15,
+  },
+  registerTextBold: {
+    color: '#15803D',
+    fontWeight: '800',
   }
 });
 

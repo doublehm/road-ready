@@ -15,8 +15,8 @@ const getServerUrl = () => {
       return `http://${host}:8000`;
     }
   }
-  // Production: replace with your deployed server URL
-  return 'http://10.32.100.57:8000';
+  // Fallback: read from .env (EXPO_PUBLIC_API_URL) so no IP is hardcoded
+  return process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
 };
 
 export const SERVER_URL = getServerUrl();

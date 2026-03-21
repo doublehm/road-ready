@@ -103,65 +103,72 @@ const StudentProgressScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.header}>My Progress</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>My Progress</Text>
+          <Text style={styles.subtitle}>OPERATIONAL STATUS</Text>
+        </View>
         
         {/* Main Stats Grid */}
         <View style={styles.statsGrid}>
             <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Lessons</Text>
+                <Text style={styles.statLabel}>LESSONS</Text>
                 <Text style={styles.statNumber}>{stats.totalSessions}</Text>
             </View>
             <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Skill</Text>
-                <Text style={[styles.statNumber, {color: '#007bff'}]}>{stats.overallScore?.toFixed(1)}%</Text>
+                <Text style={styles.statLabel}>READY</Text>
+                <Text style={[styles.statNumber, {color: '#15803D'}]}>{stats.overallScore?.toFixed(0)}%</Text>
             </View>
             <View style={styles.statBox}>
-                <Text style={styles.statLabel}>Hours</Text>
-                <Text style={styles.statNumber}>{stats.totalHours}h</Text>
+                <Text style={styles.statLabel}>HOURS</Text>
+                <Text style={styles.statNumber}>{Math.round(stats.totalHours)}h</Text>
             </View>
         </View>
 
         {/* Trend Banner */}
-
         <View style={[styles.trendBanner, stats.trend === 'Improving' ? styles.trendGood : styles.trendNeutral]}>
-            <Ionicons name={stats.trend === 'Improving' ? "trending-up" : "analytics"} size={24} color="white" />
-            <Text style={styles.trendText}>Status: {stats.trend}</Text>
+            <View style={styles.trendIconContainer}>
+              <Ionicons name={stats.trend === 'Improving' ? "trending-up" : "analytics"} size={20} color="white" />
+            </View>
+            <View>
+              <Text style={styles.trendLabel}>SYSTEM TREND</Text>
+              <Text style={styles.trendText}>{stats.trend.toUpperCase()}</Text>
+            </View>
         </View>
 
         {/* Practice Hours Goal (Visual Bar) */}
         <Text style={styles.sectionTitle}>Road to License</Text>
         <View style={styles.goalContainer}>
             <View style={styles.goalHeader}>
-                <Text style={styles.goalLabel}>Practice Hours</Text>
+                <Text style={styles.goalLabel}>PRACTICE LOG</Text>
                 <Text style={styles.goalValue}>{stats.totalHours} / 60h</Text>
             </View>
             <View style={styles.progressBarBg}>
                 <View style={[styles.progressBarFill, { width: `${Math.min((stats.totalHours/60)*100, 100)}%` }]} />
             </View>
-            <Text style={styles.goalSub}>Recommended practice before road test</Text>
+            <Text style={styles.goalSub}>Recommended practice hours for optimal safety</Text>
         </View>
 
-        <Text style={styles.sectionTitle}>Areas for Improvement</Text>
+        <Text style={styles.sectionTitle}>Performance Analytics</Text>
         <View style={styles.row}>
-          <View style={[styles.skillCard, { backgroundColor: '#ffebee' }]}>
+          <View style={[styles.skillCard, { backgroundColor: '#FEE2E2' }]}>
              <Text style={styles.skillTitle}>Observation</Text>
-             <Text style={styles.skillCount}>{stats.faultCounts?.A || 0} Issues</Text>
+             <Text style={[styles.skillCount, { color: '#B91C1C' }]}>{stats.faultCounts?.A || 0} Issues</Text>
           </View>
-          <View style={[styles.skillCard, { backgroundColor: '#e3f2fd' }]}>
+          <View style={[styles.skillCard, { backgroundColor: '#E0E7FF' }]}>
              <Text style={styles.skillTitle}>Space Margins</Text>
-             <Text style={styles.skillCount}>{stats.faultCounts?.B || 0} Issues</Text>
+             <Text style={[styles.skillCount, { color: '#4338CA' }]}>{stats.faultCounts?.B || 0} Issues</Text>
           </View>
         </View>
 
         <View style={styles.row}>
-          <View style={[styles.skillCard, { backgroundColor: '#e8f5e9' }]}>
+          <View style={[styles.skillCard, { backgroundColor: '#DCFCE7' }]}>
              <Text style={styles.skillTitle}>Speed Control</Text>
-             <Text style={styles.skillCount}>{stats.faultCounts?.C || 0} Issues</Text>
+             <Text style={[styles.skillCount, { color: '#15803D' }]}>{stats.faultCounts?.C || 0} Issues</Text>
           </View>
-          <View style={[styles.skillCard, { backgroundColor: '#fff3cd' }]}>
+          <View style={[styles.skillCard, { backgroundColor: '#FEF3C7' }]}>
              <Text style={styles.skillTitle}>Steering</Text>
-             <Text style={styles.skillCount}>{stats.faultCounts?.D || 0} Issues</Text>
+             <Text style={[styles.skillCount, { color: '#D97706' }]}>{stats.faultCounts?.D || 0} Issues</Text>
           </View>
         </View>
         
@@ -174,92 +181,105 @@ const StudentProgressScreen = ({ navigation }) => {
             >
                 <View style={{flex: 1}}>
                   <Text style={styles.date}>Lesson #{s.booking_id}</Text>
-                  <Text style={styles.comment} numberOfLines={2}>
+                  <Text style={styles.comment} numberOfLines={1}>
                     {s.shared_feedback || "No written feedback."}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
             </TouchableOpacity>
         ))}
 
         <Text style={styles.sectionTitle}>Diagnostic Rides</Text>
         {diagnosticRides.length > 0 ? (
             diagnosticRides.map(r => (
-                <View key={r.id} style={styles.feedbackCard}>
+                <TouchableOpacity 
+                  key={r.id} 
+                  style={styles.diagCard}
+                  onPress={() => navigation.navigate('DiagnosticRideDetail', { rideId: r.id })}
+                >
                     <View style={{flex: 1}}>
                         <View style={styles.rowBetween}>
-                            <Text style={styles.date}>{r.created_at.split('T')[0]}</Text>
-                            <View style={[styles.badge, {backgroundColor: r.passed ? '#28a745' : '#dc3545'}]}>
-                                <Text style={styles.badgeText}>{r.passed ? 'PASSED' : 'FAILED'}</Text>
+                            <Text style={styles.date}>{new Date(r.created_at).toLocaleDateString()}</Text>
+                            <View style={[styles.badge, {backgroundColor: r.passed ? '#15803D' : '#EF4444'}]}>
+                                <Text style={styles.badgeText}>{r.passed ? 'PASS' : 'FAIL'}</Text>
                             </View>
                         </View>
                         <Text style={styles.diagType}>{r.ride_type.replace('_', ' ').toUpperCase()}</Text>
-                        <Text style={styles.scoreText}>Score: {r.overall_score?.toFixed(1)}%</Text>
-                        {r.evaluator_notes && (
-                            <Text style={styles.notes} numberOfLines={2}>Note: {r.evaluator_notes}</Text>
-                        )}
+                        <View style={styles.scoreContainer}>
+                          <Text style={styles.scoreLabel}>OVERALL SCORE</Text>
+                          <Text style={[styles.scoreText, {color: r.passed ? '#15803D' : '#EF4444'}]}>{r.overall_score?.toFixed(1)}%</Text>
+                        </View>
                     </View>
-                </View>
+                </TouchableOpacity>
             ))
         ) : (
-            <Text style={styles.emptyText}>No diagnostic rides yet.</Text>
+            <Text style={styles.emptyText}>No diagnostic telemetry recorded.</Text>
         )}
-        <View style={{height: 40}} />
+        <View style={{height: 100}} />
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  scroll: { padding: 20 },
-  header: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, color: '#333' },
+  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  scroll: { padding: 24 },
+  headerContainer: { marginBottom: 24 },
+  header: { fontSize: 32, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  subtitle: { fontSize: 12, fontWeight: '800', color: '#15803D', letterSpacing: 2, marginTop: 4 },
   
-  statsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  statsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   statBox: { 
-      width: '31%', backgroundColor: '#f8f9fa', padding: 15, borderRadius: 12, alignItems: 'center',
-      borderWidth: 1, borderColor: '#eee'
+      width: '31%', backgroundColor: 'white', padding: 20, borderRadius: 20, alignItems: 'center',
+      shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 12, elevation: 2
   },
-  statLabel: { fontSize: 12, color: '#666', marginBottom: 5 },
-  statNumber: { fontSize: 20, fontWeight: 'bold', color: '#333' },
+  statLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', marginBottom: 8, letterSpacing: 1 },
+  statNumber: { fontSize: 24, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
 
   trendBanner: { 
-      flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 12, marginBottom: 25,
-      backgroundColor: '#6c757d'
+      flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 24, marginBottom: 32,
+      backgroundColor: '#1E293B', shadowColor: '#1E293B', shadowOpacity: 0.2, shadowRadius: 20, elevation: 8
   },
-  trendGood: { backgroundColor: '#28a745' },
-  trendNeutral: { backgroundColor: '#6c757d' },
-  trendText: { color: 'white', fontWeight: 'bold', marginLeft: 10, fontSize: 16 },
+  trendGood: { backgroundColor: '#15803D' },
+  trendNeutral: { backgroundColor: '#1E293B' },
+  trendIconContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+  trendLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '800', fontSize: 10, letterSpacing: 1 },
+  trendText: { color: 'white', fontWeight: '800', fontSize: 18, letterSpacing: -0.5 },
 
-  goalContainer: { marginBottom: 25 },
-  goalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  goalLabel: { fontWeight: '600', color: '#333' },
-  goalValue: { color: '#007bff', fontWeight: 'bold' },
-  progressBarBg: { height: 10, backgroundColor: '#e9ecef', borderRadius: 5, overflow: 'hidden' },
-  progressBarFill: { height: '100%', backgroundColor: '#007bff' },
-  goalSub: { fontSize: 12, color: '#888', marginTop: 5 },
+  goalContainer: { backgroundColor: 'white', padding: 24, borderRadius: 24, marginBottom: 40, shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 15, elevation: 2 },
+  goalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, alignItems: 'flex-end' },
+  goalLabel: { fontWeight: '800', color: '#1E293B', fontSize: 13, letterSpacing: 0.5 },
+  goalValue: { color: '#15803D', fontWeight: '800', fontSize: 20, letterSpacing: -1 },
+  progressBarBg: { height: 12, backgroundColor: '#F1F5F9', borderRadius: 6, overflow: 'hidden' },
+  progressBarFill: { height: '100%', backgroundColor: '#15803D', borderRadius: 6 },
+  goalSub: { fontSize: 12, color: '#94A3B8', marginTop: 12, fontWeight: '500' },
 
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginTop: 10, marginBottom: 15 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  skillCard: { width: '48%', padding: 15, borderRadius: 10 },
-  skillTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 5 },
-  skillCount: { fontSize: 14, color: '#555' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20, color: '#1E293B', letterSpacing: -0.5 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  skillCard: { width: '48%', padding: 20, borderRadius: 20 },
+  skillTitle: { fontWeight: '800', fontSize: 16, marginBottom: 4, color: '#1E293B', letterSpacing: -0.3 },
+  skillCount: { fontSize: 13, fontWeight: '700' },
   
   feedbackCard: { 
-    backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 10,
-    borderWidth: 1, borderColor: '#eee',
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'
+    backgroundColor: 'white', padding: 20, borderRadius: 20, marginBottom: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 12, elevation: 2
   },
-  date: { fontWeight: 'bold', marginBottom: 5, color: '#333' },
-  comment: { fontStyle: 'italic', color: '#666', width: '95%' },
-  diagType: { fontSize: 11, fontWeight: 'bold', color: '#007bff', marginBottom: 5 },
-  scoreText: { fontSize: 14, fontWeight: 'bold', color: '#333' },
-  notes: { fontSize: 12, color: '#666', marginTop: 5, fontStyle: 'italic' },
+  diagCard: {
+    backgroundColor: 'white', padding: 24, borderRadius: 24, marginBottom: 16,
+    shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 15, elevation: 2
+  },
+  date: { fontWeight: '800', color: '#1E293B', fontSize: 16, letterSpacing: -0.5 },
+  comment: { color: '#64748B', fontWeight: '500', marginTop: 4, fontSize: 14 },
+  diagType: { fontSize: 11, fontWeight: '800', color: '#15803D', marginBottom: 16, letterSpacing: 1 },
+  scoreContainer: { borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  scoreLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', letterSpacing: 1 },
+  scoreText: { fontSize: 20, fontWeight: '800', letterSpacing: -1 },
   
-  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  badgeText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
-  emptyText: { textAlign: 'center', color: '#999', marginTop: 10, fontStyle: 'italic' }
+  badge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+  badgeText: { color: 'white', fontSize: 11, fontWeight: '900' },
+  emptyText: { textAlign: 'center', color: '#94A3B8', marginTop: 10, fontWeight: '600' }
 });
 
 

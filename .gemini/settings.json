@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "stitch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "stitch-mcp-auto"
+      ],
+      "env": {
+        "GOOGLE_CLOUD_PROJECT": "road-ready-483021",
+        "GOOGLE_APPLICATION_CREDENTIALS": "/home/Hoss/.config/gcloud/application_default_credentials.json"
+      }
+    }
+  }
+}

@@ -56,10 +56,11 @@ def test_live_evaluate_endpoint(client, db, auth_headers):
     
     headers = auth_headers("test_live@example.com")
     
-    # Payload with one harsh braking event
+    # Payload with one harsh braking event on Y-axis (forward/backward).
+    # Z stays near gravity (~9.81) so it won't be excluded as a vertical impact.
     payload = {
         "acceleration_window": [
-            {"timestamp": 1000, "x": 0, "y": 0, "z": -10.0, "latitude": 49.2, "longitude": -123.1}
+            {"timestamp": 1000, "x": 0, "y": -10.0, "z": -9.81, "latitude": 49.2, "longitude": -123.1}
         ],
         "speed_window": [
             {"timestamp": 1000, "speed": 30, "latitude": 49.2, "longitude": -123.1}

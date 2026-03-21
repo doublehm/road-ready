@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "node node_modules/expo/bin/cli start",
-    "android": "node node_modules/expo/bin/cli start --android",
-    "ios": "node node_modules/expo/bin/cli start --ios",
-    "web": "node node_modules/expo/bin/cli start --web",
+    "start": "node node_modules/expo/bin/cli start --offline",
+    "android": "node node_modules/expo/bin/cli start --android --offline",
+    "ios": "node node_modules/expo/bin/cli start --ios --offline",
+    "web": "node node_modules/expo/bin/cli start --web --offline",
     "test": "jest"
   },
   "jest": {

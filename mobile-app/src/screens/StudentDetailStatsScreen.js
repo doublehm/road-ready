@@ -7,13 +7,13 @@ import { FAULT_CATEGORIES } from '../data/faults';
 
 const CategoryBar = ({ label, score }) => {
     const width = score ? `${Math.min(100, score)}%` : '0%';
-    const color = (score || 0) >= 75 ? '#28a745' : (score || 0) >= 60 ? '#ffc107' : '#dc3545';
+    const color = (score || 0) >= 80 ? '#15803D' : (score || 0) >= 60 ? '#D97706' : '#EF4444';
   
     return (
       <View style={styles.catContainer}>
         <View style={styles.catHeader}>
-            <Text style={styles.catLabel}>{label}</Text>
-            <Text style={styles.catValue}>{Math.round(score || 0)}</Text>
+            <Text style={styles.catLabel}>{label.toUpperCase()}</Text>
+            <Text style={[styles.catValue, { color }]}>{Math.round(score || 0)}%</Text>
         </View>
         <View style={styles.catTrack}>
           <View style={[styles.catFill, { width, backgroundColor: color }]} />
@@ -23,7 +23,7 @@ const CategoryBar = ({ label, score }) => {
   };
 
 const StudentDetailStatsScreen = ({ route, navigation }) => {
-  const { student } = route.params; // Passed from list
+  const { student } = route.params; 
   const [sessions, setSessions] = useState([]);
   const [diagnosticRides, setDiagnosticRides] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,6 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
 
   const fetchStudentData = async () => {
     try {
-      // Fetch trends first for the dashboard
       try {
         const trendsRes = await client.get(`/diagnostic-rides/progress-trends?student_id=${student.id}`);
         setTrends(trendsRes.data);
@@ -44,9 +43,7 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
         console.log('No trends found:', trendsErr);
       }
 
-      // Fetch sessions and filter (prototype style)
       const response = await client.get('/sessions/');
-      
       const bookingsRes = await client.get('/bookings/');
       const studentBookings = bookingsRes.data.filter(b => b.student_id === student.id);
       const studentBookingIds = studentBookings.map(b => b.id);
@@ -57,7 +54,6 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
       setSessions(studentSessions);
       calculateStats(studentSessions);
 
-      // Fetch diagnostic rides for this student
       try {
         const ridesRes = await client.get(`/diagnostic-rides/student/${student.id}/rides`);
         setDiagnosticRides(ridesRes.data || []);
@@ -89,10 +85,9 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
        process(s.communication_data);
     });
 
-    // Sort faults by frequency
     const topFaults = Object.entries(faultCounts)
         .sort((a,b) => b[1] - a[1])
-        .slice(0, 5); // Top 5
+        .slice(0, 5); 
 
     setStats({ 
         totalLessons: data.length,
@@ -108,19 +103,22 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
       return code;
   };
 
-  if (loading) return <ActivityIndicator size="large" style={{flex:1}} />;
+  if (loading) return <ActivityIndicator size="large" style={{flex:1}} color="#1E293B" />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={24} color="#1E293B" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{student.full_name}'s Progress</Text>
-        <View style={{width: 24}} />
+        <View>
+          <Text style={styles.headerTitle}>{student.full_name}</Text>
+          <Text style={styles.headerSubtitle}>STUDENT ANALYTICS</Text>
+        </View>
+        <View style={{width: 44}} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         
         {/* Performance Dashboard */}
         <Text style={styles.sectionTitle}>Performance Dashboard</Text>
@@ -128,29 +126,30 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
             <View style={styles.dashboardRow}>
                 <View style={styles.dashboardItem}>
                     <Text style={styles.dashboardVal}>{trends?.total_rides || 0}</Text>
-                    <Text style={styles.dashboardLabel}>Total Rides</Text>
+                    <Text style={styles.dashboardLabel}>TOTAL RIDES</Text>
                 </View>
                 <View style={styles.dashboardItem}>
-                    <Text style={styles.dashboardVal}>{trends?.pass_rate || 0}%</Text>
-                    <Text style={styles.dashboardLabel}>Pass Rate</Text>
+                    <Text style={[styles.dashboardVal, {color: '#15803D'}]}>{trends?.pass_rate || 0}%</Text>
+                    <Text style={styles.dashboardLabel}>PASS RATE</Text>
                 </View>
                 <View style={styles.dashboardItem}>
-                    <Text style={[styles.dashboardVal, {color: '#28a745'}]}>{trends?.recent_score || 0}</Text>
-                    <Text style={styles.dashboardLabel}>Recent Score</Text>
+                    <Text style={[styles.dashboardVal, {color: '#1E293B'}]}>{trends?.recent_score || 0}</Text>
+                    <Text style={styles.dashboardLabel}>RECENT SCORE</Text>
                 </View>
             </View>
-            <View style={[styles.dashboardRow, {marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#f0f0f0'}]}>
+            <View style={styles.dashboardDivider} />
+            <View style={styles.dashboardRow}>
                 <View style={styles.dashboardItem}>
                     <Text style={styles.dashboardVal}>{trends?.avg_duration_minutes || 0}m</Text>
-                    <Text style={styles.dashboardLabel}>Avg Duration</Text>
+                    <Text style={styles.dashboardLabel}>AVG DURATION</Text>
                 </View>
                 <View style={styles.dashboardItem}>
                     <Text style={styles.dashboardVal}>{trends?.total_distance_km || 0}km</Text>
-                    <Text style={styles.dashboardLabel}>Total Dist.</Text>
+                    <Text style={styles.dashboardLabel}>TOTAL DIST.</Text>
                 </View>
                 <View style={styles.dashboardItem}>
-                    <Text style={[styles.dashboardVal, {color: '#ff9800'}]}>{trends?.improvement_areas?.length || 0}</Text>
-                    <Text style={styles.dashboardLabel}>Focus Areas</Text>
+                    <Text style={[styles.dashboardVal, {color: '#D97706'}]}>{trends?.improvement_areas?.length || 0}</Text>
+                    <Text style={styles.dashboardLabel}>FOCUS AREAS</Text>
                 </View>
             </View>
 
@@ -163,13 +162,13 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
         </View>
 
         {/* Top Issues */}
-        <Text style={styles.sectionTitle}>Manual Observation Faults</Text>
+        <Text style={styles.sectionTitle}>Observation Faults</Text>
         <View style={styles.issuesCard}>
             {stats.topFaults && stats.topFaults.length > 0 ? (
                 stats.topFaults.map(([code, count], index) => (
                     <View key={code} style={styles.issueRow}>
                         <View style={styles.issueRank}>
-                            <Text style={styles.rankText}>#{index + 1}</Text>
+                            <Text style={styles.rankText}>{index + 1}</Text>
                         </View>
                         <View style={{flex: 1}}>
                             <Text style={styles.issueLabel}>{getFaultLabel(code)}</Text>
@@ -181,7 +180,9 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
                     </View>
                 ))
             ) : (
-                <Text style={styles.emptyText}>No major faults recorded yet.</Text>
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No major faults recorded.</Text>
+                </View>
             )}
         </View>
 
@@ -195,18 +196,18 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
             >
                 <View>
                     <Text style={styles.sessionDate}>Lesson #{s.booking_id}</Text>
-                    <Text style={styles.sessionSub}>{s.duration_minutes} min</Text>
+                    <Text style={styles.sessionSub}>{s.duration_minutes} min duration</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
             </TouchableOpacity>
         ))}
 
         {/* Diagnostic Ride History */}
         <Text style={styles.sectionTitle}>Diagnostic Ride History</Text>
         {diagnosticRides.length > 0 ? diagnosticRides.map(ride => {
-            const scoreColor = (ride.overall_score || 0) >= 80 ? '#28a745' :
-                               (ride.overall_score || 0) >= 60 ? '#ffc107' : '#dc3545';
-            const rideDate = ride.created_at ? ride.created_at.split('T')[0] : '';
+            const scoreColor = (ride.overall_score || 0) >= 80 ? '#15803D' :
+                               (ride.overall_score || 0) >= 60 ? '#D97706' : '#EF4444';
+            const rideDate = ride.created_at ? new Date(ride.created_at).toLocaleDateString() : '';
             return (
                 <TouchableOpacity
                     key={ride.id}
@@ -216,109 +217,108 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
                     <View style={[styles.rideScoreBadge, { backgroundColor: scoreColor }]}>
                         <Text style={styles.rideScoreText}>{Math.round(ride.overall_score || 0)}</Text>
                     </View>
-                    <View style={{flex: 1, marginLeft: 12}}>
+                    <View style={{flex: 1, marginLeft: 16}}>
                         <View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
                             <Text style={styles.sessionDate}>{rideDate}</Text>
                             {ride.passed !== null && (
-                                <View style={[styles.passFailBadge, { backgroundColor: ride.passed ? '#28a745' : '#dc3545' }]}>
-                                    <Text style={styles.passFailText}>{ride.passed ? 'PASSED' : 'FAILED'}</Text>
+                                <View style={[styles.passFailBadge, { backgroundColor: ride.passed ? '#15803D' : '#EF4444' }]}>
+                                    <Text style={styles.passFailText}>{ride.passed ? 'PASS' : 'FAIL'}</Text>
                                 </View>
                             )}
                         </View>
                         <Text style={styles.sessionSub}>
-                            {ride.duration_minutes ? `${Math.round(ride.duration_minutes)} min` : '--'}
+                            {ride.duration_minutes ? `${Math.round(ride.duration_minutes)}m` : '--'}
                             {' • '}
-                            {ride.distance_km ? `${ride.distance_km.toFixed(1)} km` : '--'}
+                            {ride.distance_km ? `${ride.distance_km.toFixed(1)}km` : '--'}
                         </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                    <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
                 </TouchableOpacity>
             );
         }) : (
-            <Text style={styles.emptyText}>No diagnostic rides recorded yet.</Text>
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No diagnostic rides recorded.</Text>
+            </View>
         )}
-
+        <View style={{ height: 60 }} />
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: '#F6FAFE' },
   header: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
-    padding: 15, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#eee' 
+    paddingHorizontal: 20, paddingVertical: 16, backgroundColor: 'white',
+    shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 10, elevation: 2
   },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  scroll: { padding: 20 },
+  backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1F5F9' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
+  headerSubtitle: { fontSize: 10, fontWeight: '800', color: '#15803D', letterSpacing: 1 },
+  scroll: { padding: 24 },
 
   dashboardCard: {
-    backgroundColor: 'white', borderRadius: 12, padding: 20, marginBottom: 25,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
+    backgroundColor: 'white', borderRadius: 24, padding: 24, marginBottom: 32,
+    shadowColor: '#1E293B', shadowOpacity: 0.06, shadowRadius: 20, elevation: 4
   },
   dashboardRow: { flexDirection: 'row', justifyContent: 'space-around' },
   dashboardItem: { alignItems: 'center' },
-  dashboardVal: { fontSize: 22, fontWeight: 'bold', color: '#1a1a1a' },
-  dashboardLabel: { fontSize: 11, color: '#6c757d', marginTop: 4 },
+  dashboardVal: { fontSize: 24, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  dashboardLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', marginTop: 4, letterSpacing: 1 },
+  dashboardDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 24 },
   
-  categoryAverages: { marginTop: 25 },
-  catContainer: { marginBottom: 12 },
-  catHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  catLabel: { fontSize: 13, fontWeight: '600', color: '#495057' },
-  catValue: { fontSize: 13, fontWeight: 'bold', color: '#1a1a1a' },
-  catTrack: { height: 8, backgroundColor: '#e9ecef', borderRadius: 4, overflow: 'hidden' },
-  catFill: { height: '100%', borderRadius: 4 },
+  categoryAverages: { marginTop: 8 },
+  catContainer: { marginBottom: 16 },
+  catHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  catLabel: { fontSize: 11, fontWeight: '800', color: '#64748B', letterSpacing: 1 },
+  catValue: { fontSize: 12, fontWeight: '800' },
+  catTrack: { height: 10, backgroundColor: '#F1F5F9', borderRadius: 5, overflow: 'hidden' },
+  catFill: { height: '100%', borderRadius: 5 },
 
-  card: {
-      backgroundColor: 'white', borderRadius: 12, padding: 20, marginBottom: 25,
-      shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
-  },
-  statRow: { flexDirection: 'row' },
-  statItem: { flex: 1, alignItems: 'center' },
-  statVal: { fontSize: 24, fontWeight: 'bold', color: '#007bff' },
-  statLabel: { fontSize: 13, color: '#666', marginTop: 5 },
-
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#333' },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20, color: '#1E293B', letterSpacing: -0.5 },
   
   issuesCard: {
-      backgroundColor: 'white', borderRadius: 12, overflow: 'hidden', marginBottom: 25,
-      borderWidth: 1, borderColor: '#eee'
+      backgroundColor: 'white', borderRadius: 24, overflow: 'hidden', marginBottom: 32,
+      shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 15, elevation: 2
   },
   issueRow: { 
-      flexDirection: 'row', alignItems: 'center', padding: 15, 
-      borderBottomWidth: 1, borderBottomColor: '#f9f9f9' 
+      flexDirection: 'row', alignItems: 'center', padding: 20, 
+      borderBottomWidth: 1, borderBottomColor: '#F1F5F9' 
   },
   issueRank: { 
-      width: 30, height: 30, borderRadius: 15, backgroundColor: '#fff3cd', 
-      justifyContent: 'center', alignItems: 'center', marginRight: 15 
+      width: 32, height: 32, borderRadius: 10, backgroundColor: '#F1F5F9', 
+      justifyContent: 'center', alignItems: 'center', marginRight: 16 
   },
-  rankText: { fontWeight: 'bold', color: '#856404', fontSize: 12 },
-  issueLabel: { fontSize: 16, fontWeight: '500', color: '#333' },
-  issueCode: { fontSize: 12, color: '#888' },
-  issueCount: { backgroundColor: '#ffebee', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-  countText: { color: '#dc3545', fontWeight: 'bold', fontSize: 12 },
+  rankText: { fontWeight: '800', color: '#64748B', fontSize: 13 },
+  issueLabel: { fontSize: 16, fontWeight: '700', color: '#1E293B', letterSpacing: -0.3 },
+  issueCode: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
+  issueCount: { backgroundColor: '#FEE2E2', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  countText: { color: '#EF4444', fontWeight: '800', fontSize: 12 },
 
   sessionRow: {
-      backgroundColor: 'white', padding: 15, borderRadius: 10, marginBottom: 10,
-      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
+      backgroundColor: 'white', padding: 20, borderRadius: 20, marginBottom: 12,
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 10, elevation: 2
   },
-  sessionDate: { fontWeight: 'bold', fontSize: 16 },
-  sessionSub: { color: '#666' },
+  sessionDate: { fontWeight: '800', fontSize: 17, color: '#1E293B', letterSpacing: -0.5 },
+  sessionSub: { color: '#64748B', fontSize: 14, fontWeight: '500', marginTop: 2 },
   
-  emptyText: { padding: 20, textAlign: 'center', color: '#999' },
+  emptyContainer: { padding: 40, alignItems: 'center' },
+  emptyText: { textAlign: 'center', color: '#94A3B8', fontWeight: '600' },
 
   rideCard: {
-      backgroundColor: 'white', padding: 15, borderRadius: 10, marginBottom: 10,
+      backgroundColor: 'white', padding: 20, borderRadius: 24, marginBottom: 12,
       flexDirection: 'row', alignItems: 'center',
-      shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 3, elevation: 1
+      shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 15, elevation: 2
   },
   rideScoreBadge: {
-      width: 44, height: 44, borderRadius: 22,
+      width: 52, height: 52, borderRadius: 18,
       justifyContent: 'center', alignItems: 'center'
   },
-  rideScoreText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  passFailBadge: { borderRadius: 4, paddingHorizontal: 8, paddingVertical: 2 },
-  passFailText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
+  rideScoreText: { color: '#fff', fontSize: 20, fontWeight: '900' },
+  passFailBadge: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  passFailText: { color: '#fff', fontSize: 10, fontWeight: '900' },
 });
 
 export default StudentDetailStatsScreen;

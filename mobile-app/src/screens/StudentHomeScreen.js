@@ -1,10 +1,12 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import client from '../api/client';
-import { useIsFocused } from '@react-navigation/native'; // Refresh when screen comes into focus
+import { useIsFocused } from '@react-navigation/native';
+
+const { width } = Dimensions.get('window');
 
 const StudentHomeScreen = ({ navigation }) => {
   const { logout, userInfo, unreadCount } = useContext(AuthContext);
@@ -22,21 +24,15 @@ const StudentHomeScreen = ({ navigation }) => {
   const fetchBookings = async () => {
     try {
       const response = await client.get('/bookings/');
-      
-      // Upcoming: Status is 'accepted' or 'confirmed'
       const active = response.data.filter(b => 
         (b.status === 'accepted' || b.status === 'confirmed')
       );
-      // Sort by date (nearest first)
       active.sort((a, b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
       setUpcomingLesson(active.length > 0 ? active[0] : null);
 
-      // Pending: Status is 'pending'
       const pending = response.data.filter(b => b.status === 'pending');
-      // Sort by date (nearest first)
       pending.sort((a, b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
       setPendingRequests(pending);
-
     } catch (e) {
       console.log("Error fetching bookings", e);
     } finally {
@@ -46,184 +42,155 @@ const StudentHomeScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Hello,</Text>
-            <Text style={styles.name}>{userInfo?.full_name || 'Student'}</Text>
+            <Text style={styles.greeting}>Good Morning,</Text>
+            <Text style={styles.name}>{userInfo?.full_name || 'Driver'}</Text>
           </View>
-          <View style={{flexDirection: 'row'}}>
-            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{marginRight: 15}}>
-              <Ionicons name="notifications-outline" size={24} color="#666" />
-              {unreadCount > 0 && (
-                  <View style={styles.badge}>
-                      <Text style={styles.badgeText}>{unreadCount}</Text>
-                  </View>
-              )}
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconBtn}>
+              <Ionicons name="notifications-outline" size={24} color="#1E293B" />
+              {unreadCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount}</Text></View>}
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('StudentEditProfile')} style={{marginRight: 15}}>
-              <Ionicons name="settings-outline" size={24} color="#666" />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={logout}>
-              <Ionicons name="log-out-outline" size={24} color="#dc3545" />
+            <TouchableOpacity onPress={() => navigation.navigate('StudentEditProfile')} style={styles.iconBtn}>
+              <Ionicons name="settings-outline" size={24} color="#1E293B" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Progress Card */}
-        <View style={styles.progressCard}>
-          <View>
-            <Text style={styles.progressTitle}>Your Progress</Text>
-            <Text style={styles.progressSubtitle}>Ready for the road?</Text>
-          </View>
+        {/* Hero: Next Lesson Card */}
+        <Text style={styles.sectionTitle}>Next Lesson</Text>
+        {loading ? (
+          <ActivityIndicator color="#1E293B" />
+        ) : upcomingLesson ? (
           <TouchableOpacity 
-            style={styles.progressBtn}
-            onPress={() => navigation.navigate('StudentProgress')}
+            style={styles.heroCard}
+            onPress={() => navigation.navigate('SessionDetail', { bookingId: upcomingLesson.id })}
           >
-            <Text style={styles.progressBtnText}>View Stats</Text>
+            <View style={styles.heroGradient} />
+            <View style={styles.heroContent}>
+              <View>
+                <Text style={styles.heroLabel}>TOMORROW</Text>
+                <Text style={styles.heroTime}>{upcomingLesson.time}</Text>
+                <Text style={styles.heroInstructor}>{upcomingLesson.instructor?.user?.full_name}</Text>
+              </View>
+              <View style={styles.heroStatus}>
+                <Ionicons name="checkmark-circle" size={32} color="#15803D" />
+              </View>
+            </View>
+            <View style={styles.heroFooter}>
+              <Ionicons name="location-sharp" size={16} color="rgba(255,255,255,0.6)" />
+              <Text style={styles.heroAddress} numberOfLines={1}>{upcomingLesson.pickup_address}</Text>
+            </View>
           </TouchableOpacity>
+        ) : (
+          <TouchableOpacity 
+            style={styles.emptyHero}
+            onPress={() => navigation.navigate('Find Instructor')}
+          >
+            <Text style={styles.emptyHeroText}>No lessons scheduled</Text>
+            <Text style={styles.emptyHeroLink}>Find an instructor →</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Progress Ribbon */}
+        <View style={styles.progressSection}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressLabel}>License Readiness</Text>
+            <Text style={styles.progressValue}>65%</Text>
+          </View>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: '65%' }]} />
+          </View>
         </View>
 
         {/* Quick Actions Grid */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>Drive Center</Text>
         <View style={styles.grid}>
-          
-          <TouchableOpacity
-            style={styles.gridItem}
-            onPress={() => navigation.navigate('Learn')}
-          >
-            <View style={[styles.iconBg, { backgroundColor: '#fff3cd' }]}>
-              <Ionicons name="book" size={28} color="#ffc107" />
+          <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('DiagnosticRideIntro')}>
+            <View style={[styles.iconBg, { backgroundColor: '#E0E7FF' }]}>
+              <Ionicons name="speedometer" size={24} color="#4338CA" />
             </View>
-            <Text style={styles.gridLabel}>Study Guide</Text>
+            <Text style={styles.gridLabel}>Diagnostic</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.gridItem} 
-            onPress={() => navigation.navigate('Quiz')}
-          >
-            <View style={[styles.iconBg, { backgroundColor: '#d4edda' }]}>
-              <Ionicons name="checkmark-circle" size={28} color="#28a745" />
+          <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Learn')}>
+            <View style={[styles.iconBg, { backgroundColor: '#FEF3C7' }]}>
+              <Ionicons name="book" size={24} color="#D97706" />
             </View>
-            <Text style={styles.gridLabel}>Practice Quiz</Text>
+            <Text style={styles.gridLabel}>Study</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.gridItem}
-            onPress={() => navigation.navigate('DriveLog')}
-          >
-            <View style={[styles.iconBg, { backgroundColor: '#f8d7da' }]}>
-              <Ionicons name="car" size={28} color="#dc3545" />
+          <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('DriveLog')}>
+            <View style={[styles.iconBg, { backgroundColor: '#DCFCE7' }]}>
+              <Ionicons name="car" size={24} color="#15803D" />
             </View>
-            <Text style={styles.gridLabel}>Drive Log</Text>
+            <Text style={styles.gridLabel}>Logbook</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.gridItem}
-            onPress={() => navigation.navigate('DiagnosticRideIntro')}
-          >
-            <View style={[styles.iconBg, { backgroundColor: '#e0d9f7' }]}>
-              <Ionicons name="speedometer" size={28} color="#6610f2" />
+          <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Quiz')}>
+            <View style={[styles.iconBg, { backgroundColor: '#FEE2E2' }]}>
+              <Ionicons name="checkmark-circle" size={24} color="#B91C1C" />
             </View>
-            <Text style={styles.gridLabel}>Diagnostic Ride</Text>
+            <Text style={styles.gridLabel}>Practice</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.gridItem}
-            onPress={() => navigation.navigate('DiagnosticRideHistory')}
-          >
-            <View style={[styles.iconBg, { backgroundColor: '#d1ecf1' }]}>
-              <Ionicons name="analytics" size={28} color="#0c5460" />
+          <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('DiagnosticRideHistory')}>
+            <View style={[styles.iconBg, { backgroundColor: '#E0E7FF' }]}>
+              <Ionicons name="analytics" size={24} color="#4338CA" />
             </View>
             <Text style={styles.gridLabel}>Ride History</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('StudentProgress')}>
+            <View style={[styles.iconBg, { backgroundColor: '#F0FDF4' }]}>
+              <Ionicons name="trending-up" size={24} color="#15803D" />
+            </View>
+            <Text style={styles.gridLabel}>Progress</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Pending Requests */}
         {pendingRequests.length > 0 && (
-          <View style={{marginBottom: 20}}>
+          <View style={{ marginBottom: 32 }}>
             <Text style={styles.sectionTitle}>Pending Requests</Text>
             {pendingRequests.map((request) => (
-              <View key={request.id} style={[styles.lessonCard, {borderColor: '#ffc107', borderLeftWidth: 4}]}>
-                <View style={styles.lessonHeader}>
-                  <Text style={styles.lessonDate}>{request.date}</Text>
-                  <Text style={[styles.lessonTime, {color: '#856404'}]}>{request.time}</Text>
+              <View key={request.id} style={styles.pendingCard}>
+                <View style={styles.pendingHeader}>
+                  <Text style={styles.pendingDate}>{request.date}</Text>
+                  <Text style={styles.pendingTime}>{request.time}</Text>
                 </View>
-                <View style={styles.lessonBody}>
-                  <View style={styles.row}>
-                    <Ionicons name="person" size={16} color="#666" />
-                    <Text style={styles.lessonInfo}>{request.instructor?.user?.full_name || `Instructor #${request.instructor_id}`}</Text>
+                <View style={styles.pendingBody}>
+                  <View style={styles.pendingRow}>
+                    <Ionicons name="person" size={16} color="#64748B" />
+                    <Text style={styles.pendingInfo}>{request.instructor?.user?.full_name || `Instructor #${request.instructor_id}`}</Text>
                   </View>
-                  <View style={styles.row}>
-                    <Ionicons name="hourglass-outline" size={16} color="#ffc107" />
-                    <Text style={{marginLeft: 8, color: '#856404', fontStyle: 'italic'}}>Awaiting Approval</Text>
+                  <View style={styles.pendingRow}>
+                    <Ionicons name="hourglass-outline" size={16} color="#F59E0B" />
+                    <Text style={{ marginLeft: 8, color: '#F59E0B', fontWeight: '600', fontStyle: 'italic' }}>Awaiting Approval</Text>
                   </View>
                 </View>
-                <View style={styles.actionRow}>
-                  <TouchableOpacity 
-                    style={[styles.messageBtn, {backgroundColor: '#ffc107'}]}
-                    onPress={() => navigation.navigate('Chat', { 
-                      recipientId: request.instructor?.user_id, 
-                      name: request.instructor?.user?.full_name || 'Instructor' 
-                    })}
-                  >
-                    <Ionicons name="chatbubble-outline" size={16} color="black" style={{marginRight: 5}} />
-                    <Text style={[styles.messageBtnText, {color: 'black'}]}>Message</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={styles.pendingMsgBtn}
+                  onPress={() => navigation.navigate('Chat', {
+                    recipientId: request.instructor?.user_id,
+                    name: request.instructor?.user?.full_name || 'Instructor'
+                  })}
+                >
+                  <Ionicons name="chatbubble-outline" size={16} color="white" style={{ marginRight: 6 }} />
+                  <Text style={{ color: 'white', fontWeight: '700' }}>Message</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </View>
         )}
 
-        {/* Recent Activity */}
-        <Text style={styles.sectionTitle}>Upcoming Lesson</Text>
-        
-        {loading ? (
-          <ActivityIndicator color="#007bff" />
-        ) : upcomingLesson ? (
-          <View style={styles.lessonCard}>
-            <View style={styles.lessonHeader}>
-              <Text style={styles.lessonDate}>{upcomingLesson.date}</Text>
-              <Text style={styles.lessonTime}>{upcomingLesson.time}</Text>
-            </View>
-            <View style={styles.lessonBody}>
-              <View style={styles.row}>
-                <Ionicons name="person" size={16} color="#666" />
-                <Text style={styles.lessonInfo}>{upcomingLesson.instructor?.user?.full_name || `Instructor #${upcomingLesson.instructor_id}`}</Text>
-              </View>
-              <View style={styles.row}>
-                <Ionicons name="location" size={16} color="#666" />
-                <Text style={styles.lessonInfo} numberOfLines={1}>{upcomingLesson.pickup_address}</Text>
-              </View>
-            </View>
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.lessonAction}>
-                <Text style={styles.lessonActionText}>View Details</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.messageBtn}
-                onPress={() => navigation.navigate('Chat', { 
-                  recipientId: upcomingLesson.instructor?.user_id, 
-                  name: upcomingLesson.instructor?.user?.full_name || 'Instructor' 
-                })}
-              >
-                <Ionicons name="chatbubble-outline" size={16} color="white" style={{marginRight: 5}} />
-                <Text style={styles.messageBtnText}>Message</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No upcoming lessons scheduled.</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Find Instructor')}>
-              <Text style={styles.linkText}>Find an instructor now</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
 
       </ScrollView>
     </SafeAreaView>
@@ -231,107 +198,136 @@ const StudentHomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  scroll: { padding: 20 },
+  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  scroll: { paddingHorizontal: 20, paddingBottom: 100 },
   header: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: 25 
+    marginTop: 20,
+    marginBottom: 30 
   },
-  greeting: { fontSize: 16, color: '#666' },
-  name: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  
-  progressCard: {
-    backgroundColor: '#007bff',
-    borderRadius: 15,
-    padding: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  greeting: { fontSize: 14, color: '#64748B', fontWeight: '500' },
+  name: { fontSize: 28, fontWeight: '800', color: '#1E293B', marginTop: 2 },
+  headerActions: { flexDirection: 'row', gap: 12 },
+  iconBtn: { 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: 'white', 
+    justifyContent: 'center', 
     alignItems: 'center',
-    marginBottom: 30,
-    shadowColor: '#007bff',
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5
-  },
-  progressTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  progressSubtitle: { color: 'rgba(255,255,255,0.8)', fontSize: 14 },
-  progressBtn: { backgroundColor: 'white', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 20 },
-  progressBtnText: { color: '#007bff', fontWeight: 'bold', fontSize: 12 },
-
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#333' },
-  
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
-  gridItem: { 
-    width: '48%', 
-    backgroundColor: '#f8f9fa', 
-    padding: 15, 
-    borderRadius: 15, 
-    alignItems: 'center', 
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#eee'
-  },
-  iconBg: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  gridLabel: { fontWeight: '600', color: '#333' },
-
-  emptyState: { alignItems: 'center', padding: 20, backgroundColor: '#f9f9f9', borderRadius: 10 },
-  emptyText: { color: '#888', marginBottom: 5 },
-  linkText: { color: '#007bff', fontWeight: 'bold' },
-
-  lessonCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    padding: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
     elevation: 2
   },
-  lessonHeader: {
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: '800', 
+    marginBottom: 16, 
+    color: '#1E293B',
+    letterSpacing: -0.5
+  },
+  heroCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 32,
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
+    overflow: 'hidden'
+  },
+  heroGradient: {
+    position: 'absolute',
+    top: 0, right: 0, bottom: 0, left: 0,
+    backgroundColor: 'rgba(21, 128, 61, 0.1)',
+  },
+  heroContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  heroLabel: { color: '#94A3B8', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  heroTime: { color: 'white', fontSize: 32, fontWeight: '800', marginTop: 4, letterSpacing: -1 },
+  heroInstructor: { color: 'white', fontSize: 18, fontWeight: '500', marginTop: 4, opacity: 0.9 },
+  heroFooter: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginTop: 24, 
+    paddingTop: 16, 
+    borderTopWidth: 1, 
+    borderTopColor: 'rgba(255,255,255,0.1)' 
+  },
+  heroAddress: { color: 'rgba(255,255,255,0.6)', marginLeft: 8, fontSize: 13 },
+  emptyHero: {
+    backgroundColor: 'white',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    marginBottom: 32,
+    borderWidth: 2,
+    borderColor: '#E2E8F0',
+    borderStyle: 'dashed'
+  },
+  emptyHeroText: { color: '#64748B', fontSize: 16, fontWeight: '600' },
+  emptyHeroLink: { color: '#15803D', fontWeight: '800', marginTop: 8 },
+  progressSection: { marginBottom: 40 },
+  progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 },
+  progressLabel: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
+  progressValue: { fontSize: 20, fontWeight: '800', color: '#15803D' },
+  progressTrack: { height: 12, backgroundColor: '#E2E8F0', borderRadius: 6, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#15803D', borderRadius: 6 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 40 },
+  gridItem: { 
+    width: (width - 56) / 2, 
+    backgroundColor: 'white', 
+    padding: 20, 
+    borderRadius: 20, 
+    alignItems: 'center',
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2
+  },
+  iconBg: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  gridLabel: { fontWeight: '700', color: '#1E293B', fontSize: 15 },
+  badge: {
+    position: 'absolute', top: -4, right: -4, backgroundColor: '#EF4444', borderRadius: 10, 
+    width: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'white'
+  },
+  badgeText: { color: 'white', fontSize: 10, fontWeight: '900' },
+  logoutBtn: { padding: 20, alignItems: 'center' },
+  logoutText: { color: '#94A3B8', fontWeight: '700', fontSize: 14 },
+  pendingCard: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  pendingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    paddingBottom: 8
+    marginBottom: 12,
   },
-  lessonDate: { fontWeight: 'bold', fontSize: 16, color: '#333' },
-  lessonTime: { color: '#007bff', fontWeight: 'bold' },
-  lessonBody: { marginBottom: 10 },
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  lessonInfo: { marginLeft: 8, color: '#555' },
-  actionRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center',
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingTop: 10
-  },
-  lessonAction: { alignItems: 'center' },
-  lessonActionText: { color: '#007bff', fontWeight: '600' },
-  
-  messageBtn: {
+  pendingDate: { fontSize: 16, fontWeight: '800', color: '#1E293B' },
+  pendingTime: { fontSize: 16, fontWeight: '700', color: '#F59E0B' },
+  pendingBody: { marginBottom: 12 },
+  pendingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  pendingInfo: { marginLeft: 8, color: '#64748B', fontSize: 14, fontWeight: '500' },
+  pendingMsgBtn: {
     flexDirection: 'row',
-    backgroundColor: '#007bff',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    alignItems: 'center'
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F59E0B',
+    paddingVertical: 10,
+    borderRadius: 12,
   },
-  messageBtnText: { color: 'white', fontWeight: 'bold', fontSize: 12 },
-
-  badge: {
-      position: 'absolute', top: -5, right: -5, backgroundColor: 'red', borderRadius: 8, 
-      width: 16, height: 16, justifyContent: 'center', alignItems: 'center'
-  },
-  badgeText: { color: 'white', fontSize: 10, fontWeight: 'bold' }
 });
 
 export default StudentHomeScreen;

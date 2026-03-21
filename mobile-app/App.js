@@ -66,7 +66,7 @@ const StudentTabs = () => {
           else if (route.name === 'Messages') iconName = focused ? 'chatbubble' : 'chatbubble-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007bff',
+        tabBarActiveTintColor: '#1E293B',
         tabBarInactiveTintColor: 'gray',
       })}
     >
@@ -97,7 +97,7 @@ const InstructorTabs = () => {
           else if (route.name === 'Earnings') iconName = focused ? 'cash' : 'cash-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#28a745',
+        tabBarActiveTintColor: '#15803D',
         tabBarInactiveTintColor: 'gray',
       })}
     >
@@ -193,8 +193,9 @@ const theme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#007bff',
-    accent: '#28a745',
+    primary: '#1E293B',
+    accent: '#15803D',
+    background: '#F6FAFE',
   },
 };
 

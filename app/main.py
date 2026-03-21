@@ -55,8 +55,26 @@ def _run_migrations():
             "human_feedback": "TEXT",
             "nosql_ref": "TEXT",
             "booking_id": "INTEGER",
+            "ride_type": "TEXT",
+            "instructor_id": "INTEGER",
+            "duration_minutes": "REAL",
+            "distance_km": "REAL",
+            "route_coords": "TEXT",
+            "acceleration_data": "TEXT",
+            "rotation_data": "TEXT",
+            "speed_data": "TEXT",
+            "braking_score": "REAL",
+            "speed_score": "REAL",
+            "cornering_score": "REAL",
             "smoothness_score": "REAL",
+            "overall_score": "REAL",
+            "passed": "BOOLEAN",
+            "evaluation_result": "TEXT",
             "criteria_results": "TEXT",
+            "evaluator_notes": "TEXT",
+            "instructor_override": "BOOLEAN DEFAULT 0",
+            "status": "TEXT DEFAULT 'pending'",
+            "evaluated_at": "TEXT",
         }
         with database.engine.connect() as conn:
             for col_name, col_type in new_columns.items():
@@ -73,6 +91,8 @@ def _run_migrations():
             "tax_id": "TEXT",
             "worksafe_bc_id": "TEXT",
             "legal_entity_name": "TEXT",
+            "stripe_account_id": "TEXT",
+            "stripe_onboarding_completed": "BOOLEAN DEFAULT 0",
         }
         with database.engine.connect() as conn:
             for col_name, col_type in ip_columns.items():

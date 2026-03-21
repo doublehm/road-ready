@@ -59,8 +59,11 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Create Account</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>START YOUR JOURNEY</Text>
+        </View>
 
         <View style={styles.roleContainer}>
           <TouchableOpacity 
@@ -77,38 +80,44 @@ const RegisterScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name"
-          value={fullName}
-          onChangeText={setFullName}
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="#94A3B8"
+            value={fullName}
+            onChangeText={setFullName}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email Address"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            placeholderTextColor="#94A3B8"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Phone Number (e.g. 555-0199)"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Phone Number"
+            placeholderTextColor="#94A3B8"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <Text style={styles.hint}>Must have 8+ chars, 1 uppercase, 1 special char</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#94A3B8"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <Text style={styles.hint}>Must have 8+ chars, 1 uppercase, 1 special char</Text>
+        </View>
 
         <View style={styles.termsContainer}>
           <TouchableOpacity 
@@ -130,11 +139,17 @@ const RegisterScreen = ({ navigation }) => {
           onPress={handleRegister}
           disabled={loading}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign Up</Text>}
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Enlist Now</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.link}>
-          <Text style={styles.linkText}>Already have an account? Login</Text>
+          <Text style={styles.linkText}>
+            Already have an account? <Text style={styles.linkTextBold}>Sign In</Text>
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -142,62 +157,90 @@ const RegisterScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  scroll: { padding: 20 },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 30, textAlign: 'center', color: '#333' },
-  roleContainer: { flexDirection: 'row', marginBottom: 20, backgroundColor: '#f0f0f0', borderRadius: 10, padding: 5 },
-  roleBtn: { flex: 1, padding: 10, alignItems: 'center', borderRadius: 8 },
-  roleBtnActive: { backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 2, elevation: 2 },
-  roleText: { fontWeight: '600', color: '#666' },
-  roleTextActive: { color: '#007bff' },
-  input: {
-    backgroundColor: '#f9f9f9',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#eee',
+  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  scroll: { padding: 24, paddingBottom: 60 },
+  header: { alignItems: 'center', marginBottom: 32, marginTop: 20 },
+  title: { fontSize: 32, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  subtitle: { fontSize: 12, fontWeight: '800', color: '#15803D', letterSpacing: 2, marginTop: 4 },
+  roleContainer: { 
+    flexDirection: 'row', 
+    marginBottom: 32, 
+    backgroundColor: '#E2E8F0', 
+    borderRadius: 16, 
+    padding: 4 
   },
-  hint: { fontSize: 12, color: '#666', marginBottom: 20, marginLeft: 5 },
+  roleBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
+  roleBtnActive: { 
+    backgroundColor: 'white', 
+    shadowColor: '#1E293B', 
+    shadowOpacity: 0.1, 
+    shadowRadius: 10, 
+    elevation: 4 
+  },
+  roleText: { fontWeight: '700', color: '#64748B', fontSize: 15 },
+  roleTextActive: { color: '#1E293B' },
+  inputContainer: { marginBottom: 12 },
+  input: {
+    backgroundColor: 'white',
+    padding: 18,
+    borderRadius: 16,
+    marginBottom: 16,
+    fontSize: 16,
+    color: '#1E293B',
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.06,
+    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  hint: { fontSize: 12, color: '#94A3B8', marginBottom: 20, marginLeft: 4, fontWeight: '500' },
   termsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 25,
-    paddingHorizontal: 5,
+    marginBottom: 32,
+    paddingHorizontal: 4,
   },
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#007bff',
+    borderColor: '#1E293B',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   checkboxChecked: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#15803D',
+    borderColor: '#15803D',
   },
   termsText: {
     flex: 1,
     fontSize: 14,
-    color: '#333',
+    color: '#64748B',
     lineHeight: 20,
+    fontWeight: '500',
   },
   termsLink: {
-    color: '#007bff',
-    fontWeight: 'bold',
+    color: '#1E293B',
+    fontWeight: '700',
   },
   button: {
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 10,
+    backgroundColor: '#1E293B',
+    padding: 20,
+    borderRadius: 16,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+    shadowColor: '#1E293B',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8,
   },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
   link: { alignItems: 'center' },
-  linkText: { color: '#007bff', fontSize: 16 },
+  linkText: { color: '#64748B', fontSize: 15 },
+  linkTextBold: { color: '#15803D', fontWeight: '800' },
 });
 
 export default RegisterScreen;
