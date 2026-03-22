@@ -1,6 +1,6 @@
 import 'react-native-gesture-handler';
 import React, { useContext } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
@@ -8,7 +8,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper';
+import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -66,8 +66,9 @@ const StudentTabs = () => {
           else if (route.name === 'Messages') iconName = focused ? 'chatbubble' : 'chatbubble-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#1E293B',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#3B82F6',
+        tabBarInactiveTintColor: '#64748B',
+        tabBarStyle: { backgroundColor: '#131B2E', borderTopColor: '#1E293B' },
       })}
     >
       <Tab.Screen name="Dashboard" component={StudentHomeScreen} />
@@ -98,7 +99,8 @@ const InstructorTabs = () => {
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#15803D',
-        tabBarInactiveTintColor: 'gray',
+        tabBarInactiveTintColor: '#64748B',
+        tabBarStyle: { backgroundColor: '#131B2E', borderTopColor: '#1E293B' },
       })}
     >
       <Tab.Screen name="Dashboard" component={InstructorHomeScreen} />
@@ -132,7 +134,7 @@ const AppNav = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {userToken === null ? (
           // Auth Stack
@@ -190,19 +192,35 @@ const AppNav = () => {
 };
 
 const theme = {
-  ...DefaultTheme,
+  ...MD3DarkTheme,
   colors: {
-    ...DefaultTheme.colors,
-    primary: '#1E293B',
+    ...MD3DarkTheme.colors,
+    primary: '#3B82F6',
     accent: '#15803D',
-    background: '#F6FAFE',
+    background: '#0B1326',
+    surface: '#131B2E',
+    text: '#FFFFFF',
+    onSurface: '#FFFFFF',
+    onBackground: '#FFFFFF',
+  },
+};
+
+const navigationTheme = {
+  ...NavigationDarkTheme,
+  colors: {
+    ...NavigationDarkTheme.colors,
+    background: '#0B1326',
+    card: '#131B2E',
+    text: '#FFFFFF',
+    border: '#1E293B',
+    primary: '#3B82F6',
   },
 };
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <PaperProvider theme={theme}>
         <AuthProvider>
           <AppNav />
