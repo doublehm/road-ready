@@ -27,7 +27,7 @@ export default function useDeviceMotion(sampleRate = 10) {
   const accelSubscriptionRef = useRef(null);
   const gyroSubscriptionRef = useRef(null);
   const dataRef = useRef([]);
-  const gravityRef = useRef({ x: 0, y: 0, z: 1 }); // Start with 1g on Z axis
+  const gravityRef = useRef(null); // Seeded from first accelerometer reading
   const lastUserAccelRef = useRef({ x: 0, y: 0, z: 0 });
   const lastGyroRef = useRef({ x: 0, y: 0, z: 0 });
   const lastAccelStateUpdateRef = useRef(0);
@@ -61,14 +61,24 @@ export default function useDeviceMotion(sampleRate = 10) {
       // Clear previous data
       dataRef.current = [];
       accelRingRef.current = [];
+      gravityRef.current = null; // Re-seed from first reading
       setData([]);
 
       // Subscribe to Accelerometer
       accelSubscriptionRef.current = Accelerometer.addListener((accelData) => {
         // Accelerometer provides values in Gs (1g ≈ 9.81 m/s²)
-        // We apply a basic high-pass filter to approximate user acceleration (removing gravity).
-        
-        const alpha = 0.8; // Low-pass filter constant to isolate gravity
+        // We apply a high-pass filter to approximate user acceleration (removing gravity).
+
+        // Seed gravity estimate from first reading so the filter starts accurate
+        // regardless of phone orientation (flat, mounted, portrait, etc.)
+        if (!gravityRef.current) {
+          gravityRef.current = { x: accelData.x, y: accelData.y, z: accelData.z };
+        }
+
+        // α=0.98 gives a ~5 s time constant at 10 Hz.
+        // Sustained forces (braking, cornering) are preserved for several seconds
+        // while true gravity (constant) is still tracked and removed.
+        const alpha = 0.98;
         
         gravityRef.current = {
           x: alpha * gravityRef.current.x + (1 - alpha) * accelData.x,
