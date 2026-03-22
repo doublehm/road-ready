@@ -88,15 +88,16 @@ export default function GForceOverlay({ acceleration, isActive }) {
   const [lr, lg, lb] = forceRGB(lateralG);
   const [br, bg, bb] = forceRGB(brakingG);
 
-  const peakG = Math.max(lateralG, brakingG);
-  const [pr, pg, pb] = peakG > 0 && peakG === lateralG
-    ? forceRGB(lateralG)
-    : forceRGB(brakingG);
-
-  // Badge colour: use force colour when active, muted when idle
-  const badgeColor = peakG > DEAD_ZONE_G
-    ? `rgb(${pr},${pg},${pb})`
+  // Per-force badge colours
+  const brkColor = brakingG > DEAD_ZONE_G
+    ? `rgb(${br},${bg},${bb})`
     : '#94A3B8';
+
+  function latColor(g, dir, side) {
+    if (dir !== side || g <= DEAD_ZONE_G) return '#94A3B8';
+    const [r, gn, b] = forceRGB(g);
+    return `rgb(${r},${gn},${b})`;
+  }
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -152,38 +153,67 @@ export default function GForceOverlay({ acceleration, isActive }) {
         />
       ))}
 
-      {/* ── G-force badge (always visible during ride) ── */}
-      <View style={styles.badge}>
-        <Text style={[styles.badgeLabel, { color: badgeColor }]}>
-          {peakG.toFixed(1)}
-        </Text>
-        <Text style={styles.badgeUnit}>G</Text>
+      {/* ── Force indicators (always visible during ride) ── */}
+      <View style={styles.badgeRow}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeIcon}>⟵</Text>
+          <Text style={[styles.badgeLabel, { color: latColor(lateralG, turnDir, 'left') }]}>
+            {turnDir === 'left' ? lateralG.toFixed(2) : '0.00'}
+          </Text>
+          <Text style={styles.badgeUnit}>G</Text>
+        </View>
+        <View style={styles.badge}>
+          <Text style={styles.badgeIcon}>⇧</Text>
+          <Text style={[styles.badgeLabel, { color: brkColor }]}>
+            {brakingG.toFixed(2)}
+          </Text>
+          <Text style={styles.badgeUnit}>G</Text>
+        </View>
+        <View style={styles.badge}>
+          <Text style={[styles.badgeLabel, { color: latColor(lateralG, turnDir, 'right') }]}>
+            {turnDir === 'right' ? lateralG.toFixed(2) : '0.00'}
+          </Text>
+          <Text style={styles.badgeUnit}>G</Text>
+          <Text style={styles.badgeIcon}>⟶</Text>
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  badge: {
+  badgeRow: {
     position: 'absolute',
     bottom: 104,
-    alignSelf: 'center',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  badge: {
     flexDirection: 'row',
     alignItems: 'baseline',
     backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
   },
+  badgeIcon: {
+    fontSize: 12,
+    color: '#64748B',
+    marginHorizontal: 2,
+  },
   badgeLabel: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '900',
     letterSpacing: 0.5,
+    fontVariant: ['tabular-nums'],
   },
   badgeUnit: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '800',
-    color: '#94A3B8',
-    marginLeft: 2,
+    color: '#64748B',
+    marginLeft: 1,
   },
 });
