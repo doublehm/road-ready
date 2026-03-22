@@ -36,7 +36,7 @@ const LoginScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Email Address"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#64748B"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -46,7 +46,7 @@ const LoginScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#64748B"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -81,7 +81,7 @@ const LoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6FAFE',
+    backgroundColor: '#0B1326',
   },
   content: {
     flex: 1,
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 40,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#FFFFFF',
     letterSpacing: -1.5,
   },
   subtitle: {
@@ -110,30 +110,20 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 60,
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     borderRadius: 16,
     paddingHorizontal: 20,
     marginBottom: 16,
     fontSize: 16,
-    color: '#1E293B',
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.06,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    color: '#E2E8F0',
   },
   button: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#3B82F6',
     height: 60,
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
   },
   buttonText: {
     color: '#fff',

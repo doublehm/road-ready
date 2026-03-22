@@ -82,7 +82,7 @@ const SessionDetailScreen = ({ route, navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Session Report</Text>
         <View style={{width: 24}} />
@@ -95,15 +95,15 @@ const SessionDetailScreen = ({ route, navigation }) => {
           <Text style={styles.date}>{formatDate(session.created_at)}</Text>
           <View style={styles.row}>
             <View style={styles.stat}>
-              <Ionicons name="time-outline" size={20} color="#666" />
+              <Ionicons name="time-outline" size={20} color="#94A3B8" />
               <Text style={styles.statText}>{session.duration_minutes} min</Text>
             </View>
             <View style={styles.stat}>
-              <Ionicons name="partly-sunny-outline" size={20} color="#666" />
+              <Ionicons name="partly-sunny-outline" size={20} color="#94A3B8" />
               <Text style={styles.statText}>{session.weather_condition}</Text>
             </View>
             <View style={styles.stat}>
-              <Ionicons name="car-outline" size={20} color="#666" />
+              <Ionicons name="car-outline" size={20} color="#94A3B8" />
               <Text style={styles.statText}>{session.road_type}</Text>
             </View>
           </View>
@@ -127,7 +127,7 @@ const SessionDetailScreen = ({ route, navigation }) => {
         {!session.observation_data && !session.space_margin_data && !session.speed_data && 
          !session.steering_data && !session.communication_data && (
            <View style={styles.perfectCard}>
-             <Ionicons name="star" size={40} color="#ffc107" />
+             <Ionicons name="star" size={40} color="#F59E0B" />
              <Text style={styles.perfectText}>Perfect Drive! No faults recorded.</Text>
            </View>
         )}
@@ -138,51 +138,51 @@ const SessionDetailScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   header: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
-    padding: 15, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#eee' 
+    padding: 15, backgroundColor: '#131B2E', borderBottomWidth: 1, borderBottomColor: '#1E293B' 
   },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   scroll: { padding: 20 },
 
   summaryCard: {
-    backgroundColor: 'white', borderRadius: 12, padding: 20, marginBottom: 20,
-    alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
+    backgroundColor: '#131B2E', borderRadius: 12, padding: 20, marginBottom: 20,
+    alignItems: 'center'
   },
-  date: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#333' },
+  date: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#FFFFFF' },
   row: { flexDirection: 'row', justifyContent: 'space-around', width: '100%' },
   stat: { alignItems: 'center' },
-  statText: { marginTop: 5, color: '#666', fontSize: 14 },
+  statText: { marginTop: 5, color: '#94A3B8', fontSize: 14 },
 
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#333' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#FFFFFF' },
   section: { marginBottom: 25 },
   
   feedbackBox: { 
-    backgroundColor: '#fff', padding: 15, borderRadius: 10, 
-    borderLeftWidth: 4, borderLeftColor: '#007bff' 
+    backgroundColor: '#131B2E', padding: 15, borderRadius: 10, 
+    borderLeftWidth: 4, borderLeftColor: '#3B82F6' 
   },
-  feedbackText: { fontSize: 16, color: '#444', lineHeight: 22, fontStyle: 'italic' },
+  feedbackText: { fontSize: 16, color: '#E2E8F0', lineHeight: 22, fontStyle: 'italic' },
 
   categoryCard: { 
-    backgroundColor: 'white', borderRadius: 10, marginBottom: 15, overflow: 'hidden',
-    borderWidth: 1, borderColor: '#eee'
+    backgroundColor: '#131B2E', borderRadius: 10, marginBottom: 15, overflow: 'hidden',
+    borderWidth: 1, borderColor: '#1E293B'
   },
   catHeader: { padding: 10, paddingHorizontal: 15 },
-  catTitle: { fontWeight: 'bold', fontSize: 16, color: '#333' },
+  catTitle: { fontWeight: 'bold', fontSize: 16, color: '#FFFFFF' },
   catBody: { padding: 15 },
   
   faultRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   badge: { 
-    backgroundColor: '#dc3545', width: 30, height: 30, borderRadius: 15, 
+    backgroundColor: '#EF4444', width: 30, height: 30, borderRadius: 15, 
     justifyContent: 'center', alignItems: 'center' 
   },
   badgeText: { color: 'white', fontWeight: 'bold' },
-  faultLabel: { fontSize: 16, color: '#333', fontWeight: '500' },
-  faultCode: { fontSize: 12, color: '#888' },
+  faultLabel: { fontSize: 16, color: '#FFFFFF', fontWeight: '500' },
+  faultCode: { fontSize: 12, color: '#64748B' },
 
-  perfectCard: { alignItems: 'center', padding: 30, backgroundColor: 'white', borderRadius: 12 },
-  perfectText: { marginTop: 10, fontSize: 16, color: '#333', fontWeight: 'bold' }
+  perfectCard: { alignItems: 'center', padding: 30, backgroundColor: '#131B2E', borderRadius: 12 },
+  perfectText: { marginTop: 10, fontSize: 16, color: '#FFFFFF', fontWeight: 'bold' }
 });
 
 export default SessionDetailScreen;

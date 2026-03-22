@@ -153,10 +153,10 @@ const SetupInstructorScreen = ({ navigation }) => {
         <Text style={styles.title}>Instructor Profile</Text>
 
         <Text style={styles.label}>City</Text>
-        <TextInput style={styles.input} placeholder="e.g. Vancouver" value={city} onChangeText={setCity} />
+        <TextInput style={styles.input} placeholder="e.g. Vancouver" placeholderTextColor="#64748B" value={city} onChangeText={setCity} />
 
         <Text style={styles.label}>Base Hourly Rate ($)</Text>
-        <TextInput style={styles.input} placeholder="50.00" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" />
+        <TextInput style={styles.input} placeholder="50.00" placeholderTextColor="#64748B" value={hourlyRate} onChangeText={setHourlyRate} keyboardType="numeric" />
 
         <Text style={styles.label}>License Classes Taught</Text>
         <View style={styles.classContainer}>
@@ -173,6 +173,7 @@ const SetupInstructorScreen = ({ navigation }) => {
                         <TextInput 
                             style={styles.priceInput} 
                             placeholder={hourlyRate || "Rate"} 
+                            placeholderTextColor="#64748B"
                             value={cls.price} 
                             onChangeText={(text) => updateClassPrice(index, text)}
                             keyboardType="numeric"
@@ -183,21 +184,21 @@ const SetupInstructorScreen = ({ navigation }) => {
         </View>
 
         <Text style={styles.label}>Bio</Text>
-        <TextInput style={[styles.input, {height: 80}]} placeholder="About you..." value={bio} onChangeText={setBio} multiline />
+        <TextInput style={[styles.input, {height: 80}]} placeholder="About you..." placeholderTextColor="#64748B" value={bio} onChangeText={setBio} multiline />
 
         <Text style={styles.label}>Car Model</Text>
-        <TextInput style={styles.input} placeholder="Toyota Prius" value={carModel} onChangeText={setCarModel} />
+        <TextInput style={styles.input} placeholder="Toyota Prius" placeholderTextColor="#64748B" value={carModel} onChangeText={setCarModel} />
 
         <Text style={styles.label}>Insurance #</Text>
-        <TextInput style={styles.input} placeholder="INS-123" value={insurance} onChangeText={setInsurance} />
+        <TextInput style={styles.input} placeholder="INS-123" placeholderTextColor="#64748B" value={insurance} onChangeText={setInsurance} />
 
         <Text style={styles.label}>Cert ID</Text>
-        <TextInput style={styles.input} placeholder="CERT-999" value={certId} onChangeText={setCertId} />
+        <TextInput style={styles.input} placeholder="CERT-999" placeholderTextColor="#64748B" value={certId} onChangeText={setCertId} />
 
         <Text style={styles.label}>Cert Expiry</Text>
         <TouchableOpacity style={styles.dateBtn} onPress={() => setShowPicker(true)}>
             <Text style={styles.dateText}>{expiry.toISOString().split('T')[0]}</Text>
-            <Ionicons name="calendar" size={20} color="#666" />
+            <Ionicons name="calendar" size={20} color="#94A3B8" />
         </TouchableOpacity>
         
         {showPicker && (
@@ -215,7 +216,7 @@ const SetupInstructorScreen = ({ navigation }) => {
             <Image source={{ uri: image }} style={styles.preview} />
           ) : (
             <View style={styles.cameraPlaceholder}>
-              <Ionicons name="camera" size={40} color="#666" />
+              <Ionicons name="camera" size={40} color="#94A3B8" />
               <Text style={styles.cameraText}>Upload License</Text>
             </View>
           )}
@@ -227,7 +228,7 @@ const SetupInstructorScreen = ({ navigation }) => {
             <Image source={{ uri: insuranceImage }} style={styles.preview} />
           ) : (
             <View style={styles.cameraPlaceholder}>
-              <Ionicons name="document-text" size={40} color="#666" />
+              <Ionicons name="document-text" size={40} color="#94A3B8" />
               <Text style={styles.cameraText}>Upload Insurance</Text>
             </View>
           )}
@@ -239,7 +240,7 @@ const SetupInstructorScreen = ({ navigation }) => {
             <Image source={{ uri: certImage }} style={styles.preview} />
           ) : (
             <View style={styles.cameraPlaceholder}>
-              <Ionicons name="ribbon" size={40} color="#666" />
+              <Ionicons name="ribbon" size={40} color="#94A3B8" />
               <Text style={styles.cameraText}>Upload Certificate</Text>
             </View>
           )}
@@ -250,7 +251,7 @@ const SetupInstructorScreen = ({ navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={logout} style={{alignItems: 'center', marginBottom: 20}}>
-            <Text style={{color: 'red'}}>Logout</Text>
+            <Text style={{color: '#EF4444'}}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -258,30 +259,30 @@ const SetupInstructorScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  label: { fontWeight: 'bold', marginBottom: 5, color: '#333' },
-  input: { backgroundColor: '#f9f9f9', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#eee' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#FFFFFF' },
+  label: { fontWeight: 'bold', marginBottom: 5, color: '#FFFFFF' },
+  input: { backgroundColor: '#131B2E', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#1E293B', color: '#E2E8F0' },
   
   classContainer: { marginTop: 5, marginBottom: 15 },
   classRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  checkbox: { width: 24, height: 24, borderRadius: 4, borderWidth: 1, borderColor: '#ccc', marginRight: 10, justifyContent: 'center', alignItems: 'center' },
-  checked: { backgroundColor: '#28a745', borderColor: '#28a745' },
-  classLabel: { flex: 1, fontSize: 16 },
-  priceInput: { width: 80, padding: 8, borderWidth: 1, borderColor: '#eee', borderRadius: 8, backgroundColor: '#fff' },
+  checkbox: { width: 24, height: 24, borderRadius: 4, borderWidth: 1, borderColor: '#475569', marginRight: 10, justifyContent: 'center', alignItems: 'center' },
+  checked: { backgroundColor: '#15803D', borderColor: '#15803D' },
+  classLabel: { flex: 1, fontSize: 16, color: '#E2E8F0' },
+  priceInput: { width: 80, padding: 8, borderWidth: 1, borderColor: '#1E293B', borderRadius: 8, backgroundColor: '#131B2E', color: '#E2E8F0' },
 
   dateBtn: { 
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      backgroundColor: '#f9f9f9', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#eee'
+      backgroundColor: '#131B2E', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#1E293B'
   },
-  dateText: { fontSize: 16 },
+  dateText: { fontSize: 16, color: '#E2E8F0' },
 
   cameraBtn: { marginBottom: 20 },
-  cameraPlaceholder: { width: '100%', height: 150, backgroundColor: '#f0f0f0', borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#ddd', borderStyle: 'dashed' },
+  cameraPlaceholder: { width: '100%', height: 150, backgroundColor: '#1E293B', borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#475569', borderStyle: 'dashed' },
   preview: { width: '100%', height: 150, borderRadius: 10 },
-  cameraText: { marginTop: 10, color: '#666' },
-  button: { backgroundColor: '#28a745', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 20 },
+  cameraText: { marginTop: 10, color: '#94A3B8' },
+  button: { backgroundColor: '#15803D', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 20 },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });
 

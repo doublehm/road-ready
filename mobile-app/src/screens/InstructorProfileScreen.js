@@ -17,11 +17,11 @@ const InstructorProfileScreen = ({ route, navigation }) => {
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <Text style={styles.name}>{instructor.user?.full_name || 'Instructor'}</Text>
             {instructor.is_verified && (
-              <Ionicons name="checkmark-circle" size={24} color="#007bff" style={{marginLeft: 8}} />
+              <Ionicons name="checkmark-circle" size={24} color="#3B82F6" style={{marginLeft: 8}} />
             )}
           </View>
           {instructor.is_verified && (
-            <Text style={{color: '#007bff', fontWeight: 'bold', fontSize: 12, marginTop: 4}}>
+            <Text style={{color: '#3B82F6', fontWeight: 'bold', fontSize: 12, marginTop: 4}}>
               VERIFIED ACCOUNT
             </Text>
           )}
@@ -76,32 +76,32 @@ const InstructorProfileScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { alignItems: 'center', padding: 30, backgroundColor: '#f8f9fa' },
-  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#007bff', justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  header: { alignItems: 'center', padding: 30, backgroundColor: '#0B1326' },
+  avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
   avatarText: { color: 'white', fontSize: 32, fontWeight: 'bold' },
-  name: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  city: { fontSize: 16, color: '#666', marginTop: 5 },
+  name: { fontSize: 24, fontWeight: 'bold', color: '#FFFFFF' },
+  city: { fontSize: 16, color: '#94A3B8', marginTop: 5 },
   
-  statsRow: { flexDirection: 'row', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  statsRow: { flexDirection: 'row', padding: 20, borderBottomWidth: 1, borderBottomColor: '#1E293B' },
   stat: { flex: 1, alignItems: 'center' },
-  statBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#eee' },
-  statVal: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  statLabel: { fontSize: 12, color: '#888', marginTop: 2 },
+  statBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: '#1E293B' },
+  statVal: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
+  statLabel: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
 
   section: { padding: 20 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#333' },
-  bio: { fontSize: 16, color: '#555', lineHeight: 24 },
-  reviewsText: { fontStyle: 'italic', color: '#999' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#FFFFFF' },
+  bio: { fontSize: 16, color: '#CBD5E1', lineHeight: 24 },
+  reviewsText: { fontStyle: 'italic', color: '#64748B' },
 
   footer: { 
-    padding: 20, borderTopWidth: 1, borderTopColor: '#eee', 
+    padding: 20, borderTopWidth: 1, borderTopColor: '#1E293B', 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: 'white'
+    backgroundColor: '#131B2E'
   },
-  price: { fontSize: 22, fontWeight: 'bold', color: '#333' },
-  subtext: { fontSize: 12, color: '#888' },
-  bookButton: { backgroundColor: '#28a745', paddingVertical: 12, paddingHorizontal: 25, borderRadius: 10 },
+  price: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' },
+  subtext: { fontSize: 12, color: '#94A3B8' },
+  bookButton: { backgroundColor: '#15803D', paddingVertical: 12, paddingHorizontal: 25, borderRadius: 10 },
   bookButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 }
 });
 

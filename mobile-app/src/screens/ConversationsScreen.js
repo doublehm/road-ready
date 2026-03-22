@@ -145,7 +145,7 @@ const ConversationsScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  if (loading) return <ActivityIndicator size="large" style={{flex:1}} />;
+  if (loading) return <ActivityIndicator size="large" style={{flex:1}} color="#3B82F6" />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -163,20 +163,20 @@ const ConversationsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { fontSize: 24, fontWeight: 'bold', padding: 20 },
-  card: { flexDirection: 'row', padding: 15, borderBottomWidth: 1, borderBottomColor: '#f0f0f0', alignItems: 'center' },
-  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#e9ecef', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  avatarText: { color: '#007bff', fontSize: 20, fontWeight: 'bold' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  header: { fontSize: 24, fontWeight: 'bold', padding: 20, color: '#FFFFFF' },
+  card: { flexDirection: 'row', padding: 15, borderBottomWidth: 1, borderBottomColor: '#1E293B', alignItems: 'center' },
+  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#1E293B', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  avatarText: { color: '#3B82F6', fontSize: 20, fontWeight: 'bold' },
   info: { flex: 1 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  name: { fontSize: 16, fontWeight: '600', color: '#333' },
-  bold: { fontWeight: '800', color: 'black' },
-  time: { fontSize: 12, color: '#999' },
-  lastMessage: { color: '#666', fontSize: 14 },
-  boldText: { color: '#333', fontWeight: '600' },
-  empty: { padding: 20, textAlign: 'center', color: '#999', marginTop: 50 },
-  badge: { backgroundColor: '#007bff', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 5, marginLeft: 10 },
+  name: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
+  bold: { fontWeight: '800', color: '#FFFFFF' },
+  time: { fontSize: 12, color: '#64748B' },
+  lastMessage: { color: '#94A3B8', fontSize: 14 },
+  boldText: { color: '#FFFFFF', fontWeight: '600' },
+  empty: { padding: 20, textAlign: 'center', color: '#64748B', marginTop: 50 },
+  badge: { backgroundColor: '#3B82F6', borderRadius: 10, minWidth: 20, height: 20, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 5, marginLeft: 10 },
   badgeText: { color: 'white', fontSize: 10, fontWeight: 'bold' }
 });
 

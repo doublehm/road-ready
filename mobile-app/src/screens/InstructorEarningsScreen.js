@@ -115,8 +115,8 @@ const InstructorEarningsScreen = ({ navigation }) => {
           style={styles.transactionRow}
           onPress={() => navigation.navigate('DiagnosticRideDetail', { rideId: item._rideId })}
         >
-          <View style={[styles.iconBox, { backgroundColor: '#e8f5e9' }]}>
-            <Ionicons name="speedometer" size={20} color="#28a745" />
+          <View style={[styles.iconBox, { backgroundColor: 'rgba(21,128,61,0.15)' }]}>
+            <Ionicons name="speedometer" size={20} color="#15803D" />
           </View>
           <View style={styles.transInfo}>
             <Text style={styles.transTitle}>Diagnostic: {item.student?.full_name || 'Student'}</Text>
@@ -126,7 +126,7 @@ const InstructorEarningsScreen = ({ navigation }) => {
             <View style={[styles.transScoreBadge, { backgroundColor: scoreColor }]}>
               <Text style={styles.transScoreText}>{Math.round(item.overall_score || 0)}</Text>
             </View>
-            <Text style={{fontSize:10, color:'#007bff', marginTop: 2}}>View Report</Text>
+            <Text style={{fontSize:10, color:'#3B82F6', marginTop: 2}}>View Report</Text>
           </View>
         </TouchableOpacity>
       );
@@ -143,7 +143,7 @@ const InstructorEarningsScreen = ({ navigation }) => {
         disabled={!item.driving_session}
       >
         <View style={styles.iconBox}>
-          <Ionicons name="car-sport" size={20} color="#007bff" />
+          <Ionicons name="car-sport" size={20} color="#3B82F6" />
         </View>
         <View style={styles.transInfo}>
           <Text style={styles.transTitle}>Lesson with {item.student?.full_name || 'Student'}</Text>
@@ -151,13 +151,13 @@ const InstructorEarningsScreen = ({ navigation }) => {
         </View>
         <View style={{alignItems: 'flex-end'}}>
           <Text style={styles.transAmount}>+${(item.instructor_payout || 0).toFixed(2)}</Text>
-          {item.driving_session && <Text style={{fontSize:10, color:'#007bff'}}>View Report</Text>}
+          {item.driving_session && <Text style={{fontSize:10, color:'#3B82F6'}}>View Report</Text>}
         </View>
       </TouchableOpacity>
     );
   };
 
-  if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
+  if (loading) return <ActivityIndicator size="large" color="#3B82F6" style={{ flex: 1 }} />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -180,7 +180,7 @@ const InstructorEarningsScreen = ({ navigation }) => {
             </View>
             <View style={styles.statCard}>
                 <Text style={styles.label}>Avg Rate/Hr</Text>
-                <Text style={[styles.value, {color: '#28a745'}]}>${earnings.stats.avgRate}</Text>
+                <Text style={[styles.value, {color: '#15803D'}]}>${earnings.stats.avgRate}</Text>
             </View>
         </View>
 
@@ -219,7 +219,7 @@ const InstructorEarningsScreen = ({ navigation }) => {
                             <Text style={styles.studentInitials}>{student.full_name[0]}</Text>
                         </View>
                         <Text style={styles.studentName}>{student.full_name}</Text>
-                        <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                        <Ionicons name="chevron-forward" size={20} color="#475569" />
                     </TouchableOpacity>
                 ));
             })()}
@@ -240,61 +240,57 @@ const InstructorEarningsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { padding: 20 },
-  header: { fontSize: 26, fontWeight: 'bold', marginBottom: 20, color: '#333' },
+  header: { fontSize: 26, fontWeight: 'bold', marginBottom: 20, color: '#FFFFFF' },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 20 },
   statCard: {
-      width: '48%', backgroundColor: 'white', padding: 15, borderRadius: 12, marginBottom: 15,
-      shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
+      width: '48%', backgroundColor: '#131B2E', padding: 15, borderRadius: 12, marginBottom: 15,
   },
-  label: { fontSize: 13, color: '#666', marginBottom: 5 },
-  value: { fontSize: 22, fontWeight: 'bold', color: '#333' },
+  label: { fontSize: 13, color: '#94A3B8', marginBottom: 5 },
+  value: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF' },
 
   chartCard: {
-      backgroundColor: 'white', padding: 20, borderRadius: 15, marginBottom: 25,
-      shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
+      backgroundColor: '#131B2E', padding: 20, borderRadius: 15, marginBottom: 25,
   },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#333' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: '#FFFFFF' },
   chartContainer: { 
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 150 
   },
   barGroup: { alignItems: 'center', width: 30 },
   barTrack: { 
-      width: 12, height: 120, backgroundColor: '#f1f1f1', borderRadius: 6, 
+      width: 12, height: 120, backgroundColor: '#1E293B', borderRadius: 6, 
       justifyContent: 'flex-end', overflow: 'hidden'
   },
-  barFill: { width: '100%', backgroundColor: '#007bff', borderRadius: 6 },
-  barLabel: { marginTop: 8, fontSize: 12, color: '#666' },
+  barFill: { width: '100%', backgroundColor: '#3B82F6', borderRadius: 6 },
+  barLabel: { marginTop: 8, fontSize: 12, color: '#94A3B8' },
 
   transactionRow: {
-      flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', 
+      flexDirection: 'row', alignItems: 'center', backgroundColor: '#131B2E', 
       padding: 15, borderRadius: 12, marginBottom: 10,
-      shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 3, elevation: 1
   },
   iconBox: {
-      width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', 
+      width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(59,130,246,0.15)', 
       justifyContent: 'center', alignItems: 'center', marginRight: 15
   },
   transInfo: { flex: 1 },
-  transTitle: { fontSize: 15, fontWeight: '600', color: '#333' },
-  transDate: { fontSize: 12, color: '#888' },
-  transAmount: { fontSize: 16, fontWeight: 'bold', color: '#28a745' },
+  transTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  transDate: { fontSize: 12, color: '#94A3B8' },
+  transAmount: { fontSize: 16, fontWeight: 'bold', color: '#15803D' },
   
-  emptyText: { textAlign: 'center', color: '#999', marginTop: 20 },
+  emptyText: { textAlign: 'center', color: '#64748B', marginTop: 20 },
 
   studentCard: {
-      flexDirection: 'row', alignItems: 'center', backgroundColor: 'white',
+      flexDirection: 'row', alignItems: 'center', backgroundColor: '#131B2E',
       padding: 15, borderRadius: 12, marginBottom: 10,
-      shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 3
   },
   studentAvatar: {
-      width: 40, height: 40, borderRadius: 20, backgroundColor: '#6c757d',
+      width: 40, height: 40, borderRadius: 20, backgroundColor: '#94A3B8',
       justifyContent: 'center', alignItems: 'center', marginRight: 15
   },
   studentInitials: { color: 'white', fontWeight: 'bold' },
-  studentName: { flex: 1, fontSize: 16, fontWeight: '500', color: '#333' },
+  studentName: { flex: 1, fontSize: 16, fontWeight: '500', color: '#FFFFFF' },
 
   transScoreBadge: {
       width: 32, height: 32, borderRadius: 16,

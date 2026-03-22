@@ -122,25 +122,25 @@ const StudentEditProfileScreen = ({ navigation }) => {
 
         <Text style={styles.sectionHeader}>Personal Info</Text>
         <Text style={styles.label}>Full Name</Text>
-        <TextInput style={styles.input} value={fullName} onChangeText={setFullName} />
+        <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholderTextColor="#64748B" />
         
         <Text style={styles.label}>Email</Text>
-        <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none"/>
+        <TextInput style={styles.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholderTextColor="#64748B" />
 
         <Text style={styles.label}>Phone</Text>
-        <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <TextInput style={styles.input} value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholderTextColor="#64748B" />
 
         <Text style={styles.sectionHeader}>License Info</Text>
         <Text style={styles.label}>Age</Text>
-        <TextInput style={styles.input} value={age} onChangeText={setAge} keyboardType="numeric" />
+        <TextInput style={styles.input} value={age} onChangeText={setAge} keyboardType="numeric" placeholderTextColor="#64748B" />
 
         <Text style={styles.label}>License #</Text>
-        <TextInput style={styles.input} value={licenseNumber} onChangeText={setLicenseNumber} />
+        <TextInput style={styles.input} value={licenseNumber} onChangeText={setLicenseNumber} placeholderTextColor="#64748B" />
 
         <Text style={styles.label}>Expiry Date</Text>
         <TouchableOpacity style={styles.dateBtn} onPress={() => setShowPicker(true)}>
             <Text style={styles.dateText}>{expiry.toISOString().split('T')[0]}</Text>
-            <Ionicons name="calendar" size={20} color="#666" />
+            <Ionicons name="calendar" size={20} color="#64748B" />
         </TouchableOpacity>
         
         {showPicker && (
@@ -160,7 +160,7 @@ const StudentEditProfileScreen = ({ navigation }) => {
             <Image source={{ uri: currentImage }} style={styles.preview} />
           ) : (
             <View style={styles.cameraPlaceholder}>
-              <Ionicons name="camera" size={40} color="#666" />
+              <Ionicons name="camera" size={40} color="#64748B" />
               <Text style={styles.cameraText}>Take New Photo</Text>
             </View>
           )}
@@ -176,7 +176,7 @@ const StudentEditProfileScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Legal', { type: 'terms' })}
         >
           <Text style={styles.legalBtnText}>Terms of Service</Text>
-          <Ionicons name="chevron-forward" size={20} color="#666" />
+          <Ionicons name="chevron-forward" size={20} color="#64748B" />
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -184,7 +184,7 @@ const StudentEditProfileScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Legal', { type: 'privacy' })}
         >
           <Text style={styles.legalBtnText}>Privacy Policy</Text>
-          <Ionicons name="chevron-forward" size={20} color="#666" />
+          <Ionicons name="chevron-forward" size={20} color="#64748B" />
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
@@ -196,35 +196,35 @@ const StudentEditProfileScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { padding: 20 },
-  header: { fontSize: 24, fontWeight: '800', marginBottom: 20, color: '#1E293B' },
+  header: { fontSize: 24, fontWeight: '800', marginBottom: 20, color: '#FFFFFF' },
   sectionHeader: { fontSize: 18, fontWeight: '800', marginTop: 10, marginBottom: 15, color: '#15803D' },
   label: { fontWeight: '600', marginBottom: 5, color: '#64748B' },
   input: { 
-    borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, 
-    padding: 12, fontSize: 16, backgroundColor: 'white', marginBottom: 15 
+    borderWidth: 1, borderColor: '#1E293B', borderRadius: 12, 
+    padding: 12, fontSize: 16, backgroundColor: '#131B2E', marginBottom: 15, color: '#E2E8F0'
   },
   dateBtn: { 
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      backgroundColor: 'white', padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#E2E8F0'
+      backgroundColor: '#131B2E', padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: '#1E293B'
   },
-  dateText: { fontSize: 16, color: '#1E293B' },
+  dateText: { fontSize: 16, color: '#E2E8F0' },
   cameraBtn: { marginBottom: 10, alignItems: 'center' },
   cameraPlaceholder: {
-    width: '100%', height: 200, backgroundColor: '#F1F5F9', borderRadius: 16,
-    justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#E2E8F0', borderStyle: 'dashed'
+    width: '100%', height: 200, backgroundColor: '#131B2E', borderRadius: 16,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#1E293B', borderStyle: 'dashed'
   },
   preview: { width: '100%', height: 200, borderRadius: 16, resizeMode: 'cover' },
   cameraText: { marginTop: 10, color: '#64748B' },
   hint: { textAlign: 'center', color: '#94A3B8', marginBottom: 20 },
-  warningText: { color: '#92400E', backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 20, fontSize: 14 },
+  warningText: { color: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.15)', padding: 12, borderRadius: 12, marginBottom: 20, fontSize: 14 },
   
   legalBtn: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#E2E8F0', marginBottom: 10
+    paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#1E293B', marginBottom: 10
   },
-  legalBtnText: { fontSize: 16, color: '#1E293B' },
+  legalBtnText: { fontSize: 16, color: '#E2E8F0' },
 
   saveBtn: { backgroundColor: '#15803D', padding: 15, borderRadius: 12, alignItems: 'center', marginBottom: 40 },
   saveText: { color: 'white', fontWeight: '800', fontSize: 16 }

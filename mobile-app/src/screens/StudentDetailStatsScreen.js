@@ -103,13 +103,13 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
       return code;
   };
 
-  if (loading) return <ActivityIndicator size="large" style={{flex:1}} color="#1E293B" />;
+  if (loading) return <ActivityIndicator size="large" style={{flex:1}} color="#3B82F6" />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="#1E293B" />
+          <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View>
           <Text style={styles.headerTitle}>{student.full_name}</Text>
@@ -133,7 +133,7 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
                     <Text style={styles.dashboardLabel}>PASS RATE</Text>
                 </View>
                 <View style={styles.dashboardItem}>
-                    <Text style={[styles.dashboardVal, {color: '#1E293B'}]}>{trends?.recent_score || 0}</Text>
+                    <Text style={[styles.dashboardVal, {color: '#FFFFFF'}]}>{trends?.recent_score || 0}</Text>
                     <Text style={styles.dashboardLabel}>RECENT SCORE</Text>
                 </View>
             </View>
@@ -247,70 +247,65 @@ const StudentDetailStatsScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   header: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
-    paddingHorizontal: 20, paddingVertical: 16, backgroundColor: 'white',
-    shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 10, elevation: 2
+    paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#131B2E',
   },
-  backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1F5F9' },
-  headerTitle: { fontSize: 20, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
+  backBtn: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1E293B' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 },
   headerSubtitle: { fontSize: 10, fontWeight: '800', color: '#15803D', letterSpacing: 1 },
   scroll: { padding: 24 },
 
   dashboardCard: {
-    backgroundColor: 'white', borderRadius: 24, padding: 24, marginBottom: 32,
-    shadowColor: '#1E293B', shadowOpacity: 0.06, shadowRadius: 20, elevation: 4
+    backgroundColor: '#131B2E', borderRadius: 24, padding: 24, marginBottom: 32,
   },
   dashboardRow: { flexDirection: 'row', justifyContent: 'space-around' },
   dashboardItem: { alignItems: 'center' },
-  dashboardVal: { fontSize: 24, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  dashboardVal: { fontSize: 24, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1 },
   dashboardLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', marginTop: 4, letterSpacing: 1 },
-  dashboardDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 24 },
+  dashboardDivider: { height: 1, backgroundColor: '#1E293B', marginVertical: 24 },
   
   categoryAverages: { marginTop: 8 },
   catContainer: { marginBottom: 16 },
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  catLabel: { fontSize: 11, fontWeight: '800', color: '#64748B', letterSpacing: 1 },
+  catLabel: { fontSize: 11, fontWeight: '800', color: '#94A3B8', letterSpacing: 1 },
   catValue: { fontSize: 12, fontWeight: '800' },
-  catTrack: { height: 10, backgroundColor: '#F1F5F9', borderRadius: 5, overflow: 'hidden' },
+  catTrack: { height: 10, backgroundColor: '#1E293B', borderRadius: 5, overflow: 'hidden' },
   catFill: { height: '100%', borderRadius: 5 },
 
-  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20, color: '#1E293B', letterSpacing: -0.5 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20, color: '#FFFFFF', letterSpacing: -0.5 },
   
   issuesCard: {
-      backgroundColor: 'white', borderRadius: 24, overflow: 'hidden', marginBottom: 32,
-      shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 15, elevation: 2
+      backgroundColor: '#131B2E', borderRadius: 24, overflow: 'hidden', marginBottom: 32,
   },
   issueRow: { 
       flexDirection: 'row', alignItems: 'center', padding: 20, 
-      borderBottomWidth: 1, borderBottomColor: '#F1F5F9' 
+      borderBottomWidth: 1, borderBottomColor: '#1E293B' 
   },
   issueRank: { 
-      width: 32, height: 32, borderRadius: 10, backgroundColor: '#F1F5F9', 
+      width: 32, height: 32, borderRadius: 10, backgroundColor: '#1E293B', 
       justifyContent: 'center', alignItems: 'center', marginRight: 16 
   },
-  rankText: { fontWeight: '800', color: '#64748B', fontSize: 13 },
-  issueLabel: { fontSize: 16, fontWeight: '700', color: '#1E293B', letterSpacing: -0.3 },
+  rankText: { fontWeight: '800', color: '#94A3B8', fontSize: 13 },
+  issueLabel: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 },
   issueCode: { fontSize: 12, color: '#94A3B8', fontWeight: '500' },
-  issueCount: { backgroundColor: '#FEE2E2', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  issueCount: { backgroundColor: 'rgba(239,68,68,0.15)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
   countText: { color: '#EF4444', fontWeight: '800', fontSize: 12 },
 
   sessionRow: {
-      backgroundColor: 'white', padding: 20, borderRadius: 20, marginBottom: 12,
+      backgroundColor: '#131B2E', padding: 20, borderRadius: 20, marginBottom: 12,
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 10, elevation: 2
   },
-  sessionDate: { fontWeight: '800', fontSize: 17, color: '#1E293B', letterSpacing: -0.5 },
+  sessionDate: { fontWeight: '800', fontSize: 17, color: '#FFFFFF', letterSpacing: -0.5 },
   sessionSub: { color: '#64748B', fontSize: 14, fontWeight: '500', marginTop: 2 },
   
   emptyContainer: { padding: 40, alignItems: 'center' },
   emptyText: { textAlign: 'center', color: '#94A3B8', fontWeight: '600' },
 
   rideCard: {
-      backgroundColor: 'white', padding: 20, borderRadius: 24, marginBottom: 12,
+      backgroundColor: '#131B2E', padding: 20, borderRadius: 24, marginBottom: 12,
       flexDirection: 'row', alignItems: 'center',
-      shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 15, elevation: 2
   },
   rideScoreBadge: {
       width: 52, height: 52, borderRadius: 18,

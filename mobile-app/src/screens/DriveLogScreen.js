@@ -118,8 +118,8 @@ const DriveLogScreen = ({ navigation }) => {
   if (!location) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
-        <Text>Fetching Location...</Text>
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text style={{color: '#E2E8F0'}}>Fetching Location...</Text>
       </View>
     );
   }
@@ -136,7 +136,7 @@ const DriveLogScreen = ({ navigation }) => {
           { latitude: location.latitude, longitude: location.longitude, title: "You" }
         ]}
         polylines={[
-          { coordinates: routeCoordinates, strokeWidth: 5, strokeColor: "#007bff" }
+          { coordinates: routeCoordinates, strokeWidth: 5, strokeColor: "#3B82F6" }
         ]}
       />
 
@@ -161,36 +161,32 @@ const DriveLogScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B1326' },
   map: { flex: 1 },
   controls: {
     position: 'absolute',
     bottom: 30,
     left: 20,
     right: 20,
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     padding: 20,
     borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    elevation: 5,
   },
   stats: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 20,
   },
-  statText: { fontSize: 18, fontWeight: 'bold' },
+  statText: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   button: {
     height: 50,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  startButton: { backgroundColor: '#28a745' },
-  stopButton: { backgroundColor: '#dc3545' },
+  startButton: { backgroundColor: '#15803D' },
+  stopButton: { backgroundColor: '#EF4444' },
   buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
 });
 

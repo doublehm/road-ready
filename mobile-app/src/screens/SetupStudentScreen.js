@@ -103,15 +103,15 @@ const SetupStudentScreen = ({ navigation }) => {
         <Text style={styles.title}>Student Verification</Text>
 
         <Text style={styles.label}>Age</Text>
-        <TextInput style={styles.input} placeholder="18" value={age} onChangeText={setAge} keyboardType="numeric" />
+        <TextInput style={styles.input} placeholder="18" placeholderTextColor="#64748B" value={age} onChangeText={setAge} keyboardType="numeric" />
 
         <Text style={styles.label}>License #</Text>
-        <TextInput style={styles.input} placeholder="L-1234567" value={licenseNumber} onChangeText={setLicenseNumber} />
+        <TextInput style={styles.input} placeholder="L-1234567" placeholderTextColor="#64748B" value={licenseNumber} onChangeText={setLicenseNumber} />
 
         <Text style={styles.label}>Expiry Date</Text>
         <TouchableOpacity style={styles.dateBtn} onPress={() => setShowPicker(true)}>
             <Text style={styles.dateText}>{expiry.toISOString().split('T')[0]}</Text>
-            <Ionicons name="calendar" size={20} color="#666" />
+            <Ionicons name="calendar" size={20} color="#94A3B8" />
         </TouchableOpacity>
         
         {showPicker && (
@@ -129,7 +129,7 @@ const SetupStudentScreen = ({ navigation }) => {
             <Image source={{ uri: image }} style={styles.preview} />
           ) : (
             <View style={styles.cameraPlaceholder}>
-              <Ionicons name="camera" size={40} color="#666" />
+              <Ionicons name="camera" size={40} color="#94A3B8" />
               <Text style={styles.cameraText}>Take Photo</Text>
             </View>
           )}
@@ -140,7 +140,7 @@ const SetupStudentScreen = ({ navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={logout} style={{alignItems: 'center', marginVertical: 20}}>
-            <Text style={{color: 'red'}}>Logout</Text>
+            <Text style={{color: '#EF4444'}}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -148,23 +148,24 @@ const SetupStudentScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  label: { fontWeight: 'bold', marginBottom: 5, color: '#333' },
-  input: { backgroundColor: '#f9f9f9', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#eee' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, textAlign: 'center', color: '#FFFFFF' },
+  label: { fontWeight: 'bold', marginBottom: 5, color: '#FFFFFF' },
+  input: { backgroundColor: '#131B2E', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#1E293B', color: '#E2E8F0' },
   
   dateBtn: { 
       flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-      backgroundColor: '#f9f9f9', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#eee'
+      backgroundColor: '#131B2E', padding: 12, borderRadius: 10, marginBottom: 15, borderWidth: 1, borderColor: '#1E293B'
   },
-  dateText: { fontSize: 16 },
+  dateText: { fontSize: 16, color: '#E2E8F0' },
 
   cameraBtn: { marginBottom: 20 },
-  cameraPlaceholder: { width: '100%', height: 150, backgroundColor: '#f0f0f0', borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#ddd', borderStyle: 'dashed' },
+  cameraPlaceholder: { width: '100%', height: 150, backgroundColor: '#1E293B', borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#475569', borderStyle: 'dashed' },
+  cameraText: { marginTop: 10, color: '#94A3B8' },
   preview: { width: '100%', height: 150, borderRadius: 10 },
   
-  button: { backgroundColor: '#28a745', padding: 15, borderRadius: 10, alignItems: 'center' },
+  button: { backgroundColor: '#15803D', padding: 15, borderRadius: 10, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });
 

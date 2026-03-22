@@ -41,7 +41,7 @@ const CheckoutScreen = ({ route, navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payment</Text>
         <View style={{ width: 24 }} />
@@ -49,7 +49,7 @@ const CheckoutScreen = ({ route, navigation }) => {
 
       {loading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#007bff" />
+          <ActivityIndicator size="large" color="#3B82F6" />
           <Text style={styles.loadingText}>Loading payment form...</Text>
         </View>
       )}
@@ -69,17 +69,17 @@ const CheckoutScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#1E293B',
   },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   webview: { flex: 1 },
   loadingOverlay: {
     position: 'absolute',
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10,
   },
-  loadingText: { marginTop: 10, color: '#666', fontSize: 14 },
+  loadingText: { marginTop: 10, color: '#94A3B8', fontSize: 14 },
 });
 
 export default CheckoutScreen;

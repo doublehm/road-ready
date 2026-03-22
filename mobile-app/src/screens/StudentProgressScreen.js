@@ -99,7 +99,7 @@ const StudentProgressScreen = ({ navigation }) => {
       return list.reduce((sum, s) => sum + countFaults(s), 0);
   };
 
-  if (loading) return <ActivityIndicator size="large" style={{flex:1}} />;
+  if (loading) return <ActivityIndicator size="large" color="#3B82F6" style={{flex:1, backgroundColor: '#0B1326'}} />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -151,22 +151,22 @@ const StudentProgressScreen = ({ navigation }) => {
 
         <Text style={styles.sectionTitle}>Performance Analytics</Text>
         <View style={styles.row}>
-          <View style={[styles.skillCard, { backgroundColor: '#FEE2E2' }]}>
+          <View style={[styles.skillCard, { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
              <Text style={styles.skillTitle}>Observation</Text>
              <Text style={[styles.skillCount, { color: '#B91C1C' }]}>{stats.faultCounts?.A || 0} Issues</Text>
           </View>
-          <View style={[styles.skillCard, { backgroundColor: '#E0E7FF' }]}>
+          <View style={[styles.skillCard, { backgroundColor: 'rgba(59,130,246,0.15)' }]}>
              <Text style={styles.skillTitle}>Space Margins</Text>
              <Text style={[styles.skillCount, { color: '#4338CA' }]}>{stats.faultCounts?.B || 0} Issues</Text>
           </View>
         </View>
 
         <View style={styles.row}>
-          <View style={[styles.skillCard, { backgroundColor: '#DCFCE7' }]}>
+          <View style={[styles.skillCard, { backgroundColor: 'rgba(21,128,61,0.15)' }]}>
              <Text style={styles.skillTitle}>Speed Control</Text>
              <Text style={[styles.skillCount, { color: '#15803D' }]}>{stats.faultCounts?.C || 0} Issues</Text>
           </View>
-          <View style={[styles.skillCard, { backgroundColor: '#FEF3C7' }]}>
+          <View style={[styles.skillCard, { backgroundColor: 'rgba(245,158,11,0.15)' }]}>
              <Text style={styles.skillTitle}>Steering</Text>
              <Text style={[styles.skillCount, { color: '#D97706' }]}>{stats.faultCounts?.D || 0} Issues</Text>
           </View>
@@ -222,23 +222,22 @@ const StudentProgressScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { padding: 24 },
   headerContainer: { marginBottom: 24 },
-  header: { fontSize: 32, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  header: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1 },
   subtitle: { fontSize: 12, fontWeight: '800', color: '#15803D', letterSpacing: 2, marginTop: 4 },
   
   statsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   statBox: { 
-      width: '31%', backgroundColor: 'white', padding: 20, borderRadius: 20, alignItems: 'center',
-      shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 12, elevation: 2
+      width: '31%', backgroundColor: '#131B2E', padding: 20, borderRadius: 20, alignItems: 'center',
   },
   statLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', marginBottom: 8, letterSpacing: 1 },
-  statNumber: { fontSize: 24, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  statNumber: { fontSize: 24, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1 },
 
   trendBanner: { 
       flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 24, marginBottom: 32,
-      backgroundColor: '#1E293B', shadowColor: '#1E293B', shadowOpacity: 0.2, shadowRadius: 20, elevation: 8
+      backgroundColor: '#1E293B',
   },
   trendGood: { backgroundColor: '#15803D' },
   trendNeutral: { backgroundColor: '#1E293B' },
@@ -246,34 +245,32 @@ const styles = StyleSheet.create({
   trendLabel: { color: 'rgba(255,255,255,0.6)', fontWeight: '800', fontSize: 10, letterSpacing: 1 },
   trendText: { color: 'white', fontWeight: '800', fontSize: 18, letterSpacing: -0.5 },
 
-  goalContainer: { backgroundColor: 'white', padding: 24, borderRadius: 24, marginBottom: 40, shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 15, elevation: 2 },
+  goalContainer: { backgroundColor: '#131B2E', padding: 24, borderRadius: 24, marginBottom: 40 },
   goalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, alignItems: 'flex-end' },
-  goalLabel: { fontWeight: '800', color: '#1E293B', fontSize: 13, letterSpacing: 0.5 },
+  goalLabel: { fontWeight: '800', color: '#FFFFFF', fontSize: 13, letterSpacing: 0.5 },
   goalValue: { color: '#15803D', fontWeight: '800', fontSize: 20, letterSpacing: -1 },
-  progressBarBg: { height: 12, backgroundColor: '#F1F5F9', borderRadius: 6, overflow: 'hidden' },
+  progressBarBg: { height: 12, backgroundColor: '#1E293B', borderRadius: 6, overflow: 'hidden' },
   progressBarFill: { height: '100%', backgroundColor: '#15803D', borderRadius: 6 },
   goalSub: { fontSize: 12, color: '#94A3B8', marginTop: 12, fontWeight: '500' },
 
-  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20, color: '#1E293B', letterSpacing: -0.5 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20, color: '#FFFFFF', letterSpacing: -0.5 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   skillCard: { width: '48%', padding: 20, borderRadius: 20 },
-  skillTitle: { fontWeight: '800', fontSize: 16, marginBottom: 4, color: '#1E293B', letterSpacing: -0.3 },
+  skillTitle: { fontWeight: '800', fontSize: 16, marginBottom: 4, color: '#FFFFFF', letterSpacing: -0.3 },
   skillCount: { fontSize: 13, fontWeight: '700' },
   
   feedbackCard: { 
-    backgroundColor: 'white', padding: 20, borderRadius: 20, marginBottom: 12,
+    backgroundColor: '#131B2E', padding: 20, borderRadius: 20, marginBottom: 12,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 12, elevation: 2
   },
   diagCard: {
-    backgroundColor: 'white', padding: 24, borderRadius: 24, marginBottom: 16,
-    shadowColor: '#1E293B', shadowOpacity: 0.04, shadowRadius: 15, elevation: 2
+    backgroundColor: '#131B2E', padding: 24, borderRadius: 24, marginBottom: 16,
   },
-  date: { fontWeight: '800', color: '#1E293B', fontSize: 16, letterSpacing: -0.5 },
+  date: { fontWeight: '800', color: '#FFFFFF', fontSize: 16, letterSpacing: -0.5 },
   comment: { color: '#64748B', fontWeight: '500', marginTop: 4, fontSize: 14 },
   diagType: { fontSize: 11, fontWeight: '800', color: '#15803D', marginBottom: 16, letterSpacing: 1 },
-  scoreContainer: { borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  scoreContainer: { borderTopWidth: 1, borderTopColor: '#1E293B', paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   scoreLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', letterSpacing: 1 },
   scoreText: { fontSize: 20, fontWeight: '800', letterSpacing: -1 },
   

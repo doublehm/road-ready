@@ -16,7 +16,7 @@ import { Accelerometer, Gyroscope } from 'expo-sensors';
 const DATA_WINDOW = 600;
 // Minimum ms between React state updates for acceleration/rotation.
 // Sensors still sample at full rate into refs; this only limits re-renders.
-const STATE_THROTTLE_MS = 500;
+const STATE_THROTTLE_MS = 150;
 
 export default function useDeviceMotion(sampleRate = 10) {
   const [isTracking, setIsTracking] = useState(false);

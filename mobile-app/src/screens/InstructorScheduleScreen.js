@@ -101,7 +101,7 @@ const InstructorScheduleScreen = ({ navigation }) => {
               name: item.student?.full_name || 'Student'
             })}
           >
-            <Ionicons name="chatbubble-ellipses-outline" size={18} color="#1E293B" />
+            <Ionicons name="chatbubble-ellipses-outline" size={18} color="#FFFFFF" />
             <Text style={styles.messageBtnText}>Message</Text>
           </TouchableOpacity>
         )}
@@ -130,7 +130,7 @@ const InstructorScheduleScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#1E293B" />
+        <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
   }
@@ -180,66 +180,62 @@ const InstructorScheduleScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6FAFE' },
-  header: { padding: 24, backgroundColor: 'white' },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  header: { padding: 24, backgroundColor: '#131B2E' },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1 },
   headerSubtitle: { fontSize: 11, fontWeight: '800', color: '#15803D', letterSpacing: 2, marginTop: 4 },
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F6FAFE' },
+  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B1326' },
   
   tabContainer: { 
     flexDirection: 'row', 
-    backgroundColor: 'white', 
+    backgroundColor: '#131B2E', 
     paddingHorizontal: 24, 
     paddingBottom: 4,
     gap: 24
   },
   tab: { paddingBottom: 12 },
-  activeTab: { borderBottomWidth: 3, borderBottomColor: '#1E293B' },
+  activeTab: { borderBottomWidth: 3, borderBottomColor: '#FFFFFF' },
   tabText: { fontSize: 15, color: '#94A3B8', fontWeight: '700' },
-  activeTabText: { color: '#1E293B' },
+  activeTabText: { color: '#FFFFFF' },
 
   list: { padding: 24, paddingBottom: 100 },
   card: {
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     borderRadius: 24,
     padding: 24,
     marginBottom: 20,
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.04,
-    shadowRadius: 15,
-    elevation: 2,
   },
   cardHistory: { opacity: 0.7 },
   
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  date: { fontSize: 18, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
+  date: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 },
   
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusText: { fontSize: 10, fontWeight: '900' },
-  statusActive: { backgroundColor: '#DCFCE7' },
+  statusActive: { backgroundColor: 'rgba(21,128,61,0.15)' },
   statusActiveText: { color: '#15803D' },
-  statusCompleted: { backgroundColor: '#F1F5F9' },
+  statusCompleted: { backgroundColor: '#1E293B' },
   statusCompletedText: { color: '#64748B' },
-  statusInactive: { backgroundColor: '#FEE2E2' },
+  statusInactive: { backgroundColor: 'rgba(239,68,68,0.15)' },
   statusInactiveText: { color: '#EF4444' },
 
   infoGrid: { gap: 10, marginBottom: 20 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  info: { fontSize: 15, color: '#64748B', marginLeft: 10, fontWeight: '600' },
+  info: { fontSize: 15, color: '#94A3B8', marginLeft: 10, fontWeight: '600' },
   
   diagNoteBox: { 
     flexDirection: 'row', 
     alignItems: 'center', 
-    backgroundColor: '#E0E7FF', 
+    backgroundColor: 'rgba(67,56,202,0.15)', 
     padding: 12, 
     borderRadius: 12,
     gap: 8,
     marginBottom: 16
   },
-  diagNoteText: { color: '#4338CA', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
+  diagNoteText: { color: '#818CF8', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
   
-  noteBox: { backgroundColor: '#F8FAFC', padding: 12, borderRadius: 12, marginBottom: 16 },
-  noteText: { fontStyle: 'italic', color: '#64748B', fontSize: 14, fontWeight: '500' },
+  noteBox: { backgroundColor: '#1E293B', padding: 12, borderRadius: 12, marginBottom: 16 },
+  noteText: { fontStyle: 'italic', color: '#94A3B8', fontSize: 14, fontWeight: '500' },
 
   cardActions: { flexDirection: 'row', gap: 12 },
   messageBtn: {
@@ -249,10 +245,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#1E293B',
     gap: 8
   },
-  messageBtnText: { color: '#1E293B', fontWeight: '800', fontSize: 14 },
+  messageBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
 
   startRideBtn: {
     flex: 1,
@@ -261,7 +257,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#3B82F6',
     gap: 8
   },
   startRideBtnText: { color: '#fff', fontWeight: '800', fontSize: 14 },

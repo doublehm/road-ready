@@ -140,7 +140,7 @@ const QuizScreen = () => {
 
 
 
-  if (loading) return <ActivityIndicator style={styles.loader} size="large" color="#FF5864" />; 
+  if (loading) return <ActivityIndicator style={styles.loader} size="large" color="#3B82F6" />; 
 
 
 
@@ -172,7 +172,7 @@ const QuizScreen = () => {
 
 
 
-  if (questions.length === 0) return <View style={styles.container}><Text>No questions available.</Text></View>;
+  if (questions.length === 0) return <View style={styles.container}><Text style={{color: '#94A3B8'}}>No questions available.</Text></View>;
 
 
 
@@ -245,27 +245,23 @@ const QuizScreen = () => {
     };
 
     const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F6FAFE', padding: 20, justifyContent: 'center' },
-    loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F6FAFE' },
+    container: { flex: 1, backgroundColor: '#0B1326', padding: 20, justifyContent: 'center' },
+    loader: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0B1326' },
     header: { position: 'absolute', top: 60, left: 20, right: 20, zIndex: 1 },
     headerTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
     progressText: { fontSize: 12, fontWeight: '800', color: '#64748B', letterSpacing: 1 },
     scoreText: { fontSize: 12, fontWeight: '800', color: '#15803D', letterSpacing: 1 },
-    progressTrack: { height: 8, backgroundColor: '#E2E8F0', borderRadius: 4, overflow: 'hidden' },
+    progressTrack: { height: 8, backgroundColor: '#1E293B', borderRadius: 4, overflow: 'hidden' },
     progressFill: { height: '100%', backgroundColor: '#15803D', borderRadius: 4 },
 
-    finishTitle: { fontSize: 32, fontWeight: '800', color: '#1E293B', textAlign: 'center', marginBottom: 12, letterSpacing: -1 },
+    finishTitle: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', marginBottom: 12, letterSpacing: -1 },
     finishScore: { fontSize: 18, color: '#64748B', textAlign: 'center', marginBottom: 40, fontWeight: '600' },
-    finishCard: { backgroundColor: 'white', borderRadius: 24, padding: 32, alignItems: 'center', shadowColor: '#1E293B', shadowOpacity: 0.1, shadowRadius: 20, elevation: 5 },
+    finishCard: { backgroundColor: '#131B2E', borderRadius: 24, padding: 32, alignItems: 'center' },
 
     card: {
-      backgroundColor: 'white',
+      backgroundColor: '#131B2E',
       borderRadius: 24,
       padding: 24,
-      shadowColor: '#1E293B',
-      shadowOpacity: 0.06,
-      shadowRadius: 20,
-      elevation: 4,
       minHeight: 450,
     },
     questionImage: {
@@ -273,14 +269,14 @@ const QuizScreen = () => {
       height: 180,
       borderRadius: 16,
       marginBottom: 24,
-      backgroundColor: '#F8FAFC',
+      backgroundColor: '#1E293B',
     },
-    questionText: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 32, color: '#1E293B', letterSpacing: -0.5, lineHeight: 28 },
+    questionText: { fontSize: 22, fontWeight: '800', textAlign: 'center', marginBottom: 32, color: '#FFFFFF', letterSpacing: -0.5, lineHeight: 28 },
     optionsContainer: { width: '100%' },
     optionButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#F8FAFC',
+      backgroundColor: '#1E293B',
       padding: 16,
       borderRadius: 16,
       marginBottom: 12,
@@ -289,13 +285,13 @@ const QuizScreen = () => {
       width: 32,
       height: 32,
       borderRadius: 8,
-      backgroundColor: '#1E293B',
+      backgroundColor: '#3B82F6',
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 16,
     },
     optionLabel: { fontWeight: '800', color: 'white', fontSize: 14 },
-    optionText: { fontSize: 16, color: '#1E293B', fontWeight: '600', flex: 1 },
+    optionText: { fontSize: 16, color: '#E2E8F0', fontWeight: '600', flex: 1 },
     });
 
 export default QuizScreen;

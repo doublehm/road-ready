@@ -64,7 +64,7 @@ const ModulesScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#3B82F6" />
       </View>
     );
   }
@@ -181,7 +181,7 @@ const ModulesScreen = ({ navigation }) => {
   const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6FAFE',
+    backgroundColor: '#0B1326',
   },
   scrollContent: {
     padding: 24,
@@ -190,7 +190,7 @@ const ModulesScreen = ({ navigation }) => {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F6FAFE',
+    backgroundColor: '#0B1326',
   },
   header: {
     alignItems: 'flex-start',
@@ -200,7 +200,7 @@ const ModulesScreen = ({ navigation }) => {
   headerTitle: {
     fontSize: 32,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#FFFFFF',
     letterSpacing: -1,
   },
   headerSubtitle: {
@@ -211,18 +211,14 @@ const ModulesScreen = ({ navigation }) => {
     marginTop: 4,
   },
   moduleCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 24,
     padding: 24,
     marginBottom: 16,
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.04,
-    shadowRadius: 15,
-    elevation: 2,
   },
   lockedCard: {
     opacity: 0.7,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#1E293B',
   },
   moduleHeader: {
     flexDirection: 'row',
@@ -233,14 +229,14 @@ const ModulesScreen = ({ navigation }) => {
   moduleName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#1E293B',
+    color: '#FFFFFF',
     flex: 1,
     letterSpacing: -0.5,
   },
   completedBadgeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#DCFCE7',
+    backgroundColor: 'rgba(21,128,61,0.15)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -262,7 +258,7 @@ const ModulesScreen = ({ navigation }) => {
     marginBottom: 24,
     gap: 8,
     padding: 16,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#1E293B',
     borderRadius: 16
   },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
@@ -271,14 +267,14 @@ const ModulesScreen = ({ navigation }) => {
     color: '#64748B',
     fontWeight: '600'
   },
-  infoValue: { color: '#1E293B', fontWeight: '800' },
+  infoValue: { color: '#FFFFFF', fontWeight: '800' },
   progressSection: { marginBottom: 20 },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10 },
   progressLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', letterSpacing: 1 },
   progressValue: { fontSize: 13, fontWeight: '800', color: '#15803D' },
   progressBar: {
     height: 10,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#1E293B',
     borderRadius: 5,
     overflow: 'hidden',
   },
@@ -296,12 +292,12 @@ const ModulesScreen = ({ navigation }) => {
     alignItems: 'center',
   },
   packageButton: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#3B82F6',
   },
   hourlyButton: {
-    backgroundColor: 'white',
+    backgroundColor: '#0B1326',
     borderWidth: 2,
-    borderColor: '#F1F5F9'
+    borderColor: '#1E293B'
   },
   buttonText: {
     fontSize: 15,

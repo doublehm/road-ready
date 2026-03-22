@@ -17,7 +17,7 @@ const LegalScreen = ({ route, navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {type === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
@@ -30,7 +30,7 @@ const LegalScreen = ({ route, navigation }) => {
         startInLoadingState={true}
         renderLoading={() => (
           <View style={styles.loading}>
-            <ActivityIndicator size="large" color="#007bff" />
+            <ActivityIndicator size="large" color="#3B82F6" />
           </View>
         )}
       />
@@ -39,7 +39,7 @@ const LegalScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   header: { 
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -47,9 +47,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee'
+    borderBottomColor: '#1E293B'
   },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   backBtn: { padding: 5 },
   loading: {
     position: 'absolute',
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white'
+    backgroundColor: '#0B1326'
   }
 });
 

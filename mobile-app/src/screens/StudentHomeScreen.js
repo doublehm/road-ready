@@ -52,11 +52,11 @@ const StudentHomeScreen = ({ navigation }) => {
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconBtn}>
-              <Ionicons name="notifications-outline" size={24} color="#1E293B" />
+              <Ionicons name="notifications-outline" size={24} color="#FFFFFF" />
               {unreadCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount}</Text></View>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('StudentEditProfile')} style={styles.iconBtn}>
-              <Ionicons name="settings-outline" size={24} color="#1E293B" />
+              <Ionicons name="settings-outline" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -64,7 +64,7 @@ const StudentHomeScreen = ({ navigation }) => {
         {/* Hero: Next Lesson Card */}
         <Text style={styles.sectionTitle}>Next Lesson</Text>
         {loading ? (
-          <ActivityIndicator color="#1E293B" />
+          <ActivityIndicator color="#3B82F6" />
         ) : upcomingLesson ? (
           <TouchableOpacity 
             style={styles.heroCard}
@@ -111,42 +111,42 @@ const StudentHomeScreen = ({ navigation }) => {
         <Text style={styles.sectionTitle}>Drive Center</Text>
         <View style={styles.grid}>
           <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('DiagnosticRideIntro')}>
-            <View style={[styles.iconBg, { backgroundColor: '#E0E7FF' }]}>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(59,130,246,0.15)' }]}>
               <Ionicons name="speedometer" size={24} color="#4338CA" />
             </View>
             <Text style={styles.gridLabel}>Diagnostic</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Learn')}>
-            <View style={[styles.iconBg, { backgroundColor: '#FEF3C7' }]}>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(245,158,11,0.15)' }]}>
               <Ionicons name="book" size={24} color="#D97706" />
             </View>
             <Text style={styles.gridLabel}>Study</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('DriveLog')}>
-            <View style={[styles.iconBg, { backgroundColor: '#DCFCE7' }]}>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(21,128,61,0.15)' }]}>
               <Ionicons name="car" size={24} color="#15803D" />
             </View>
             <Text style={styles.gridLabel}>Logbook</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('Quiz')}>
-            <View style={[styles.iconBg, { backgroundColor: '#FEE2E2' }]}>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(239,68,68,0.15)' }]}>
               <Ionicons name="checkmark-circle" size={24} color="#B91C1C" />
             </View>
             <Text style={styles.gridLabel}>Practice</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('DiagnosticRideHistory')}>
-            <View style={[styles.iconBg, { backgroundColor: '#E0E7FF' }]}>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(59,130,246,0.15)' }]}>
               <Ionicons name="analytics" size={24} color="#4338CA" />
             </View>
             <Text style={styles.gridLabel}>Ride History</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.gridItem} onPress={() => navigation.navigate('StudentProgress')}>
-            <View style={[styles.iconBg, { backgroundColor: '#F0FDF4' }]}>
+            <View style={[styles.iconBg, { backgroundColor: 'rgba(21,128,61,0.15)' }]}>
               <Ionicons name="trending-up" size={24} color="#15803D" />
             </View>
             <Text style={styles.gridLabel}>Progress</Text>
@@ -198,7 +198,7 @@ const StudentHomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { paddingHorizontal: 20, paddingBottom: 100 },
   header: { 
     flexDirection: 'row', 
@@ -207,26 +207,22 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 30 
   },
-  greeting: { fontSize: 14, color: '#64748B', fontWeight: '500' },
-  name: { fontSize: 28, fontWeight: '800', color: '#1E293B', marginTop: 2 },
+  greeting: { fontSize: 14, color: '#94A3B8', fontWeight: '500' },
+  name: { fontSize: 28, fontWeight: '800', color: '#FFFFFF', marginTop: 2 },
   headerActions: { flexDirection: 'row', gap: 12 },
   iconBtn: { 
     width: 44, 
     height: 44, 
     borderRadius: 22, 
-    backgroundColor: 'white', 
+    backgroundColor: '#131B2E', 
     justifyContent: 'center', 
     alignItems: 'center',
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2
   },
   sectionTitle: { 
     fontSize: 18, 
     fontWeight: '800', 
     marginBottom: 16, 
-    color: '#1E293B',
+    color: '#FFFFFF',
     letterSpacing: -0.5
   },
   heroCard: {
@@ -234,11 +230,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     marginBottom: 32,
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
     overflow: 'hidden'
   },
   heroGradient: {
@@ -260,62 +251,54 @@ const styles = StyleSheet.create({
   },
   heroAddress: { color: 'rgba(255,255,255,0.6)', marginLeft: 8, fontSize: 13 },
   emptyHero: {
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     borderRadius: 24,
     padding: 32,
     alignItems: 'center',
     marginBottom: 32,
     borderWidth: 2,
-    borderColor: '#E2E8F0',
+    borderColor: '#1E293B',
     borderStyle: 'dashed'
   },
   emptyHeroText: { color: '#64748B', fontSize: 16, fontWeight: '600' },
   emptyHeroLink: { color: '#15803D', fontWeight: '800', marginTop: 8 },
   progressSection: { marginBottom: 40 },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 },
-  progressLabel: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
+  progressLabel: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
   progressValue: { fontSize: 20, fontWeight: '800', color: '#15803D' },
-  progressTrack: { height: 12, backgroundColor: '#E2E8F0', borderRadius: 6, overflow: 'hidden' },
+  progressTrack: { height: 12, backgroundColor: '#1E293B', borderRadius: 6, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#15803D', borderRadius: 6 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginBottom: 40 },
   gridItem: { 
     width: (width - 56) / 2, 
-    backgroundColor: 'white', 
+    backgroundColor: '#131B2E', 
     padding: 20, 
     borderRadius: 20, 
     alignItems: 'center',
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2
   },
   iconBg: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  gridLabel: { fontWeight: '700', color: '#1E293B', fontSize: 15 },
+  gridLabel: { fontWeight: '700', color: '#FFFFFF', fontSize: 15 },
   badge: {
     position: 'absolute', top: -4, right: -4, backgroundColor: '#EF4444', borderRadius: 10, 
-    width: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'white'
+    width: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#0B1326'
   },
   badgeText: { color: 'white', fontSize: 10, fontWeight: '900' },
   logoutBtn: { padding: 20, alignItems: 'center' },
   logoutText: { color: '#94A3B8', fontWeight: '700', fontSize: 14 },
   pendingCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     borderRadius: 20,
     padding: 20,
     marginBottom: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#F59E0B',
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.04,
-    shadowRadius: 12,
-    elevation: 2,
   },
   pendingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  pendingDate: { fontSize: 16, fontWeight: '800', color: '#1E293B' },
+  pendingDate: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
   pendingTime: { fontSize: 16, fontWeight: '700', color: '#F59E0B' },
   pendingBody: { marginBottom: 12 },
   pendingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },

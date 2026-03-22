@@ -159,6 +159,7 @@ const BookingFlowScreen = ({ route, navigation }) => {
         <TextInput 
           style={styles.input} 
           placeholder="Enter address..." 
+          placeholderTextColor="#64748B"
           value={address} 
           onChangeText={setAddress} 
         />
@@ -166,7 +167,7 @@ const BookingFlowScreen = ({ route, navigation }) => {
         {/* Summary */}
         <View style={styles.summary}>
           <View style={styles.summaryRow}>
-            <Text>Total</Text>
+            <Text style={{color: '#E2E8F0'}}>Total</Text>
             <Text style={styles.totalPrice}>${(instructor.hourly_rate * parseFloat(duration)).toFixed(2)}</Text>
           </View>
         </View>
@@ -186,38 +187,38 @@ const BookingFlowScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { padding: 20 },
-  header: { fontSize: 28, fontWeight: 'bold', color: '#333', marginBottom: 20 },
-  label: { fontWeight: '600', marginBottom: 10, marginTop: 10, color: '#333', fontSize: 16 },
+  header: { fontSize: 28, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20 },
+  label: { fontWeight: '600', marginBottom: 10, marginTop: 10, color: '#FFFFFF', fontSize: 16 },
   
   dateTimeRow: { flexDirection: 'row', justifyContent: 'space-between' },
   dateTimeBtn: { 
-      flex: 0.48, padding: 15, backgroundColor: '#f0f0f0', borderRadius: 10, alignItems: 'center' 
+      flex: 0.48, padding: 15, backgroundColor: '#1E293B', borderRadius: 10, alignItems: 'center' 
   },
-  dateTimeText: { fontSize: 16, color: '#333' },
+  dateTimeText: { fontSize: 16, color: '#FFFFFF' },
 
   durationRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   durationBtn: { 
-    flex: 1, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#ddd', 
-    alignItems: 'center', marginHorizontal: 5, backgroundColor: '#fff'
+    flex: 1, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#1E293B', 
+    alignItems: 'center', marginHorizontal: 5, backgroundColor: '#131B2E'
   },
-  durationBtnActive: { backgroundColor: '#007bff', borderColor: '#007bff' },
-  durationText: { color: '#666' },
+  durationBtnActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
+  durationText: { color: '#94A3B8' },
   textActive: { color: 'white' },
 
   mapContainer: { height: 200, borderRadius: 12, overflow: 'hidden', marginBottom: 10 },
   map: { flex: 1 },
   input: { 
-    borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, 
-    fontSize: 16, backgroundColor: '#f9f9f9', marginBottom: 20 
+    borderWidth: 1, borderColor: '#1E293B', borderRadius: 8, padding: 12, 
+    fontSize: 16, backgroundColor: '#131B2E', marginBottom: 20, color: '#E2E8F0'
   },
 
-  summary: { backgroundColor: '#f8f9fa', padding: 20, borderRadius: 10, marginBottom: 20 },
+  summary: { backgroundColor: '#131B2E', padding: 20, borderRadius: 10, marginBottom: 20 },
   summaryRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  totalPrice: { fontWeight: 'bold', fontSize: 18, color: '#28a745' },
+  totalPrice: { fontWeight: 'bold', fontSize: 18, color: '#15803D' },
 
-  confirmBtn: { backgroundColor: '#28a745', padding: 16, borderRadius: 10, alignItems: 'center' },
+  confirmBtn: { backgroundColor: '#15803D', padding: 16, borderRadius: 10, alignItems: 'center' },
   confirmText: { color: 'white', fontWeight: 'bold', fontSize: 18 }
 });
 

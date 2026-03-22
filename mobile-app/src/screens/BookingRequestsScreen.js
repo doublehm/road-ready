@@ -89,9 +89,9 @@ const BookingRequestsScreen = ({ navigation }) => {
       </View>
       
       <View style={styles.details}>
-        <Text style={styles.detailText}><Ionicons name="calendar" /> {item.date}</Text>
-        <Text style={styles.detailText}><Ionicons name="time" /> {item.time}</Text>
-        <Text style={styles.detailText}><Ionicons name="card" /> Exp: {expiry || 'N/A'}</Text>
+        <Text style={styles.detailText}><Ionicons name="calendar" color="#CBD5E1" /> {item.date}</Text>
+        <Text style={styles.detailText}><Ionicons name="time" color="#CBD5E1" /> {item.time}</Text>
+        <Text style={styles.detailText}><Ionicons name="card" color="#CBD5E1" /> Exp: {expiry || 'N/A'}</Text>
         
         {isExpired && <Text style={styles.expiredText}>⚠️ LICENSE EXPIRED</Text>}
 
@@ -101,7 +101,7 @@ const BookingRequestsScreen = ({ navigation }) => {
                 <Text style={{color: 'white', marginLeft: 5}}>View License</Text>
             </TouchableOpacity>
         ) : (
-            <Text style={{color:'#999', fontStyle:'italic'}}>No license photo</Text>
+            <Text style={{color:'#64748B', fontStyle:'italic'}}>No license photo</Text>
         )}
 
         <TouchableOpacity 
@@ -125,7 +125,7 @@ const BookingRequestsScreen = ({ navigation }) => {
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.btn, styles.acceptBtn, isExpired && {backgroundColor: '#ccc'}]} 
+          style={[styles.btn, styles.acceptBtn, isExpired && {backgroundColor: '#475569'}]} 
           onPress={() => handleAccept(item.id)}
           disabled={isExpired}
         >
@@ -141,7 +141,7 @@ const BookingRequestsScreen = ({ navigation }) => {
       <Text style={styles.screenTitle}>Booking Requests</Text>
       
       {loading ? (
-        <ActivityIndicator style={{marginTop: 50}} size="large" />
+        <ActivityIndicator style={{marginTop: 50}} size="large" color="#3B82F6" />
       ) : (
         <FlatList
           data={requests}
@@ -161,12 +161,13 @@ const BookingRequestsScreen = ({ navigation }) => {
                   <TextInput 
                     style={styles.modalInput} 
                     placeholder="e.g. Schedule conflict..." 
+                    placeholderTextColor="#64748B"
                     value={rejectReason}
                     onChangeText={setRejectReason}
                   />
                   <View style={styles.modalActions}>
                       <TouchableOpacity onPress={() => setRejectModalVisible(false)} style={styles.modalBtnCancel}>
-                          <Text>Cancel</Text>
+                          <Text style={{color: '#CBD5E1'}}>Cancel</Text>
                       </TouchableOpacity>
                       <TouchableOpacity onPress={confirmReject} style={styles.modalBtnConfirm}>
                           <Text style={{color:'white'}}>Reject</Text>
@@ -193,48 +194,48 @@ const BookingRequestsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  screenTitle: { fontSize: 22, fontWeight: 'bold', padding: 20, color: '#333' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  screenTitle: { fontSize: 22, fontWeight: 'bold', padding: 20, color: '#FFFFFF' },
   list: { paddingHorizontal: 15 },
   card: {
-    backgroundColor: 'white', borderRadius: 12, padding: 15, marginBottom: 15,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
+    backgroundColor: '#131B2E', borderRadius: 12, padding: 15, marginBottom: 15,
+    borderWidth: 1, borderColor: '#1E293B'
   },
   header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  studentName: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  price: { fontSize: 18, fontWeight: 'bold', color: '#28a745' },
+  studentName: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
+  price: { fontSize: 18, fontWeight: 'bold', color: '#15803D' },
   
   details: { marginBottom: 15 },
-  detailText: { fontSize: 15, color: '#555', marginBottom: 5 },
-  expiredText: { color: 'red', fontWeight: 'bold', marginBottom: 5 },
+  detailText: { fontSize: 15, color: '#CBD5E1', marginBottom: 5 },
+  expiredText: { color: '#EF4444', fontWeight: 'bold', marginBottom: 5 },
   viewLicenseBtn: { 
-      flexDirection: 'row', alignItems: 'center', backgroundColor: '#6c757d', 
+      flexDirection: 'row', alignItems: 'center', backgroundColor: '#475569', 
       padding: 8, borderRadius: 5, alignSelf: 'flex-start', marginTop: 5 
   },
   messageBtn: { 
-      flexDirection: 'row', alignItems: 'center', backgroundColor: '#007bff', 
+      flexDirection: 'row', alignItems: 'center', backgroundColor: '#3B82F6', 
       padding: 8, borderRadius: 5, alignSelf: 'flex-start', marginTop: 5 
   },
   
   actions: { flexDirection: 'row', justifyContent: 'space-between' },
   btn: { flex: 1, padding: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  rejectBtn: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#dc3545', marginRight: 10 },
-  acceptBtn: { backgroundColor: '#28a745' },
+  rejectBtn: { backgroundColor: '#131B2E', borderWidth: 1, borderColor: '#EF4444', marginRight: 10 },
+  acceptBtn: { backgroundColor: '#15803D' },
   
-  btnTextReject: { color: '#dc3545', fontWeight: 'bold' },
+  btnTextReject: { color: '#EF4444', fontWeight: 'bold' },
   btnTextAccept: { color: 'white', fontWeight: 'bold' },
   
-  empty: { textAlign: 'center', marginTop: 50, color: '#999' },
+  empty: { textAlign: 'center', marginTop: 50, color: '#64748B' },
 
   // Modal Styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: 'white', borderRadius: 15, padding: 20 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-  modalSub: { marginBottom: 10, color: '#666' },
-  modalInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 10, minHeight: 80, textAlignVertical: 'top', marginBottom: 20 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#131B2E', borderRadius: 15, padding: 20, borderWidth: 1, borderColor: '#1E293B' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 10, color: '#FFFFFF' },
+  modalSub: { marginBottom: 10, color: '#94A3B8' },
+  modalInput: { borderWidth: 1, borderColor: '#1E293B', borderRadius: 8, padding: 10, minHeight: 80, textAlignVertical: 'top', marginBottom: 20, color: '#E2E8F0', backgroundColor: '#0B1326' },
   modalActions: { flexDirection: 'row', justifyContent: 'flex-end' },
   modalBtnCancel: { padding: 10, marginRight: 15 },
-  modalBtnConfirm: { backgroundColor: '#dc3545', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  modalBtnConfirm: { backgroundColor: '#EF4444', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
 
   // Image Modal
   imageModal: { flex: 1, backgroundColor: 'black', justifyContent: 'center', alignItems: 'center' },

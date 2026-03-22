@@ -84,7 +84,7 @@ const RegisterScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Full Name"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#64748B"
             value={fullName}
             onChangeText={setFullName}
           />
@@ -92,7 +92,7 @@ const RegisterScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Email Address"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#64748B"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -102,7 +102,7 @@ const RegisterScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Phone Number"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#64748B"
             value={phone}
             onChangeText={setPhone}
             keyboardType="phone-pad"
@@ -111,7 +111,7 @@ const RegisterScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#64748B"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -157,41 +157,32 @@ const RegisterScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { padding: 24, paddingBottom: 60 },
   header: { alignItems: 'center', marginBottom: 32, marginTop: 20 },
-  title: { fontSize: 32, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  title: { fontSize: 32, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1 },
   subtitle: { fontSize: 12, fontWeight: '800', color: '#15803D', letterSpacing: 2, marginTop: 4 },
   roleContainer: { 
     flexDirection: 'row', 
     marginBottom: 32, 
-    backgroundColor: '#E2E8F0', 
+    backgroundColor: '#1E293B', 
     borderRadius: 16, 
     padding: 4 
   },
   roleBtn: { flex: 1, paddingVertical: 12, alignItems: 'center', borderRadius: 12 },
   roleBtnActive: { 
-    backgroundColor: 'white', 
-    shadowColor: '#1E293B', 
-    shadowOpacity: 0.1, 
-    shadowRadius: 10, 
-    elevation: 4 
+    backgroundColor: '#131B2E',
   },
   roleText: { fontWeight: '700', color: '#64748B', fontSize: 15 },
-  roleTextActive: { color: '#1E293B' },
+  roleTextActive: { color: '#FFFFFF' },
   inputContainer: { marginBottom: 12 },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     padding: 18,
     borderRadius: 16,
     marginBottom: 16,
     fontSize: 16,
-    color: '#1E293B',
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.06,
-    shadowRadius: 15,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    color: '#E2E8F0',
   },
   hint: { fontSize: 12, color: '#94A3B8', marginBottom: 20, marginLeft: 4, fontWeight: '500' },
   termsContainer: {
@@ -205,7 +196,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#1E293B',
+    borderColor: '#475569',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -222,20 +213,15 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   termsLink: {
-    color: '#1E293B',
+    color: '#E2E8F0',
     fontWeight: '700',
   },
   button: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#3B82F6',
     padding: 20,
     borderRadius: 16,
     alignItems: 'center',
     marginBottom: 24,
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
   },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: '800', letterSpacing: -0.5 },
   link: { alignItems: 'center' },

@@ -98,16 +98,16 @@ const GradeStudentScreen = ({ navigation }) => {
       onPress={() => setSelectedBooking(item)}
     >
       <View style={styles.bookingRow}>
-        <Ionicons name="person-circle" size={40} color="#007bff" />
+        <Ionicons name="person-circle" size={40} color="#3B82F6" />
         <View style={{marginLeft: 15}}>
           <Text style={styles.cardTitle}>{item.student?.full_name || `Student #${item.student_id}`}</Text>
-          <Text>{item.date} at {item.time}</Text>
+          <Text style={{color: '#94A3B8'}}>{item.date} at {item.time}</Text>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  if (loading) return <ActivityIndicator style={{flex:1}} size="large" />;
+  if (loading) return <ActivityIndicator style={{flex:1}} size="large" color="#3B82F6" />;
 
   if (!selectedBooking) {
     return (
@@ -128,7 +128,7 @@ const GradeStudentScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => setSelectedBooking(null)}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Grading Lesson #{selectedBooking.id}</Text>
         <View style={{width: 24}} />
@@ -146,7 +146,7 @@ const GradeStudentScreen = ({ navigation }) => {
               <Text style={styles.categoryTitle}>{cat.id}. {cat.title}</Text>
               <Ionicons 
                 name={expandedCategory === cat.id ? "chevron-up" : "chevron-down"} 
-                size={20} color="#555" 
+                size={20} color="#94A3B8" 
               />
             </TouchableOpacity>
             
@@ -163,11 +163,11 @@ const GradeStudentScreen = ({ navigation }) => {
                       
                       <View style={styles.counter}>
                         <TouchableOpacity onPress={() => updateCount(item.code, -1)} disabled={count===0}>
-                          <Ionicons name="remove-circle-outline" size={28} color={count===0 ? "#ccc" : "#dc3545"} />
+                          <Ionicons name="remove-circle-outline" size={28} color={count===0 ? "#475569" : "#EF4444"} />
                         </TouchableOpacity>
                         <Text style={styles.countText}>{count}</Text>
                         <TouchableOpacity onPress={() => updateCount(item.code, 1)}>
-                          <Ionicons name="add-circle" size={28} color="#28a745" />
+                          <Ionicons name="add-circle" size={28} color="#15803D" />
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -184,16 +184,18 @@ const GradeStudentScreen = ({ navigation }) => {
           multiline
           numberOfLines={4}
           placeholder="Shared feedback for the student..."
+          placeholderTextColor="#64748B"
           value={feedback}
           onChangeText={setFeedback}
         />
 
         <Text style={styles.sectionHeader}>Private Notes</Text>
         <TextInput
-          style={[styles.input, { backgroundColor: '#fffbe6' }]}
+          style={[styles.input, { backgroundColor: 'rgba(245,158,11,0.15)' }]}
           multiline
           numberOfLines={2}
           placeholder="Notes for yourself..."
+          placeholderTextColor="#64748B"
           value={privateNotes}
           onChangeText={setPrivateNotes}
         />
@@ -208,38 +210,37 @@ const GradeStudentScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { fontSize: 22, fontWeight: 'bold', padding: 20 },
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  header: { fontSize: 22, fontWeight: 'bold', padding: 20, color: '#FFFFFF' },
   list: { padding: 15 },
   card: {
-    backgroundColor: 'white', padding: 20, borderRadius: 12, marginBottom: 15,
-    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 5, elevation: 2
+    backgroundColor: '#131B2E', padding: 20, borderRadius: 12, marginBottom: 15
   },
   bookingRow: { flexDirection: 'row', alignItems: 'center' },
-  cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
-  emptyText: { textAlign: 'center', marginTop: 50, color: '#999' },
+  cardTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 5, color: '#FFFFFF' },
+  emptyText: { textAlign: 'center', marginTop: 50, color: '#64748B' },
 
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: '#131B2E', borderBottomWidth: 1, borderBottomColor: '#1E293B' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   
   formScroll: { padding: 15 },
-  sectionHeader: { fontSize: 18, fontWeight: 'bold', marginTop: 20, marginBottom: 10, color: '#333' },
+  sectionHeader: { fontSize: 18, fontWeight: 'bold', marginTop: 20, marginBottom: 10, color: '#FFFFFF' },
   
-  categoryCard: { marginBottom: 10, backgroundColor: 'white', borderRadius: 8, overflow: 'hidden' },
+  categoryCard: { marginBottom: 10, backgroundColor: '#131B2E', borderRadius: 8, overflow: 'hidden' },
   categoryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15 },
   categoryTitle: { fontWeight: 'bold', fontSize: 16 },
   categoryContent: { padding: 10 },
   
-  faultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  faultCode: { fontWeight: 'bold', color: '#666', fontSize: 12 },
-  faultLabel: { fontSize: 15, color: '#333' },
+  faultRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#1E293B' },
+  faultCode: { fontWeight: 'bold', color: '#94A3B8', fontSize: 12 },
+  faultLabel: { fontSize: 15, color: '#E2E8F0' },
   
   counter: { flexDirection: 'row', alignItems: 'center', minWidth: 100, justifyContent: 'flex-end' },
-  countText: { fontSize: 18, fontWeight: 'bold', marginHorizontal: 15, minWidth: 20, textAlign: 'center' },
+  countText: { fontSize: 18, fontWeight: 'bold', marginHorizontal: 15, minWidth: 20, textAlign: 'center', color: '#FFFFFF' },
   
-  input: { backgroundColor: 'white', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#ddd', textAlignVertical: 'top', fontSize: 16 },
+  input: { backgroundColor: '#131B2E', padding: 15, borderRadius: 8, borderWidth: 1, borderColor: '#1E293B', textAlignVertical: 'top', fontSize: 16, color: '#E2E8F0' },
   
-  submitButton: { backgroundColor: '#007bff', padding: 18, borderRadius: 10, alignItems: 'center', marginTop: 30 },
+  submitButton: { backgroundColor: '#3B82F6', padding: 18, borderRadius: 10, alignItems: 'center', marginTop: 30 },
   submitButtonText: { color: 'white', fontWeight: 'bold', fontSize: 18 }
 });
 

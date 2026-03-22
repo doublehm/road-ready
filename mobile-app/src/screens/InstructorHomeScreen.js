@@ -19,11 +19,11 @@ const InstructorHomeScreen = ({ navigation }) => {
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.iconBtn}>
-              <Ionicons name="notifications-outline" size={24} color="#1E293B" />
+              <Ionicons name="notifications-outline" size={24} color="#E2E8F0" />
               {unreadCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount}</Text></View>}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('EditProfile')} style={styles.iconBtn}>
-              <Ionicons name="settings-outline" size={24} color="#1E293B" />
+              <Ionicons name="settings-outline" size={24} color="#E2E8F0" />
             </TouchableOpacity>
             <TouchableOpacity onPress={logout} style={styles.iconBtn}>
               <Ionicons name="log-out-outline" size={24} color="#EF4444" />
@@ -50,7 +50,7 @@ const InstructorHomeScreen = ({ navigation }) => {
           style={styles.actionCard}
           onPress={() => navigation.navigate('BookingRequests')}
         >
-          <View style={[styles.iconBg, { backgroundColor: '#FEF3C7' }]}>
+          <View style={[styles.iconBg, { backgroundColor: 'rgba(245,158,11,0.15)' }]}>
             <Ionicons name="mail-unread-outline" size={24} color="#D97706" />
           </View>
           <View style={styles.actionInfo}>
@@ -69,7 +69,7 @@ const InstructorHomeScreen = ({ navigation }) => {
           style={styles.actionCard}
           onPress={() => navigation.navigate('DiagnosticRideHistory')}
         >
-          <View style={[styles.iconBg, { backgroundColor: '#E0E7FF' }]}>
+          <View style={[styles.iconBg, { backgroundColor: 'rgba(59,130,246,0.15)' }]}>
             <Ionicons name="speedometer-outline" size={24} color="#4338CA" />
           </View>
           <View style={styles.actionInfo}>
@@ -83,7 +83,7 @@ const InstructorHomeScreen = ({ navigation }) => {
           style={styles.actionCard}
           onPress={() => navigation.navigate('Messages')}
         >
-          <View style={[styles.iconBg, { backgroundColor: '#DCFCE7' }]}>
+          <View style={[styles.iconBg, { backgroundColor: 'rgba(21,128,61,0.15)' }]}>
             <Ionicons name="chatbubbles-outline" size={24} color="#15803D" />
           </View>
           <View style={styles.actionInfo}>
@@ -97,8 +97,8 @@ const InstructorHomeScreen = ({ navigation }) => {
           style={styles.actionCard}
           onPress={() => navigation.navigate('Schedule')}
         >
-          <View style={[styles.iconBg, { backgroundColor: '#F1F5F9' }]}>
-            <Ionicons name="calendar-outline" size={24} color="#1E293B" />
+          <View style={[styles.iconBg, { backgroundColor: '#1E293B' }]}>
+            <Ionicons name="calendar-outline" size={24} color="#E2E8F0" />
           </View>
           <View style={styles.actionInfo}>
             <Text style={styles.actionTitle}>Operational Schedule</Text>
@@ -114,7 +114,7 @@ const InstructorHomeScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   scroll: { padding: 24 },
   header: { 
     flexDirection: 'row', 
@@ -124,57 +124,45 @@ const styles = StyleSheet.create({
     marginTop: 10
   },
   greeting: { fontSize: 14, color: '#64748B', fontWeight: '600' },
-  name: { fontSize: 28, fontWeight: '800', color: '#1E293B', marginTop: 2, letterSpacing: -0.5 },
+  name: { fontSize: 28, fontWeight: '800', color: '#FFFFFF', marginTop: 2, letterSpacing: -0.5 },
   headerActions: { flexDirection: 'row', gap: 12 },
   iconBtn: { 
     width: 44, 
     height: 44, 
     borderRadius: 22, 
-    backgroundColor: 'white', 
+    backgroundColor: '#131B2E', 
     justifyContent: 'center', 
     alignItems: 'center',
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2
   },
 
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 },
   statCard: { 
     width: '48%', 
-    backgroundColor: 'white', 
+    backgroundColor: '#131B2E', 
     padding: 24, 
     borderRadius: 24, 
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.04,
-    shadowRadius: 15,
-    elevation: 2
   },
   statLabel: { color: '#94A3B8', fontSize: 10, fontWeight: '800', marginBottom: 8, letterSpacing: 1 },
-  statValue: { fontSize: 22, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
+  statValue: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 },
 
-  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20, color: '#1E293B', letterSpacing: -0.5 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', marginBottom: 20, color: '#FFFFFF', letterSpacing: -0.5 },
 
   actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'white',
+    backgroundColor: '#131B2E',
     borderRadius: 24,
     marginBottom: 16,
-    shadowColor: '#1E293B',
-    shadowOpacity: 0.04,
-    shadowRadius: 15,
-    elevation: 2
   },
   iconBg: { width: 56, height: 56, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 20 },
   actionInfo: { flex: 1 },
-  actionTitle: { fontSize: 16, fontWeight: '800', color: '#1E293B', letterSpacing: -0.3 },
+  actionTitle: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 },
   actionDesc: { fontSize: 13, color: '#64748B', marginTop: 2, fontWeight: '500' },
   
   badge: {
     position: 'absolute', top: -4, right: -4, backgroundColor: '#EF4444', borderRadius: 10, 
-    width: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'white'
+    width: 18, height: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#131B2E'
   },
   badgeText: { color: 'white', fontSize: 10, fontWeight: '900' },
   

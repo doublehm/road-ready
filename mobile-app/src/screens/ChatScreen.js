@@ -98,7 +98,7 @@ const ChatScreen = ({ route, navigation }) => {
       </View>
 
       {loading ? (
-        <ActivityIndicator size="large" style={{flex:1}} />
+        <ActivityIndicator size="large" style={{flex:1}} color="#3B82F6" />
       ) : (
         <FlatList
           ref={flatListRef}
@@ -117,6 +117,7 @@ const ChatScreen = ({ route, navigation }) => {
             value={inputText}
             onChangeText={setInputText}
             placeholder="Type a message..."
+            placeholderTextColor="#64748B"
           />
           <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
             <Text style={styles.sendText}>Send</Text>
@@ -128,22 +129,22 @@ const ChatScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#ddd' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 15, backgroundColor: '#131B2E', borderBottomWidth: 1, borderBottomColor: '#1E293B' },
   backBtn: { marginRight: 15 },
-  backText: { fontSize: 24, color: '#007bff' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  backText: { fontSize: 24, color: '#3B82F6' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   list: { padding: 15 },
   bubble: { maxWidth: '80%', padding: 10, borderRadius: 15, marginBottom: 10 },
-  myBubble: { alignSelf: 'flex-end', backgroundColor: '#007bff' },
-  theirBubble: { alignSelf: 'flex-start', backgroundColor: '#e5e5ea' },
+  myBubble: { alignSelf: 'flex-end', backgroundColor: '#3B82F6' },
+  theirBubble: { alignSelf: 'flex-start', backgroundColor: '#1E293B' },
   text: { fontSize: 16 },
   myText: { color: 'white' },
-  theirText: { color: 'black' },
-  inputContainer: { flexDirection: 'row', padding: 10, backgroundColor: 'white', alignItems: 'center' },
-  input: { flex: 1, backgroundColor: '#f0f0f0', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 10, marginRight: 10 },
+  theirText: { color: '#E2E8F0' },
+  inputContainer: { flexDirection: 'row', padding: 10, backgroundColor: '#131B2E', alignItems: 'center' },
+  input: { flex: 1, backgroundColor: '#1E293B', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 10, marginRight: 10, color: '#E2E8F0' },
   sendBtn: { padding: 10 },
-  sendText: { color: '#007bff', fontWeight: 'bold', fontSize: 16 }
+  sendText: { color: '#3B82F6', fontWeight: 'bold', fontSize: 16 }
 });
 
 export default ChatScreen;

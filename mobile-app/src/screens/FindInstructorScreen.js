@@ -83,14 +83,14 @@ const FindInstructorScreen = ({ navigation, route }) => {
         <TextInput
           style={styles.searchInput}
           placeholder="Search by city or name..."
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#64748B"
           value={search}
           onChangeText={setSearch}
         />
       </View>
 
       {loading ? (
-        <ActivityIndicator style={{marginTop: 50}} size="large" color="#1E293B" />
+        <ActivityIndicator style={{marginTop: 50}} size="large" color="#3B82F6" />
       ) : (
         <FlatList
           data={filteredInstructors}
@@ -99,7 +99,7 @@ const FindInstructorScreen = ({ navigation, route }) => {
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="search-outline" size={48} color="#CBD5E1" />
+              <Ionicons name="search-outline" size={48} color="#475569" />
               <Text style={styles.empty}>No instructors found in this sector.</Text>
             </View>
           }
@@ -111,44 +111,42 @@ const FindInstructorScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6FAFE' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   header: { paddingHorizontal: 20, paddingTop: 20, marginBottom: 20 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#1E293B', letterSpacing: -1 },
+  headerTitle: { fontSize: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: -1 },
   headerSubtitle: { fontSize: 11, fontWeight: '800', color: '#15803D', letterSpacing: 2, marginTop: 4 },
   searchContainer: { 
-    flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', 
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#131B2E', 
     marginHorizontal: 20, marginBottom: 24, paddingHorizontal: 20, borderRadius: 16, height: 56,
-    shadowColor: '#1E293B', shadowOpacity: 0.06, shadowRadius: 15, elevation: 4
   },
   searchIcon: { marginRight: 12 },
-  searchInput: { flex: 1, fontSize: 16, color: '#1E293B', fontWeight: '500' },
+  searchInput: { flex: 1, fontSize: 16, color: '#E2E8F0', fontWeight: '500' },
   
   list: { paddingHorizontal: 20, paddingBottom: 40 },
   card: {
-    backgroundColor: 'white', borderRadius: 24, padding: 24, marginBottom: 20,
-    shadowColor: '#1E293B', shadowOpacity: 0.06, shadowRadius: 20, elevation: 4
+    backgroundColor: '#131B2E', borderRadius: 24, padding: 24, marginBottom: 20,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  avatar: { width: 56, height: 56, borderRadius: 20, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 22, fontWeight: '800', color: '#1E293B' },
+  avatar: { width: 56, height: 56, borderRadius: 20, backgroundColor: '#1E293B', justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontSize: 22, fontWeight: '800', color: '#FFFFFF' },
   cardInfo: { flex: 1, marginLeft: 16 },
-  name: { fontSize: 18, fontWeight: '800', color: '#1E293B', letterSpacing: -0.5 },
+  name: { fontSize: 18, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.5 },
   city: { color: '#64748B', marginTop: 2, fontSize: 14, fontWeight: '500' },
   rating: { 
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: '#FEF3C7', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12 
+    backgroundColor: 'rgba(245,158,11,0.15)', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12 
   },
   ratingText: { fontWeight: '800', color: '#D97706', fontSize: 13 },
   
   cardFooter: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', 
-    paddingTop: 20, borderTopWidth: 1, borderTopColor: '#F1F5F9' 
+    paddingTop: 20, borderTopWidth: 1, borderTopColor: '#1E293B' 
   },
   priceLabel: { fontSize: 10, fontWeight: '800', color: '#94A3B8', letterSpacing: 1, marginBottom: 2 },
   price: { fontSize: 24, fontWeight: '800', color: '#15803D', letterSpacing: -1 },
   perHour: { fontSize: 14, color: '#94A3B8', fontWeight: '600' },
   viewBtn: { 
-    backgroundColor: '#1E293B', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 
+    backgroundColor: '#3B82F6', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 
   },
   viewBtnText: { color: 'white', fontWeight: '800', fontSize: 14 },
   

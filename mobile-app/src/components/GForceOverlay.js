@@ -4,15 +4,15 @@ import { View, Text, StyleSheet } from 'react-native';
 const G = 9.81; // m/s² per G
 
 // ── Force thresholds (in G) ──
-// Below DEAD_ZONE the glow is invisible; normal micro-accelerations from
-// engine vibration, gentle lane changes, and GPS jitter stay in this range.
-const DEAD_ZONE_G = 0.15;
+// Below DEAD_ZONE the edge glow is invisible; only engine vibration and
+// road noise should fall in this range.
+const DEAD_ZONE_G = 0.05;
 // Yellow/amber ceiling — forces above this start transitioning to red.
-const YELLOW_CEIL_G = 0.35;
+const YELLOW_CEIL_G = 0.20;
 // Fully red at or above this value.
-const RED_FLOOR_G = 0.6;
+const RED_FLOOR_G = 0.40;
 // Used to cap the opacity ramp so it doesn't exceed ~0.8.
-const MAX_DISPLAY_G = 1.0;
+const MAX_DISPLAY_G = 0.80;
 
 // ── Glow geometry ──
 const GLOW_LAYERS = 5;
@@ -85,14 +85,18 @@ export default function GForceOverlay({ acceleration, isActive }) {
   const latOp = baseOpacity(lateralG);
   const brkOp = baseOpacity(brakingG);
 
-  // Nothing to draw — bail early to avoid rendering 15 invisible Views.
-  if (latOp === 0 && brkOp === 0) return null;
-
   const [lr, lg, lb] = forceRGB(lateralG);
   const [br, bg, bb] = forceRGB(brakingG);
 
   const peakG = Math.max(lateralG, brakingG);
-  const [pr, pg, pb] = peakG === lateralG ? [lr, lg, lb] : [br, bg, bb];
+  const [pr, pg, pb] = peakG > 0 && peakG === lateralG
+    ? forceRGB(lateralG)
+    : forceRGB(brakingG);
+
+  // Badge colour: use force colour when active, muted when idle
+  const badgeColor = peakG > DEAD_ZONE_G
+    ? `rgb(${pr},${pg},${pb})`
+    : '#94A3B8';
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -148,9 +152,9 @@ export default function GForceOverlay({ acceleration, isActive }) {
         />
       ))}
 
-      {/* ── G-force badge ── */}
+      {/* ── G-force badge (always visible during ride) ── */}
       <View style={styles.badge}>
-        <Text style={[styles.badgeLabel, { color: `rgb(${pr},${pg},${pb})` }]}>
+        <Text style={[styles.badgeLabel, { color: badgeColor }]}>
           {peakG.toFixed(1)}
         </Text>
         <Text style={styles.badgeUnit}>G</Text>

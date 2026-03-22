@@ -43,7 +43,7 @@ const NotificationsScreen = ({ navigation }) => {
         <Ionicons 
             name={item.title.includes('Booking') ? "calendar" : "notifications"} 
             size={24} 
-            color={!item.is_read ? "#007bff" : "#666"} 
+            color={!item.is_read ? "#3B82F6" : "#94A3B8"} 
         />
       </View>
       <View style={styles.content}>
@@ -59,7 +59,7 @@ const NotificationsScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
         <View style={{width: 24}} />
@@ -100,35 +100,35 @@ const NotificationsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
+  container: { flex: 1, backgroundColor: '#0B1326' },
   header: { 
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', 
-    padding: 15, backgroundColor: 'white', borderBottomWidth: 1, borderBottomColor: '#eee' 
+    padding: 15, backgroundColor: '#131B2E', borderBottomWidth: 1, borderBottomColor: '#1E293B' 
   },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF' },
   list: { padding: 15 },
   
   card: {
-    backgroundColor: 'white', flexDirection: 'row', padding: 15, borderRadius: 12, marginBottom: 10,
+    backgroundColor: '#131B2E', flexDirection: 'row', padding: 15, borderRadius: 12, marginBottom: 10,
     alignItems: 'center'
   },
-  unread: { backgroundColor: '#e3f2fd' },
+  unread: { backgroundColor: 'rgba(59,130,246,0.15)' },
   iconBox: { marginRight: 15 },
   content: { flex: 1 },
-  title: { fontSize: 16, color: '#333', marginBottom: 2 },
+  title: { fontSize: 16, color: '#FFFFFF', marginBottom: 2 },
   bold: { fontWeight: 'bold' },
-  message: { fontSize: 14, color: '#666', marginBottom: 5 },
-  time: { fontSize: 12, color: '#999' },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#007bff', marginLeft: 10 },
+  message: { fontSize: 14, color: '#94A3B8', marginBottom: 5 },
+  time: { fontSize: 12, color: '#64748B' },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#3B82F6', marginLeft: 10 },
   
-  empty: { textAlign: 'center', marginTop: 50, color: '#999' },
+  empty: { textAlign: 'center', marginTop: 50, color: '#64748B' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 30 },
-  modalContent: { backgroundColor: 'white', borderRadius: 15, padding: 25, elevation: 5 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15, color: '#333' },
-  modalBody: { fontSize: 16, color: '#555', lineHeight: 24, marginBottom: 20 },
-  modalTime: { fontSize: 12, color: '#999', marginBottom: 20, fontStyle: 'italic' },
-  closeBtn: { backgroundColor: '#007bff', padding: 12, borderRadius: 10, alignItems: 'center' },
+  modalContent: { backgroundColor: '#131B2E', borderRadius: 15, padding: 25 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15, color: '#FFFFFF' },
+  modalBody: { fontSize: 16, color: '#CBD5E1', lineHeight: 24, marginBottom: 20 },
+  modalTime: { fontSize: 12, color: '#64748B', marginBottom: 20, fontStyle: 'italic' },
+  closeBtn: { backgroundColor: '#3B82F6', padding: 12, borderRadius: 10, alignItems: 'center' },
   closeText: { color: 'white', fontWeight: 'bold' }
 });
 
