@@ -94,7 +94,7 @@ const FeedbackPanel = ({ visible, onClose, feedbackCounts, onUpdateCount, elapse
             <Text style={styles.countBadgeText}>{count}</Text>
           </View>
         )}
-        <Ionicons name="add-circle" size={28} color="#28a745" />
+        <Ionicons name="add-circle" size={28} color="#15803D" />
       </TouchableOpacity>
     );
   };
@@ -110,7 +110,7 @@ const FeedbackPanel = ({ visible, onClose, feedbackCounts, onUpdateCount, elapse
           {/* Header */}
           <View style={styles.panelHeader}>
             <View style={styles.panelTitleRow}>
-              <Ionicons name="flag" size={20} color="#e17055" />
+              <Ionicons name="flag" size={20} color="#F59E0B" />
               <Text style={styles.panelTitle}>Flag Criteria</Text>
               {totalFlags > 0 && (
                 <View style={styles.totalBadge}>
@@ -119,17 +119,17 @@ const FeedbackPanel = ({ visible, onClose, feedbackCounts, onUpdateCount, elapse
               )}
             </View>
             <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close-circle" size={28} color="#6c757d" />
+              <Ionicons name="close-circle" size={28} color="#94A3B8" />
             </TouchableOpacity>
           </View>
 
           {/* Search */}
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#adb5bd" />
+            <Ionicons name="search" size={20} color="#64748B" />
             <TextInput
               style={styles.searchInput}
               placeholder="Search code or name (e.g. A1, Mirror, Speed)..."
-              placeholderTextColor="#adb5bd"
+              placeholderTextColor="#64748B"
               value={searchText}
               onChangeText={setSearchText}
               autoCorrect={false}
@@ -137,7 +137,7 @@ const FeedbackPanel = ({ visible, onClose, feedbackCounts, onUpdateCount, elapse
             />
             {searchText.length > 0 && (
               <TouchableOpacity onPress={() => setSearchText('')}>
-                <Ionicons name="close" size={20} color="#adb5bd" />
+                <Ionicons name="close" size={20} color="#64748B" />
               </TouchableOpacity>
             )}
           </View>
@@ -154,16 +154,16 @@ const FeedbackPanel = ({ visible, onClose, feedbackCounts, onUpdateCount, elapse
                   </View>
                   <View style={styles.flaggedCounter}>
                     <TouchableOpacity onPress={() => handleDecrement(item.code)}>
-                      <Ionicons name="remove-circle-outline" size={24} color="#dc3545" />
+                      <Ionicons name="remove-circle-outline" size={24} color="#EF4444" />
                     </TouchableOpacity>
                     <Text style={styles.flaggedCount}>{item.count}</Text>
                     <TouchableOpacity onPress={() => handleTap({
                       code: item.code,
                       label: item.label,
                       categoryId: item.category,
-                      categoryColor: '#ccc',
+                      categoryColor: '#475569',
                     })}>
-                      <Ionicons name="add-circle" size={24} color="#28a745" />
+                      <Ionicons name="add-circle" size={24} color="#15803D" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -200,14 +200,14 @@ const styles = StyleSheet.create({
   },
   panelContainer: {
     flex: 0.85,
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 20,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   panelHeader: {
     flexDirection: 'row',
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#1E293B',
   },
   panelTitleRow: {
     flexDirection: 'row',
@@ -227,10 +227,10 @@ const styles = StyleSheet.create({
   panelTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#FFFFFF',
   },
   totalBadge: {
-    backgroundColor: '#e17055',
+    backgroundColor: '#F59E0B',
     borderRadius: 10,
     minWidth: 22,
     height: 22,
@@ -246,34 +246,34 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#1E293B',
     marginHorizontal: 16,
     marginVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 10,
     height: 44,
     borderWidth: 1,
-    borderColor: '#dee2e6',
+    borderColor: '#1E293B',
   },
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: '#1a1a1a',
+    color: '#FFFFFF',
     marginLeft: 8,
   },
   flaggedSection: {
     marginHorizontal: 16,
     marginBottom: 8,
-    backgroundColor: '#fff9e6',
+    backgroundColor: 'rgba(245,158,11,0.1)',
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#ffc107',
+    borderColor: '#F59E0B',
   },
   flaggedTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#F59E0B',
     marginBottom: 8,
     textTransform: 'uppercase',
   },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: 'rgba(255,255,255,0.05)',
   },
   flaggedInfo: {
     flex: 1,
@@ -293,14 +293,14 @@ const styles = StyleSheet.create({
   },
   flaggedCode: {
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#F59E0B',
     fontSize: 13,
     width: 30,
   },
   flaggedLabel: {
     flex: 1,
     fontSize: 14,
-    color: '#856404',
+    color: '#F59E0B',
   },
   flaggedCounter: {
     flexDirection: 'row',
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   flaggedCount: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#FFFFFF',
     minWidth: 24,
     textAlign: 'center',
   },
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#1E293B',
     gap: 10,
   },
   categoryDot: {
@@ -336,16 +336,16 @@ const styles = StyleSheet.create({
   },
   criterionLabel: {
     fontSize: 15,
-    color: '#1a1a1a',
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   criterionCode: {
     fontSize: 12,
-    color: '#6c757d',
+    color: '#94A3B8',
     marginTop: 1,
   },
   countBadge: {
-    backgroundColor: '#dc3545',
+    backgroundColor: '#EF4444',
     borderRadius: 10,
     minWidth: 22,
     height: 22,
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#6c757d',
+    color: '#94A3B8',
     fontSize: 15,
   },
 });

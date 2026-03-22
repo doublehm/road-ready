@@ -33,7 +33,7 @@ const HumanFeedbackSection = ({ humanFeedback = [] }) => {
   const renderCategory = (catId, items) => {
     const catDef = FAULT_CATEGORIES.find(c => c.id === catId);
     const catTitle = catDef?.title || `Category ${catId}`;
-    const catColor = catDef?.color || '#f0f0f0';
+    const catColor = catDef?.color || '#1E293B';
 
     return (
       <View key={catId} style={styles.categoryCard}>
@@ -80,7 +80,7 @@ const HumanFeedbackSection = ({ humanFeedback = [] }) => {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Ionicons name="flag" size={18} color="#e17055" />
+        <Ionicons name="flag" size={18} color="#F59E0B" />
         <Text style={styles.sectionTitle}>Supervisor Feedback</Text>
         <View style={styles.totalBadge}>
           <Text style={styles.totalBadgeText}>{totalFlags} flags</Text>
@@ -91,13 +91,13 @@ const HumanFeedbackSection = ({ humanFeedback = [] }) => {
       <View style={styles.sourceRow}>
         {hasHuman && (
           <View style={styles.sourceTag}>
-            <Ionicons name="person" size={12} color="#007bff" />
+            <Ionicons name="person" size={12} color="#3B82F6" />
             <Text style={styles.sourceText}>Human Observed</Text>
           </View>
         )}
         {hasDevice && (
           <View style={styles.sourceTag}>
-            <Ionicons name="phone-portrait" size={12} color="#6c757d" />
+            <Ionicons name="phone-portrait" size={12} color="#94A3B8" />
             <Text style={styles.sourceText}>Device Detected</Text>
           </View>
         )}
@@ -125,11 +125,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#FFFFFF',
     flex: 1,
   },
   totalBadge: {
-    backgroundColor: '#e17055',
+    backgroundColor: '#F59E0B',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -148,22 +148,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#1E293B',
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   sourceText: {
     fontSize: 11,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   categoryCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 10,
     marginBottom: 10,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#1E293B',
   },
   catHeader: {
     flexDirection: 'row',
@@ -175,12 +175,12 @@ const styles = StyleSheet.create({
   catTitle: {
     fontWeight: 'bold',
     fontSize: 15,
-    color: '#333',
+    color: '#FFFFFF',
   },
   catCount: {
     fontWeight: 'bold',
     fontSize: 14,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   catBody: {
     padding: 12,
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   faultWrapper: {
     marginBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f8f9fa',
+    borderBottomColor: '#1E293B',
     paddingBottom: 10,
   },
   faultRow: {
@@ -207,20 +207,20 @@ const styles = StyleSheet.create({
     marginLeft: 38,
   },
   timeTag: {
-    backgroundColor: '#f1f3f5',
+    backgroundColor: '#1E293B',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderWidth: 1,
-    borderColor: '#e9ecef',
+    borderColor: '#1E293B',
   },
   timeTagText: {
     fontSize: 10,
-    color: '#495057',
+    color: '#CBD5E1',
     fontWeight: '600',
   },
   badge: {
-    backgroundColor: '#dc3545',
+    backgroundColor: '#EF4444',
     width: 28,
     height: 28,
     borderRadius: 14,
@@ -238,12 +238,12 @@ const styles = StyleSheet.create({
   },
   faultLabel: {
     fontSize: 15,
-    color: '#333',
+    color: '#FFFFFF',
     fontWeight: '500',
   },
   faultCode: {
     fontSize: 12,
-    color: '#888',
+    color: '#64748B',
   },
 });
 

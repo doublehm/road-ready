@@ -4,16 +4,16 @@ import OSMMap from './OSMMap';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const SEGMENT_COLORS = {
-  red: '#dc3545',
-  yellow: '#ffc107',
-  green: '#28a745',
+  red: '#EF4444',
+  yellow: '#F59E0B',
+  green: '#15803D',
 };
 
 const EVENT_ICONS = {
-  speeding: { name: 'speedometer', color: '#dc3545' },
-  harsh_braking: { name: 'hand-left', color: '#e17055' },
-  sharp_turn: { name: 'refresh', color: '#fdcb6e' },
-  sudden_stop: { name: 'stop-circle', color: '#d63031' },
+  speeding: { name: 'speedometer', color: '#EF4444' },
+  harsh_braking: { name: 'hand-left', color: '#F59E0B' },
+  sharp_turn: { name: 'refresh', color: '#F59E0B' },
+  sudden_stop: { name: 'stop-circle', color: '#EF4444' },
 };
 
 /**
@@ -104,7 +104,7 @@ const RouteReplayMap = ({ routeSegments = [], events = [], routeCoords = [], hei
   if (routeSegments.length === 0 && routeCoords.length === 0) {
     return (
       <View style={[styles.placeholder, { height }]}>
-        <Ionicons name="map-outline" size={40} color="#ccc" />
+        <Ionicons name="map-outline" size={40} color="#475569" />
         <Text style={styles.placeholderText}>No route data available</Text>
       </View>
     );
@@ -142,7 +142,7 @@ const RouteReplayMap = ({ routeSegments = [], events = [], routeCoords = [], hei
           ...(polylines.length === 0 && routeCoords.length > 0 ? [{
             coordinates: routeCoords,
             strokeWidth: 4,
-            strokeColor: "#007bff"
+            strokeColor: "#3B82F6"
           }] : [])
         ]}
       />
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
   },
   map: {
     flex: 1,
@@ -178,11 +178,11 @@ const styles = StyleSheet.create({
   placeholder: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     borderRadius: 12,
   },
   placeholderText: {
-    color: '#999',
+    color: '#64748B',
     marginTop: 8,
     fontSize: 14,
   },
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     bottom: 8,
     left: 8,
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(19,27,46,0.9)',
     borderRadius: 8,
     padding: 6,
     gap: 12,
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 10,
-    color: '#333',
+    color: '#FFFFFF',
   },
 });
 

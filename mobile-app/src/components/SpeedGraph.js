@@ -80,12 +80,12 @@ const SpeedGraph = ({ speedData = [], speedLimitData = [], routeSegments = [], h
       <View style={styles.chartHeader}>
         <View style={styles.chartLegend}>
           <View style={styles.legendItem}>
-            <View style={[styles.legendLine, { backgroundColor: '#007bff' }]} />
+            <View style={[styles.legendLine, { backgroundColor: '#3B82F6' }]} />
             <Text style={styles.legendLabel}>Your Speed</Text>
           </View>
           {limits.some(l => l > 0) && (
             <View style={styles.legendItem}>
-              <View style={[styles.legendLine, { backgroundColor: '#dc3545' }]} />
+              <View style={[styles.legendLine, { backgroundColor: '#EF4444' }]} />
               <Text style={styles.legendLabel}>Speed Limit</Text>
             </View>
           )}
@@ -125,7 +125,7 @@ const SpeedGraph = ({ speedData = [], speedLimitData = [], routeSegments = [], h
                       {
                         height: Math.max(1, barHeight),
                         width: barWidth - 1,
-                        backgroundColor: isOver ? '#dc3545' : '#007bff',
+                        backgroundColor: isOver ? '#EF4444' : '#3B82F6',
                       },
                     ]}
                   />
@@ -141,18 +141,18 @@ const SpeedGraph = ({ speedData = [], speedLimitData = [], routeSegments = [], h
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 12,
     overflow: 'hidden',
   },
   placeholder: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#1E293B',
     borderRadius: 12,
   },
   placeholderText: {
-    color: '#999',
+    color: '#64748B',
     fontSize: 14,
   },
   chartHeader: {
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     fontSize: 12,
-    color: '#6c757d',
+    color: '#94A3B8',
   },
   barChart: {
     flexDirection: 'row',
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   },
   yLabel: {
     fontSize: 9,
-    color: '#6c757d',
+    color: '#94A3B8',
     textAlign: 'right',
   },
   barsContainer: {
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   limitLine: {
     position: 'absolute',
     height: 2,
-    backgroundColor: '#dc3545',
+    backgroundColor: '#EF4444',
     opacity: 0.6,
     zIndex: 1,
   },

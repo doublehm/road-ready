@@ -6,41 +6,41 @@ const EVENT_CONFIG = {
   speeding: {
     icon: 'speedometer',
     label: 'Speeding',
-    color: '#dc3545',
+    color: '#EF4444',
   },
   harsh_braking: {
     icon: 'hand-left',
     label: 'Harsh Braking',
-    color: '#e17055',
+    color: '#F59E0B',
   },
   sharp_turn: {
     icon: 'refresh',
     label: 'Sharp Turn',
-    color: '#fdcb6e',
+    color: '#F59E0B',
   },
   sudden_stop: {
     icon: 'stop-circle',
     label: 'Sudden Stop',
-    color: '#d63031',
+    color: '#EF4444',
   },
   human_flag: {
     icon: 'flag',
     label: 'Supervisor Flag',
-    color: '#e17055',
+    color: '#F59E0B',
   },
   coach_note: {
     icon: 'chatbox-ellipses',
     label: 'Coach Note',
-    color: '#007bff',
+    color: '#3B82F6',
   },
 };
 
 const SEVERITY_COLORS = {
-  high: '#dc3545',
-  medium: '#ffc107',
-  low: '#28a745',
-  human: '#e17055',
-  note: '#007bff',
+  high: '#EF4444',
+  medium: '#F59E0B',
+  low: '#15803D',
+  human: '#F59E0B',
+  note: '#3B82F6',
 };
 
 /**
@@ -57,7 +57,7 @@ const EventTimeline = ({ events = [], startTime = 0, humanFeedback = [], maxEven
   if (events.length === 0 && totalFlags === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Ionicons name="checkmark-circle" size={32} color="#28a745" />
+        <Ionicons name="checkmark-circle" size={32} color="#15803D" />
         <Text style={styles.emptyText}>No driving events detected!</Text>
         <Text style={styles.emptySubtext}>Great job maintaining safe driving habits.</Text>
       </View>
@@ -105,7 +105,7 @@ const EventTimeline = ({ events = [], startTime = 0, humanFeedback = [], maxEven
       {totalFlags > 0 && (
         <View style={styles.aggregateHeader}>
           <View style={styles.aggregateTitleRow}>
-            <Ionicons name="flag" size={16} color="#e17055" />
+            <Ionicons name="flag" size={16} color="#F59E0B" />
             <Text style={styles.aggregateTitle}>Supervisor Summary</Text>
             <View style={styles.totalFlagsBadge}>
               <Text style={styles.totalFlagsText}>{totalFlags} total flags</Text>
@@ -130,7 +130,7 @@ const EventTimeline = ({ events = [], startTime = 0, humanFeedback = [], maxEven
         const config = EVENT_CONFIG[event.type] || {
           icon: 'alert-circle',
           label: event.type.replace(/_/g, ' '),
-          color: '#6c757d',
+          color: '#94A3B8',
         };
         const sevColor = SEVERITY_COLORS[event.severity] || SEVERITY_COLORS.medium;
         const isLast = index === displayEvents.length - 1;
@@ -191,24 +191,24 @@ const EventTimeline = ({ events = [], startTime = 0, humanFeedback = [], maxEven
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 12,
     padding: 16,
   },
   header: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#6c757d',
+    color: '#94A3B8',
     marginBottom: 16,
     textTransform: 'uppercase',
   },
   aggregateHeader: {
-    backgroundColor: '#fff9e6',
+    backgroundColor: 'rgba(245,158,11,0.1)',
     borderRadius: 8,
     padding: 12,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#ffeaa7',
+    borderColor: '#1E293B',
   },
   aggregateTitleRow: {
     flexDirection: 'row',
@@ -219,11 +219,11 @@ const styles = StyleSheet.create({
   aggregateTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#F59E0B',
     flex: 1,
   },
   totalFlagsBadge: {
-    backgroundColor: '#e17055',
+    backgroundColor: '#F59E0B',
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -241,26 +241,26 @@ const styles = StyleSheet.create({
   aggregateItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'rgba(30,41,59,0.5)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: '#ffeaa7',
+    borderColor: '#1E293B',
   },
   aggregateCount: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#e17055',
+    color: '#F59E0B',
     marginRight: 6,
   },
   aggregateLabel: {
     fontSize: 11,
-    color: '#495057',
+    color: '#CBD5E1',
     maxWidth: 100,
   },
   emptyContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: '#131B2E',
     borderRadius: 12,
     padding: 24,
     alignItems: 'center',
@@ -268,12 +268,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#28a745',
+    color: '#15803D',
     marginTop: 8,
   },
   emptySubtext: {
     fontSize: 13,
-    color: '#6c757d',
+    color: '#94A3B8',
     marginTop: 4,
   },
   timelineItem: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   connector: {
     width: 2,
     flex: 1,
-    backgroundColor: '#e9ecef',
+    backgroundColor: '#1E293B',
     marginVertical: 2,
   },
   timelineContent: {
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   highBadge: {
-    backgroundColor: '#dc3545',
+    backgroundColor: '#EF4444',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   schoolBadge: {
-    backgroundColor: '#ff9800',
+    backgroundColor: '#F59E0B',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   manualBadge: {
-    backgroundColor: '#e17055',
+    backgroundColor: '#F59E0B',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   noteBadge: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#3B82F6',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 1,
@@ -360,17 +360,17 @@ const styles = StyleSheet.create({
   },
   eventDetail: {
     fontSize: 13,
-    color: '#495057',
+    color: '#CBD5E1',
     lineHeight: 18,
   },
   eventTime: {
     fontSize: 11,
-    color: '#adb5bd',
+    color: '#64748B',
     marginTop: 2,
   },
   moreText: {
     textAlign: 'center',
-    color: '#6c757d',
+    color: '#94A3B8',
     fontSize: 13,
     marginTop: 8,
   },
