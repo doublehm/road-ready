@@ -4,12 +4,12 @@ import { View, Text, StyleSheet } from 'react-native';
 const G = 9.81; // m/s² per G
 
 // ── Force thresholds (in G) ──
-// Below DEAD_ZONE the edge glow is invisible; only engine vibration and
-// road noise should fall in this range.
-const DEAD_ZONE_G = 0.05;
-// Yellow/amber ceiling — forces above this start transitioning to red.
-const YELLOW_CEIL_G = 0.20;
-// Fully red at or above this value.
+// Road vibration + sensor noise + micro-corrections ≈ 0.08g RMS.
+// 0.10g provides ~25% margin above the noise floor.
+const DEAD_ZONE_G = 0.10;
+// Deliberate steering force — meaningful lateral acceleration starts here.
+const YELLOW_CEIL_G = 0.25;
+// At 0.40g passengers lean hard; approaching unsafe territory.
 const RED_FLOOR_G = 0.40;
 // Used to cap the opacity ramp so it doesn't exceed ~0.8.
 const MAX_DISPLAY_G = 0.80;

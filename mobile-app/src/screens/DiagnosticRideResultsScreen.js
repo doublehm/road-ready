@@ -140,6 +140,8 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
   const speedFeedback = evaluationResult?.speed || {};
   const brakingFeedback = evaluationResult?.braking || {};
   const corneringFeedback = evaluationResult?.cornering || {};
+  const erraticFeedback = evaluationResult?.erratic_driving || {};
+  const laneFeedback = evaluationResult?.lane_discipline || {};
 
   // Parse route coords for fallback
   let routeCoords = [];
@@ -395,6 +397,31 @@ const DiagnosticRideResultsScreen = ({ route, navigation }) => {
               'Lane discipline': corneringFeedback.lane_discipline || 'N/A',
             }}
           />
+
+          {(ride.smoothness_score != null || erraticFeedback.events?.length > 0) && (
+            <CategoryCard
+              title="Smoothness"
+              icon="analytics"
+              score={ride.smoothness_score ?? 100}
+              notes={[
+                ...(erraticFeedback.notes || []),
+                ...(laneFeedback.notes || []),
+              ]}
+              tips={[
+                ...(erraticFeedback.tips || []),
+                ...(laneFeedback.tips || []),
+              ]}
+              events={[
+                ...(erraticFeedback.events || []),
+                ...(laneFeedback.events || []),
+              ]}
+              extraInfo={{
+                'Harsh accel': `${erraticFeedback.harsh_acceleration_count || 0}`,
+                'Erratic speed': `${erraticFeedback.erratic_count || 0}`,
+                'Lane weaving': `${laneFeedback.weaving_count || 0}`,
+              }}
+            />
+          )}
         </View>
 
         {/* Event Timeline */}

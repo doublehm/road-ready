@@ -10,8 +10,8 @@ const MIN_MOVE_THRESHOLD = 0.0001;
  * requiring a Google Maps API key.
  *
  * Props:
- *   region    - { latitude, longitude }
- *   markers   - [{ latitude, longitude, title?, description? }]
+ *   region    - { latitude, longitude, latitudeDelta?, longitudeDelta? }
+ *   markers   - [{ latitude, longitude, title?, description?, color? }]
  *   polylines - [{ coordinates: [{latitude, longitude}], strokeColor?, strokeWidth? }]
  *   style     - View style override
  *   onPress   - called with { latitude, longitude } on map tap
@@ -29,6 +29,8 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style }) => {
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background: #1a1a2e; }
+    .event-popup { font-size: 12px; line-height: 1.4; }
+    .event-popup b { display: block; margin-bottom: 2px; }
   </style>
 </head>
 <body>
@@ -37,8 +39,9 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style }) => {
   var map = L.map('map', { zoomControl: false, attributionControl: false }).setView([49.2827, -123.1207], 15);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-  var marker = null;
+  var posMarker = null;
   var drawnLines = [];
+  var drawnMarkers = [];
 
   document.addEventListener('message', handle);
   window.addEventListener('message', handle);
@@ -48,15 +51,37 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style }) => {
       var cmd = JSON.parse(e.data);
       if (cmd.type === 'setView') {
         map.setView([cmd.lat, cmd.lon], cmd.zoom || map.getZoom());
+      } else if (cmd.type === 'fitBounds') {
+        map.fitBounds([[cmd.south, cmd.west], [cmd.north, cmd.east]], { padding: [20, 20] });
       } else if (cmd.type === 'updateMarker') {
-        if (!marker) {
-          marker = L.circleMarker([cmd.lat, cmd.lon], {
+        if (!posMarker) {
+          posMarker = L.circleMarker([cmd.lat, cmd.lon], {
             radius: 9, color: '#fff', weight: 2,
             fillColor: '#007bff', fillOpacity: 1
           }).addTo(map);
         } else {
-          marker.setLatLng([cmd.lat, cmd.lon]);
+          posMarker.setLatLng([cmd.lat, cmd.lon]);
         }
+      } else if (cmd.type === 'updateMarkers') {
+        drawnMarkers.forEach(function(m) { map.removeLayer(m); });
+        drawnMarkers = [];
+        (cmd.markers || []).forEach(function(m) {
+          var cm = L.circleMarker([m.lat, m.lon], {
+            radius: m.radius || 7,
+            color: '#fff',
+            weight: 1.5,
+            fillColor: m.color || '#EF4444',
+            fillOpacity: 0.9
+          }).addTo(map);
+          if (m.title || m.description) {
+            var html = '<div class="event-popup">';
+            if (m.title) html += '<b>' + m.title + '</b>';
+            if (m.description) html += m.description;
+            html += '</div>';
+            cm.bindPopup(html);
+          }
+          drawnMarkers.push(cm);
+        });
       } else if (cmd.type === 'updatePolylines') {
         drawnLines.forEach(function(l) { map.removeLayer(l); });
         drawnLines = [];
@@ -117,11 +142,41 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style }) => {
     });
   }, [polylines]);
 
+  const sendMarkers = () => {
+    if (markers.length > 0) {
+      send({
+        type: 'updateMarkers',
+        markers: markers.map(m => ({
+          lat: m.latitude,
+          lon: m.longitude,
+          title: m.title || '',
+          description: m.description || '',
+          color: m.color || '#EF4444',
+          radius: m.radius || 7,
+        })),
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (!initializedRef.current) return;
+    sendMarkers();
+  }, [markers]);
+
   const onWebViewLoad = () => {
     initializedRef.current = true;
     if (region) {
-      send({ type: 'init', lat: region.latitude, lon: region.longitude });
-      send({ type: 'updateMarker', lat: region.latitude, lon: region.longitude });
+      if (region.latitudeDelta && region.longitudeDelta) {
+        send({
+          type: 'fitBounds',
+          south: region.latitude - region.latitudeDelta / 2,
+          north: region.latitude + region.latitudeDelta / 2,
+          west: region.longitude - region.longitudeDelta / 2,
+          east: region.longitude + region.longitudeDelta / 2,
+        });
+      } else {
+        send({ type: 'init', lat: region.latitude, lon: region.longitude });
+      }
     }
     if (polylines.length > 0) {
       send({
@@ -133,6 +188,7 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style }) => {
         })),
       });
     }
+    sendMarkers();
   };
 
   const onWebViewMessage = (e) => {

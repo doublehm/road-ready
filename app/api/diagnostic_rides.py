@@ -469,11 +469,13 @@ async def evaluate_chunk(
     _, braking_feedback = evaluator._evaluate_braking(accel_data, speed_data)
     _, speed_feedback = evaluator._evaluate_speed(speed_data, 1, speed_limit_data=speed_limit_data)
     _, cornering_feedback = evaluator._evaluate_cornering(accel_data, [], speed_data=speed_data)
+    _, erratic_feedback = evaluator._evaluate_erratic_driving(accel_data, speed_data)
 
     events = []
     events.extend(braking_feedback.get('events', []))
     events.extend(speed_feedback.get('events', []))
     events.extend(cornering_feedback.get('events', []))
+    events.extend(erratic_feedback.get('events', []))
 
     return {
         "events": events,

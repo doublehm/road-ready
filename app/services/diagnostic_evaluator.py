@@ -35,43 +35,49 @@ class DiagnosticEvaluator:
     # Physical constants
     GRAVITY = 9.81  # m/s²
 
-    # Braking thresholds
-    # 0.5g = firm braking; lower values are normal deceleration
-    HARSH_BRAKING_THRESHOLD = 0.5  # g
-    SUDDEN_STOP_SPEED_DROP = 8  # km/h drop within the sampling window
-    SMOOTH_BRAKING_MIN = 0.1  # g minimum for smooth braking bonus
-    SMOOTH_BRAKING_MAX = 0.4  # g maximum for smooth braking bonus
+    # ── Braking thresholds ──
+    # Comfortable braking ~0.15-0.25g, moderate ~0.25-0.35g.
+    # Passenger discomfort starts at ~0.35g; 0.40g is clearly firm braking.
+    HARSH_BRAKING_THRESHOLD = 0.40  # g
+    # Speed drop in one sampling window that indicates surprise braking (~0.17g decel)
+    SUDDEN_STOP_SPEED_DROP = 6  # km/h
+    # Smooth braking range: engine-braking level up to comfortable deceleration
+    SMOOTH_BRAKING_MIN = 0.08  # g
+    SMOOTH_BRAKING_MAX = 0.30  # g
 
-    # Jerk thresholds (m/s³)
-    # Smooth driving is < 2 m/s³, uncomfortable is > 5 m/s³, dangerous is > 10 m/s³
-    JERK_SMOOTH_THRESHOLD = 2.0
-    JERK_HARSH_THRESHOLD = 6.0
+    # ── Jerk thresholds (m/s³) — per ISO 2631 human vibration comfort ──
+    # Below 1.5 m/s³ is imperceptible; above 5.0 m/s³ is a noticeable jolt.
+    JERK_SMOOTH_THRESHOLD = 1.5
+    JERK_HARSH_THRESHOLD = 5.0
 
-    # Cornering thresholds
-    # 0.45g = aggressive lane change / sharp turn; normal city corners are ~0.2-0.3g
-    SHARP_TURN_LATERAL_THRESHOLD = 0.45  # g lateral acceleration
-    SMOOTH_TURN_THRESHOLD = 0.2  # Below this is smooth
+    # ── Cornering thresholds ──
+    # City turn at 30 km/h ≈ 0.18g; at 0.35g coffee spills and passengers lean.
+    SHARP_TURN_LATERAL_THRESHOLD = 0.35  # g lateral acceleration
+    SMOOTH_TURN_THRESHOLD = 0.15  # g — boundary between straight-line and gentle curve
 
     # Speed-dependent cornering scaling
-    # At 100 km/h, the threshold should be lower than at 20 km/h
-    CORNERING_SPEED_SENSITIVITY = 0.002 # g reduction per km/h (restored from 0.0015)
+    # At 100 km/h: 0.35 − (100 × 0.002) = 0.15g — catches highway weaving
+    CORNERING_SPEED_SENSITIVITY = 0.002  # g reduction per km/h
 
     # Minimum floor for dynamic cornering threshold regardless of speed
-    CORNERING_THRESHOLD_FLOOR = 0.18  # g (lowered from 0.25)
+    CORNERING_THRESHOLD_FLOOR = 0.15  # g
 
-    # Friction Circle Threshold (Total Grip)
-    FRICTION_CIRCLE_THRESHOLD = 0.6 # g total vector magnitude
+    # ── Friction Circle (combined lateral + longitudinal grip) ──
+    # Dry tire grip ≈ 0.80-1.00g total. 0.50g = 50% grip budget — safe margin for students.
+    FRICTION_CIRCLE_THRESHOLD = 0.50  # g total vector magnitude
 
-    # Vertical Impact Threshold (Z-axis variance)
-    VERTICAL_IMPACT_THRESHOLD = 0.4 # g variance from gravity
+    # ── Vertical Impact (Z-axis variance from gravity) ──
+    # Normal road ~0.05-0.15g, speed bump ~0.20-0.35g, pothole ~0.30-0.60g.
+    VERTICAL_IMPACT_THRESHOLD = 0.30  # g
 
     # Minimum milliseconds between two events of the same type.
     # Prevents consecutive sensor samples from one braking/cornering action
     # being counted as dozens of separate events.
     EVENT_COOLDOWN_MS = 3000  # 3 seconds
 
-    # Gyroscope: minimum change in rad/s between samples to count as jerky steering
-    JERKY_STEERING_RATE_THRESHOLD = 1.0  # rad/s (was 0.5 — too sensitive to normal corrections)
+    # ── Gyroscope ──
+    # Normal correction ~0.1-0.3 rad/s, quick lane change ~0.3-0.7, panic swerve > 1.0
+    JERKY_STEERING_RATE_THRESHOLD = 0.8  # rad/s
 
     # Speed limits (fallback when no actual data available)
     RESIDENTIAL_LIMIT = 50  # km/h
@@ -98,8 +104,9 @@ class DiagnosticEvaluator:
     SPEED_LIMIT_SMOOTH_CONSECUTIVE = 3
     SPEED_LIMIT_SMOOTH_CHANGE_THRESHOLD = 20  # km/h
 
-    # Erratic driving thresholds
-    HARSH_ACCELERATION_THRESHOLD = 0.4  # g - aggressive forward acceleration
+    # ── Erratic driving thresholds ──
+    # At 0.30g (2.94 m/s²) passengers are noticeably pushed into seats.
+    HARSH_ACCELERATION_THRESHOLD = 0.30  # g
     SPEED_OSCILLATION_WINDOW = 10  # data points to analyze for patterns
     SPEED_OSCILLATION_MIN_CHANGES = 4  # accel/decel direction changes for erratic flag
     SPEED_OSCILLATION_AMPLITUDE = 5  # km/h minimum speed range in window

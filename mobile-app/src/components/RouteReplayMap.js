@@ -9,11 +9,16 @@ const SEGMENT_COLORS = {
   green: '#15803D',
 };
 
-const EVENT_ICONS = {
-  speeding: { name: 'speedometer', color: '#EF4444' },
-  harsh_braking: { name: 'hand-left', color: '#F59E0B' },
-  sharp_turn: { name: 'refresh', color: '#F59E0B' },
-  sudden_stop: { name: 'stop-circle', color: '#EF4444' },
+const EVENT_META = {
+  speeding:                  { icon: 'speedometer',      color: '#EF4444', label: 'Speeding' },
+  harsh_braking:             { icon: 'hand-left',        color: '#F59E0B', label: 'Harsh Braking' },
+  sharp_turn:                { icon: 'refresh',          color: '#F59E0B', label: 'Sharp Turn' },
+  sudden_stop:               { icon: 'stop-circle',      color: '#EF4444', label: 'Sudden Stop' },
+  harsh_acceleration:        { icon: 'rocket',           color: '#F97316', label: 'Harsh Accel' },
+  erratic_speed:             { icon: 'pulse',            color: '#A855F7', label: 'Erratic Speed' },
+  lane_weaving:              { icon: 'swap-horizontal',  color: '#A855F7', label: 'Lane Weaving' },
+  friction_circle_violation: { icon: 'warning',          color: '#EF4444', label: 'Grip Limit' },
+  human_flag:                { icon: 'flag',             color: '#3B82F6', label: 'Supervisor Flag' },
 };
 
 /**
@@ -94,11 +99,20 @@ const RouteReplayMap = ({ routeSegments = [], events = [], routeCoords = [], hei
     return lines;
   }, [routeSegments]);
 
-  // Filter events with valid coordinates (limit to avoid marker overload)
+  // Filter events with valid coordinates
   const eventMarkers = useMemo(() => {
     return events
       .filter(e => e.lat && e.lng)
-      .slice(0, 30); // Max 30 markers
+      .slice(0, 50);
+  }, [events]);
+
+  // Count events by type for the summary
+  const eventCounts = useMemo(() => {
+    const counts = {};
+    events.forEach(e => {
+      counts[e.type] = (counts[e.type] || 0) + 1;
+    });
+    return counts;
   }, [events]);
 
   if (routeSegments.length === 0 && routeCoords.length === 0) {
@@ -116,21 +130,30 @@ const RouteReplayMap = ({ routeSegments = [], events = [], routeCoords = [], hei
         style={styles.map} 
         region={region}
         markers={[
-          ...eventMarkers.map(event => ({
-            latitude: event.lat,
-            longitude: event.lng,
-            title: event.type.replace('_', ' ').toUpperCase(),
-            description: event.description || ''
-          })),
+          ...eventMarkers.map(event => {
+            const meta = EVENT_META[event.type] || EVENT_META.speeding;
+            return {
+              latitude: event.lat,
+              longitude: event.lng,
+              title: meta.label,
+              description: event.description || '',
+              color: meta.color,
+              radius: event.severity === 'high' ? 8 : 6,
+            };
+          }),
           ...(routeSegments.length > 0 && routeSegments[0].start?.lat ? [{
             latitude: routeSegments[0].start.lat,
             longitude: routeSegments[0].start.lng,
-            title: "Start"
+            title: "Start",
+            color: '#15803D',
+            radius: 10,
           }] : []),
           ...(routeSegments.length > 0 && routeSegments[routeSegments.length - 1].end?.lat ? [{
             latitude: routeSegments[routeSegments.length - 1].end.lat,
             longitude: routeSegments[routeSegments.length - 1].end.lng,
-            title: "End"
+            title: "End",
+            color: '#3B82F6',
+            radius: 10,
           }] : [])
         ]}
         polylines={[
@@ -162,6 +185,22 @@ const RouteReplayMap = ({ routeSegments = [], events = [], routeCoords = [], hei
           <Text style={styles.legendText}>Over limit</Text>
         </View>
       </View>
+
+      {/* Event Summary Overlay */}
+      {Object.keys(eventCounts).length > 0 && (
+        <View style={styles.eventSummary}>
+          {Object.entries(eventCounts).map(([type, count]) => {
+            const meta = EVENT_META[type];
+            if (!meta) return null;
+            return (
+              <View key={type} style={styles.eventSummaryItem}>
+                <Ionicons name={meta.icon} size={12} color={meta.color} />
+                <Text style={[styles.eventSummaryCount, { color: meta.color }]}>{count}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
     </View>
   );
 };
@@ -209,6 +248,24 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 10,
     color: '#FFFFFF',
+  },
+  eventSummary: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(19,27,46,0.9)',
+    borderRadius: 8,
+    padding: 6,
+    gap: 4,
+  },
+  eventSummaryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  eventSummaryCount: {
+    fontSize: 11,
+    fontWeight: '800',
   },
 });
 

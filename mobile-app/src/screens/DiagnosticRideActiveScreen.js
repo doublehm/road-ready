@@ -45,8 +45,10 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const [feedbackBadgeCount, setFeedbackBadgeCount] = useState(0);
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [allEvents, setAllEvents] = useState([]);
+  const [autoFlagCounts, setAutoFlagCounts] = useState({});
   const [rideId, setRideId] = useState(null);
   const [isWsConnected, setIsWsConnected] = useState(false);
+  const [chunkErrors, setChunkErrors] = useState(0);
   const ws = useRef(null);
   const messageBuffer = useRef([]);
 
@@ -164,11 +166,14 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
         const response = await client.post('/diagnostic-rides/evaluate-chunk', payload);
         const newEvents = response.data.events || [];
 
+        // Reset chunk error counter on success
+        setChunkErrors(0);
+
         if (newEvents.length > 0) {
           setLatestEvents(prev => [...newEvents, ...prev].slice(0, 8));
           setAllEvents(prev => [...newEvents, ...prev].slice(0, MAX_EVENTS));
 
-          // Auto-map sensor events to feedback criteria (F-codes) — fixed mapping
+          // Auto-map sensor events to feedback criteria (F-codes)
           newEvents.forEach(event => {
             const mapping = DEVICE_EVENT_TO_CODE[event.type];
             if (mapping) {
@@ -178,6 +183,16 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
                 elapsed_seconds: latestDurationRef.current,
               });
             }
+          });
+
+          // Update auto-detected flag counts for the summary banner
+          setAutoFlagCounts(prev => {
+            const updated = { ...prev };
+            newEvents.forEach(event => {
+              const key = event.type;
+              updated[key] = (updated[key] || 0) + 1;
+            });
+            return updated;
           });
 
           const ALERT_COOLDOWN_MS = 15000;
@@ -208,7 +223,9 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           });
         }
       } catch (error) {
-        console.error('Chunk evaluation error:', error);
+        const msg = error?.response?.data?.detail || error.message || 'Unknown error';
+        console.error('Chunk evaluation error:', msg);
+        setChunkErrors(prev => prev + 1);
       }
     }, 2000);
 
@@ -245,6 +262,14 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       msg = 'Sudden Stop Detected';
       detail = `${event.value} km/h speed drop. Maintain safe following distance.`;
       icon = 'stop-circle';
+    } else if (event.type === 'harsh_acceleration') {
+      msg = 'Accelerating Too Hard';
+      detail = `${event.value}g forward force. Apply throttle gradually.`;
+      icon = 'rocket';
+    } else if (event.type === 'erratic_speed') {
+      msg = 'Erratic Speed Pattern';
+      detail = `Speed oscillating. Maintain a steady pace.`;
+      icon = 'pulse';
     }
 
     setAlertMessage({ msg, detail, icon });
@@ -510,6 +535,10 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       case 'harsh_braking': return 'hand-left';
       case 'sharp_turn': return 'refresh';
       case 'sudden_stop': return 'stop-circle';
+      case 'harsh_acceleration': return 'rocket';
+      case 'erratic_speed': return 'pulse';
+      case 'lane_weaving': return 'swap-horizontal';
+      case 'friction_circle_violation': return 'warning';
       default: return 'alert-circle';
     }
   };
@@ -780,6 +809,36 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           </View>
         </View>
 
+        {/* Auto-Detected Flags Summary */}
+        {Object.keys(autoFlagCounts).length > 0 && (
+          <View style={styles.autoFlagBanner}>
+            <Text style={styles.autoFlagTitle}>Auto-Detected Issues</Text>
+            <View style={styles.autoFlagRow}>
+              {Object.entries(autoFlagCounts).map(([type, count]) => (
+                <View key={type} style={styles.autoFlagChip}>
+                  <Ionicons name={getEventIcon(type)} size={12} color="#F59E0B" />
+                  <Text style={styles.autoFlagLabel}>
+                    {type.replace(/_/g, ' ')}
+                  </Text>
+                  <View style={styles.autoFlagCountBadge}>
+                    <Text style={styles.autoFlagCount}>{count}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Chunk Evaluation Error Indicator */}
+        {chunkErrors >= 3 && (
+          <View style={styles.chunkErrorBanner}>
+            <Ionicons name="warning" size={14} color="#F59E0B" />
+            <Text style={styles.chunkErrorText}>
+              Analysis connection unstable ({chunkErrors} errors) — events may be missed
+            </Text>
+          </View>
+        )}
+
         {/* Mistake Log */}
         {latestEvents.length > 0 && (
           <TouchableOpacity
@@ -1014,6 +1073,15 @@ const styles = StyleSheet.create({
   eventLogTitle: { fontSize: 12, fontWeight: '800', color: '#94A3B8', marginBottom: 12, textTransform: 'uppercase' },
   eventItem: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   eventText: { flex: 1, color: 'white', fontSize: 13, fontWeight: '600' },
+  autoFlagBanner: { backgroundColor: 'rgba(19, 27, 46, 0.85)', marginHorizontal: 16, marginTop: 10, borderRadius: 16, padding: 12 },
+  autoFlagTitle: { fontSize: 11, fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8 },
+  autoFlagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  autoFlagChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(245, 158, 11, 0.15)', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
+  autoFlagLabel: { color: '#CBD5E1', fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
+  autoFlagCountBadge: { backgroundColor: '#F59E0B', borderRadius: 8, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  autoFlagCount: { color: '#0F172A', fontSize: 11, fontWeight: '900' },
+  chunkErrorBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginTop: 8, backgroundColor: 'rgba(245, 158, 11, 0.15)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
+  chunkErrorText: { color: '#F59E0B', fontSize: 11, fontWeight: '600', flex: 1 },
   actionRow: { flexDirection: 'row', marginHorizontal: 16, marginTop: 16, gap: 12 },
   actionButton: { flex: 1, height: 56, backgroundColor: '#131B2E', borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   actionButtonText: { fontWeight: '800', fontSize: 14 },

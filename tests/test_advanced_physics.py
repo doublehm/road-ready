@@ -122,21 +122,21 @@ def test_friction_circle_penalty():
 def test_dynamic_cornering_thresholds():
     """
     Test that cornering thresholds are speed-sensitive.
-    Case: 0.35g lateral acceleration.
-    At 20 km/h: Safe (below default 0.45g threshold).
-    At 100 km/h: Dangerous (threshold should lower to ~0.25g).
+    Case: 0.28g lateral acceleration.
+    At 20 km/h: Safe (below dynamic threshold of 0.35 - 20*0.002 = 0.31g).
+    At 100 km/h: Dangerous (threshold lowers to floor of 0.15g).
     """
     evaluator = DiagnosticEvaluator()
     
-    # 0.35g lateral acceleration
-    accel = 0.35 * 9.81
+    # 0.28g lateral acceleration — between low-speed and high-speed thresholds
+    accel = 0.28 * 9.81
     accel_data = [{'timestamp': 1000, 'x': accel, 'y': 0, 'z': -9.81}]
     
-    # 1. Test at low speed (20 km/h)
+    # 1. Test at low speed (20 km/h) — threshold = 0.35 - 0.04 = 0.31g
     speed_low = [{'timestamp': 1000, 'speed': 20}]
     score_low, feedback_low = evaluator._evaluate_cornering(accel_data, [], speed_data=speed_low)
     
-    # 2. Test at high speed (100 km/h)
+    # 2. Test at high speed (100 km/h) — threshold = max(0.15, 0.35 - 0.20) = 0.15g
     speed_high = [{'timestamp': 1000, 'speed': 100}]
     score_high, feedback_high = evaluator._evaluate_cornering(accel_data, [], speed_data=speed_high)
     
@@ -165,10 +165,12 @@ async def test_full_physics_integration_pipeline():
         accel_data.append({'timestamp': ts, 'x': 1.0, 'y': 0, 'z': 9.81})
         speed_data.append({'timestamp': ts, 'speed': (i * 0.36)}) # 3.6 km/h per second = 1 m/s^2
         
-    # 2. Uphill (10% grade) + 0.65g Sensor Braking (should be ~0.55g true)
-    # Sensor X was forward. 0.65g braking means -0.65*9.81 on Sensor X.
+    # 2. Uphill (10% grade) + 0.45g Sensor Braking
+    # After gravity compensation (subtracting g*sin(θ) ≈ 0.10g for 10% grade),
+    # the true braking force is ~0.35g, below the 0.40g threshold.
+    # This verifies that incline compensation correctly prevents false positives.
     ts_hill = 3000
-    accel_data.append({'timestamp': ts_hill, 'x': -0.65 * 9.81, 'y': 0, 'z': 9.81})
+    accel_data.append({'timestamp': ts_hill, 'x': -0.45 * 9.81, 'y': 0, 'z': 9.81})
     speed_data.append({'timestamp': ts_hill, 'speed': 20, 'altitude': 100, 'latitude': 49.0, 'longitude': -123.0})
     # Add a point before for incline calc
     speed_data.insert(-1, {'timestamp': 2000, 'speed': 25, 'altitude': 90, 'latitude': 48.9991, 'longitude': -123.0})
@@ -178,11 +180,12 @@ async def test_full_physics_integration_pipeline():
     accel_data.append({'timestamp': 4000, 'x': 0, 'y': 0, 'z': 9.81})
     accel_data.append({'timestamp': 4100, 'x': -0.5 * 9.81, 'y': 0, 'z': 9.81})
     
-    # 4. Friction Circle violation: sustained 0.45g braking AND 0.45g turning
-    # Multiple samples needed so the median filter doesn't smooth it away.
+    # 4. Friction Circle violation: sustained 0.40g braking AND 0.40g turning
+    # Combined = sqrt(0.40² + 0.40²) = 0.566g > 0.50g friction threshold.
+    # Individual components stay below 0.40g harsh braking threshold.
     for j in range(6):
         ts_combined = 6000 + j * 100
-        accel_data.append({'timestamp': ts_combined, 'x': -0.45 * 9.81, 'y': 0.45 * 9.81, 'z': 9.81})
+        accel_data.append({'timestamp': ts_combined, 'x': -0.40 * 9.81, 'y': 0.40 * 9.81, 'z': 9.81})
     
     ride_data = {
         'duration_minutes': 25,
@@ -201,9 +204,10 @@ async def test_full_physics_integration_pipeline():
     
     # 1. Calibration should have happened (result uses orientation_matrix)
     # 2. Harsh braking at 3000ms should be GONE (compensated)
-    harsh_braking_events = [e for e in eval_dict['events'] if e['type'] == 'harsh_braking']
-    # If compensation worked, the 0.65g sensor reading became ~0.55g true.
-    assert len(harsh_braking_events) == 0
+    # The hill braking event (0.45g sensor at 10% grade → ~0.35g true) should NOT be flagged.
+    hill_braking_events = [e for e in eval_dict['events']
+                          if e['type'] == 'harsh_braking' and abs(e.get('timestamp', 0) - 3000) < 500]
+    assert len(hill_braking_events) == 0
     
     # 3. Friction Circle violation should be present
     friction_events = [e for e in eval_dict['events'] if e['type'] == 'friction_circle_violation']
@@ -219,27 +223,27 @@ def test_gravity_compensation_on_hill():
     """
     Test that gravity is compensated on hills.
     Case: Steep uphill grade (10% or ~5.7 degrees).
-    Driver brakes at 0.45g (safe under 0.5g threshold).
-    Sensor sees 0.45g + (g * sin(5.7)) ≈ 0.55g (harsh).
+    Driver brakes at 0.35g (safe under 0.40g threshold).
+    Sensor sees 0.35g + (g * sin(5.7)) ≈ 0.45g (looks harsh).
     Compensation should subtract the gravity leak and avoid penalty.
     """
     evaluator = DiagnosticEvaluator()
     
-    # Sensor sees 0.55g deceleration on an uphill
-    # (Vehicle Forward Y = -0.55g)
-    sensor_accel = -0.55 * 9.81
+    # Sensor sees 0.45g deceleration on an uphill
+    # (Vehicle Forward Y = -0.45g)
+    sensor_accel = -0.45 * 9.81
     # Z should be +9.81 for a level phone (pointing up)
     accel_data = [{'timestamp': 1000, 'x': 0, 'y': sensor_accel, 'z': 9.81}]
     
     # 1. Test WITHOUT compensation (baseline)
-    # This should trigger harsh braking since 0.55g > 0.5g
+    # This should trigger harsh braking since 0.45g > 0.40g
     score_raw, feedback_raw = evaluator._evaluate_braking(accel_data, [])
     assert feedback_raw['harsh_braking_events'] == 1
     
     # 2. Test WITH compensation
     # We provide GPS altitude data showing a 10m gain over 100m distance (10% grade)
     # sin(theta) = 10/100 = 0.1
-    # a_true = -0.55g + 0.1g = -0.45g (safe!)
+    # a_true = -0.45g + 0.1g = -0.35g (safe!)
     gps_data = [
         {'timestamp': 0, 'latitude': 49.0, 'longitude': -123.0, 'altitude': 90, 'speed': 50},
         {'timestamp': 1000, 'latitude': 49.0009, 'longitude': -123.0, 'altitude': 100, 'speed': 30}
