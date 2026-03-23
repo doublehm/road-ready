@@ -138,6 +138,7 @@ const DriveLogScreen = ({ navigation }) => {
         polylines={[
           { coordinates: routeCoordinates, strokeWidth: 5, strokeColor: "#3B82F6" }
         ]}
+        showPositionMarker
       />
 
       <View style={styles.controls}>

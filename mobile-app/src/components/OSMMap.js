@@ -15,8 +15,9 @@ const MIN_MOVE_THRESHOLD = 0.0001;
  *   polylines - [{ coordinates: [{latitude, longitude}], strokeColor?, strokeWidth? }]
  *   style     - View style override
  *   onPress   - called with { latitude, longitude } on map tap
+ *   showPositionMarker - show blue dot at region center (default false)
  */
-const OSMMap = ({ region, onPress, markers = [], polylines = [], style }) => {
+const OSMMap = ({ region, onPress, markers = [], polylines = [], style, showPositionMarker = false }) => {
   const webViewRef = useRef(null);
   const lastSentRef = useRef(null);
   const initializedRef = useRef(false);
@@ -85,15 +86,21 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style }) => {
       } else if (cmd.type === 'updatePolylines') {
         drawnLines.forEach(function(l) { map.removeLayer(l); });
         drawnLines = [];
+        var allCoords = [];
         cmd.lines.forEach(function(p) {
           if (p.coords && p.coords.length > 1) {
-            drawnLines.push(L.polyline(p.coords, {
+            var line = L.polyline(p.coords, {
               color: p.color || '#007bff',
               weight: p.width || 4,
               opacity: 0.85
-            }).addTo(map));
+            }).addTo(map);
+            drawnLines.push(line);
+            allCoords = allCoords.concat(p.coords);
           }
         });
+        if (allCoords.length > 1) {
+          map.fitBounds(L.latLngBounds(allCoords), { padding: [30, 30] });
+        }
       } else if (cmd.type === 'init') {
         map.setView([cmd.lat, cmd.lon], 16);
       }
@@ -125,7 +132,9 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style }) => {
       lastSentRef.current = { lat: region.latitude, lon: region.longitude };
       if (initializedRef.current) {
         send({ type: 'setView', lat: region.latitude, lon: region.longitude });
-        send({ type: 'updateMarker', lat: region.latitude, lon: region.longitude });
+        if (showPositionMarker) {
+          send({ type: 'updateMarker', lat: region.latitude, lon: region.longitude });
+        }
       }
     }
   }, [region?.latitude, region?.longitude]);

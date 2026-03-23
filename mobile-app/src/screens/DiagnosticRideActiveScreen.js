@@ -752,6 +752,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           region={mapRegion}
           markers={mapMarkers}
           polylines={mapPolylines}
+          showPositionMarker
         />
         <View style={{ position: 'absolute', top: insets.top + 50, left: 12, backgroundColor: 'rgba(11, 19, 38, 0.6)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
           <Text style={{ color: '#94A3B8', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 }}>OSM LIVE ENGINE</Text>

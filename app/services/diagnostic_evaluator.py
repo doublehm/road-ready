@@ -308,7 +308,8 @@ class DiagnosticEvaluator:
                 })
             
             if 'heading' in p:
-                heading_data.append({'timestamp': ts, 'heading': p['heading']})
+                heading_data.append({'timestamp': ts, 'heading': p['heading'],
+                                     'latitude': lat, 'longitude': lon})
 
         # Fallback to ride_data JSON blobs if NoSQL is empty (transition/hybrid support)
         if not acceleration_data:
@@ -320,11 +321,38 @@ class DiagnosticEvaluator:
         if not heading_data:
             heading_data = json.loads(ride_data.get('heading_data', '[]'))
 
+        # Extract heading from speed_data when heading_data is empty
+        # (mobile sends heading inside each speed data point)
+        if not heading_data and speed_data:
+            heading_data = [
+                {'timestamp': p.get('timestamp'), 'heading': p['heading'],
+                 'latitude': p.get('latitude'), 'longitude': p.get('longitude')}
+                for p in speed_data
+                if p.get('heading') is not None
+            ]
+
         speed_limit_data = json.loads(ride_data.get('speed_limit_data', '[]'))
         human_feedback = json.loads(ride_data.get('human_feedback', '[]'))
 
         duration_minutes = ride_data.get('duration_minutes') or 0
         distance_km = ride_data.get('distance_km') or 0
+
+        # Enrich acceleration data with GPS coordinates from speed_data.
+        # The mobile app sends acceleration without lat/lng, so we interpolate
+        # from the nearest speed point (which always has GPS coordinates).
+        if speed_data and acceleration_data:
+            gps_points = [p for p in speed_data if p.get('latitude') and p.get('longitude')]
+            if gps_points:
+                needs_coords = any(not p.get('latitude') for p in acceleration_data[:10])
+                if needs_coords:
+                    sorted_gps = sorted(gps_points, key=lambda p: float(p.get('timestamp') or 0))
+                    for point in acceleration_data:
+                        if point.get('latitude') and point.get('longitude'):
+                            continue
+                        ts = float(point.get('timestamp') or 0)
+                        closest = min(sorted_gps, key=lambda p: abs(float(p.get('timestamp') or 0) - ts))
+                        point['latitude'] = closest.get('latitude')
+                        point['longitude'] = closest.get('longitude')
 
         # 0. Pre-filter: median filter removes single-sample spikes (potholes, vibration)
         acceleration_data = self._median_filter(acceleration_data)
@@ -1272,9 +1300,22 @@ class DiagnosticEvaluator:
                     weaving_count += 1
                     penalty += 5
                     last_event_ts = ts
+
+                    # Get lat/lng from the closest speed or heading data point
+                    lat, lng = None, None
+                    if speed_data:
+                        closest_pt = min(speed_data, key=lambda p: abs((p.get('timestamp') or 0) - avg_ts))
+                        lat = closest_pt.get('latitude')
+                        lng = closest_pt.get('longitude')
+                    if (lat is None or lng is None) and window:
+                        lat = lat or window[0].get('latitude')
+                        lng = lng or window[0].get('longitude')
+
                     events.append({
                         'type': 'lane_weaving',
                         'timestamp': ts,
+                        'lat': lat,
+                        'lng': lng,
                         'value': round(max_change, 1),
                         'speed': round(speed_at, 1),
                         'severity': 'high' if max_change > 10 else 'medium',
