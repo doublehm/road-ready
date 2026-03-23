@@ -25,6 +25,7 @@ import { AuthContext } from '../context/AuthContext';
 import client from '../api/client';
 import FeedbackPanel from '../components/FeedbackPanel';
 import GForceOverlay from '../components/GForceOverlay';
+import TelemetryPanel from '../components/TelemetryPanel';
 import { DEVICE_EVENT_TO_CODE } from '../data/faults';
 
 const DiagnosticRideActiveScreen = ({ route, navigation }) => {
@@ -83,6 +84,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const latestLocationRef = useRef(null);
   const latestSpeedRef = useRef(0);
   const latestAccelerationRef = useRef({ x: 0, y: 0, z: 0 });
+  const prevAccelerationRef = useRef({ x: 0, y: 0, z: 0 });
   const latestRotationRef = useRef({ x: 0, y: 0, z: 0 });
   const latestDurationRef = useRef(0);
   const triggerAlertRef = useRef(null);
@@ -706,6 +708,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   latestZoneTypeRef.current = speedLimit.zoneType;
   latestLocationRef.current = gpsTracking.location;
   latestSpeedRef.current = gpsTracking.speed;
+  prevAccelerationRef.current = latestAccelerationRef.current;
   latestAccelerationRef.current = deviceMotion.acceleration;
   latestRotationRef.current = deviceMotion.rotation;
   latestDurationRef.current = duration;
@@ -809,6 +812,16 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
             )}
           </View>
         </View>
+
+        {/* Live Telemetry Dashboard */}
+        <TelemetryPanel
+          acceleration={deviceMotion.acceleration}
+          rotation={deviceMotion.rotation}
+          prevAcceleration={prevAccelerationRef.current}
+          sampleIntervalMs={100}
+          heading={gpsTracking.location?.heading}
+          isActive={!!startTime}
+        />
 
         {/* Auto-Detected Flags Summary */}
         {Object.keys(autoFlagCounts).length > 0 && (
