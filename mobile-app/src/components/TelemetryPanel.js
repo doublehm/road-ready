@@ -159,10 +159,9 @@ export default function TelemetryPanel({
     sampleIntervalMs, isActive, speed, prevSpeed,
   ]);
 
-  if (!isActive || gauges.length === 0) return null;
-
   // Fire threshold callback when any gauge hits red (with 5s cooldown per gauge)
-  if (onThresholdExceeded) {
+  React.useEffect(() => {
+    if (!onThresholdExceeded || gauges.length === 0) return;
     const now = Date.now();
     gauges.forEach(g => {
       if (g.value >= g.thresh.red && g.faultType) {
@@ -179,7 +178,9 @@ export default function TelemetryPanel({
         }
       }
     });
-  }
+  }, [gauges, onThresholdExceeded]);
+
+  if (!isActive || gauges.length === 0) return null;
 
   return (
     <View style={styles.container}>
