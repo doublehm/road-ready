@@ -93,39 +93,52 @@ export default function TelemetryPanel({
 
     return [
       {
-        id: 'lateral', icon: 'swap-horizontal', label: 'LATERAL',
-        value: lateralG, unit: 'G', suffix: lateralDir,
+        id: 'left-turn', icon: 'arrow-back-circle', label: 'LEFT TURN',
+        value: ax > 0.1 ? lateralG : 0, unit: 'G',
         thresh: THRESHOLDS.lateral,
+        wide: false,
       },
       {
-        id: 'braking', icon: 'hand-left', label: 'BRAKING',
+        id: 'right-turn', icon: 'arrow-forward-circle', label: 'RIGHT TURN',
+        value: ax < -0.1 ? lateralG : 0, unit: 'G',
+        thresh: THRESHOLDS.lateral,
+        wide: false,
+      },
+      {
+        id: 'stop-force', icon: 'stop-circle', label: 'STOP FORCE',
         value: brakingG, unit: 'G',
         thresh: THRESHOLDS.braking,
+        wide: true,
       },
       {
         id: 'throttle', icon: 'rocket', label: 'THROTTLE',
         value: throttleG, unit: 'G',
         thresh: THRESHOLDS.throttle,
-      },
-      {
-        id: 'vertical', icon: 'trending-up', label: 'VERTICAL',
-        value: verticalG, unit: 'G',
-        thresh: THRESHOLDS.vertical,
+        wide: false,
       },
       {
         id: 'grip', icon: 'radio-button-on', label: 'GRIP',
         value: gripG, unit: 'G',
         thresh: THRESHOLDS.grip,
+        wide: false,
       },
       {
         id: 'steering', icon: 'sync', label: 'STEERING',
         value: steeringRate, unit: 'rad/s',
         thresh: THRESHOLDS.steering,
+        wide: false,
       },
       {
         id: 'jerk', icon: 'flash', label: 'JERK',
         value: jerk, unit: 'm/s³',
         thresh: THRESHOLDS.jerk,
+        wide: false,
+      },
+      {
+        id: 'vertical', icon: 'trending-up', label: 'VERTICAL',
+        value: verticalG, unit: 'G',
+        thresh: THRESHOLDS.vertical,
+        wide: false,
       },
     ];
   }, [
@@ -140,7 +153,7 @@ export default function TelemetryPanel({
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Ionicons name="analytics" size={12} color="#64748B" />
+        <Ionicons name="analytics" size={14} color="#64748B" />
         <Text style={styles.headerText}>LIVE TELEMETRY</Text>
         {heading != null && (
           <Text style={styles.headingText}>HDG {Math.round(heading)}°</Text>
@@ -151,13 +164,10 @@ export default function TelemetryPanel({
           const color = getColor(g.value, g.thresh);
           const width = barWidth(g.value, g.thresh);
           return (
-            <View key={g.id} style={styles.gauge}>
+            <View key={g.id} style={[styles.gauge, g.wide && styles.gaugeWide]}>
               <View style={styles.gaugeLabelRow}>
-                <Ionicons name={g.icon} size={10} color={color} />
+                <Ionicons name={g.icon} size={14} color={color} />
                 <Text style={styles.gaugeLabel}>{g.label}</Text>
-                {g.suffix && (
-                  <Text style={[styles.gaugeSuffix, { color }]}>{g.suffix}</Text>
-                )}
               </View>
               <View style={styles.barTrack}>
                 <View style={[styles.barFill, { width: `${width}%`, backgroundColor: color }]} />
@@ -180,7 +190,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 10,
     borderRadius: 16,
-    padding: 10,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(100, 116, 139, 0.2)',
   },
@@ -188,17 +198,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   headerText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     color: '#64748B',
     letterSpacing: 1,
     flex: 1,
   },
   headingText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     color: '#64748B',
     fontVariant: ['tabular-nums'],
@@ -206,49 +216,48 @@ const styles = StyleSheet.create({
   gaugeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
   },
   gauge: {
-    width: '31%',
+    width: '47%',
     backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    borderRadius: 10,
-    padding: 6,
+    borderRadius: 12,
+    padding: 10,
+  },
+  gaugeWide: {
+    width: '97%',
   },
   gaugeLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    marginBottom: 4,
+    gap: 5,
+    marginBottom: 6,
   },
   gaugeLabel: {
-    fontSize: 8,
+    fontSize: 11,
     fontWeight: '900',
     color: '#94A3B8',
     letterSpacing: 0.5,
     flex: 1,
   },
-  gaugeSuffix: {
-    fontSize: 9,
-    fontWeight: '900',
-  },
   barTrack: {
-    height: 3,
+    height: 6,
     backgroundColor: 'rgba(51, 65, 85, 0.6)',
-    borderRadius: 2,
-    marginBottom: 3,
+    borderRadius: 3,
+    marginBottom: 5,
     overflow: 'hidden',
   },
   barFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
   },
   gaugeValue: {
-    fontSize: 13,
+    fontSize: 18,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
   },
   gaugeUnit: {
-    fontSize: 8,
+    fontSize: 10,
     fontWeight: '700',
     color: '#64748B',
   },

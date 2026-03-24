@@ -25,19 +25,30 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style, showPosi
   const html = `<!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     html, body, #map { height: 100%; width: 100%; margin: 0; padding: 0; background: #1a1a2e; }
-    .event-popup { font-size: 12px; line-height: 1.4; }
-    .event-popup b { display: block; margin-bottom: 2px; }
+    .event-popup { font-size: 12px; line-height: 1.6; }
+    .event-popup b { display: block; margin-bottom: 4px; font-size: 13px; }
+    .event-time { display: block; font-size: 11px; color: #94A3B8; margin-bottom: 4px; }
+    .event-desc { font-size: 12px; color: #CBD5E1; margin-bottom: 4px; }
+    .event-severity { display: inline-block; font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; letter-spacing: 0.5px; }
+    .severity-high { background: #EF4444; color: white; }
+    .severity-medium { background: #F59E0B; color: #1a1a2e; }
+    .severity-low { background: #22C55E; color: #1a1a2e; }
+    .severity-human { background: #3B82F6; color: white; }
+    .dark-popup .leaflet-popup-content-wrapper { background: #131B2E; color: #E2E8F0; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    .dark-popup .leaflet-popup-tip { background: #131B2E; }
+    .dark-popup .leaflet-popup-close-button { color: #64748B; }
+    @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); } 70% { box-shadow: 0 0 0 8px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
   </style>
 </head>
 <body>
 <div id="map"></div>
 <script>
-  var map = L.map('map', { zoomControl: false, attributionControl: false }).setView([49.2827, -123.1207], 15);
+  var map = L.map('map', { zoomControl: false, attributionControl: false, tap: true, touchZoom: true, dragging: true, bounceAtZoomLimits: false }).setView([49.2827, -123.1207], 15);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
   var posMarker = null;
@@ -67,19 +78,24 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style, showPosi
         drawnMarkers.forEach(function(m) { map.removeLayer(m); });
         drawnMarkers = [];
         (cmd.markers || []).forEach(function(m) {
+          var radius = m.radius || 7;
+          var pulseClass = m.severity === 'high' ? ' pulse-marker' : '';
           var cm = L.circleMarker([m.lat, m.lon], {
-            radius: m.radius || 7,
+            radius: radius,
             color: '#fff',
-            weight: 1.5,
+            weight: 2,
             fillColor: m.color || '#EF4444',
-            fillOpacity: 0.9
+            fillOpacity: 0.9,
+            className: pulseClass
           }).addTo(map);
-          if (m.title || m.description) {
+          if (m.title || m.description || m.time) {
             var html = '<div class="event-popup">';
-            if (m.title) html += '<b>' + m.title + '</b>';
-            if (m.description) html += m.description;
+            if (m.title) html += '<b style="color:' + (m.color || '#EF4444') + '">' + m.title + '</b>';
+            if (m.time) html += '<span class="event-time">' + m.time + '</span>';
+            if (m.description) html += '<div class="event-desc">' + m.description + '</div>';
+            if (m.severity) html += '<span class="event-severity severity-' + m.severity + '">' + m.severity.toUpperCase() + '</span>';
             html += '</div>';
-            cm.bindPopup(html);
+            cm.bindPopup(html, { className: 'dark-popup', maxWidth: 220 });
           }
           drawnMarkers.push(cm);
         });
@@ -162,6 +178,8 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style, showPosi
           description: m.description || '',
           color: m.color || '#EF4444',
           radius: m.radius || 7,
+          time: m.time || '',
+          severity: m.severity || '',
         })),
       });
     }
@@ -223,7 +241,9 @@ const OSMMap = ({ region, onPress, markers = [], polylines = [], style, showPosi
         domStorageEnabled
         startInLoadingState={false}
         scrollEnabled={false}
+        nestedScrollEnabled={true}
         mixedContentMode="always"
+        overScrollMode="never"
       />
     </View>
   );
