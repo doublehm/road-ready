@@ -198,16 +198,16 @@ export default function TelemetryPanel({
           return (
             <View key={g.id} style={[styles.gauge, g.wide && styles.gaugeWide]}>
               <View style={styles.gaugeLabelRow}>
-                <Ionicons name={g.icon} size={14} color={color} />
+                <Ionicons name={g.icon} size={13} color={color} />
                 <Text style={styles.gaugeLabel}>{g.label}</Text>
+                <Text style={[styles.gaugeValue, { color }]}>
+                  {g.value < 10 ? g.value.toFixed(2) : g.value.toFixed(1)}
+                  <Text style={styles.gaugeUnit}> {g.unit}</Text>
+                </Text>
               </View>
               <View style={styles.barTrack}>
                 <View style={[styles.barFill, { width: `${width}%`, backgroundColor: color }]} />
               </View>
-              <Text style={[styles.gaugeValue, { color }]}>
-                {g.value < 10 ? g.value.toFixed(2) : g.value.toFixed(1)}
-                <Text style={styles.gaugeUnit}> {g.unit}</Text>
-              </Text>
             </View>
           );
         })}
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 10,
     borderRadius: 16,
-    padding: 14,
+    padding: 10,
     borderWidth: 1,
     borderColor: 'rgba(100, 116, 139, 0.2)',
   },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 10,
+    marginBottom: 6,
   },
   headerText: {
     fontSize: 11,
@@ -253,8 +253,8 @@ const styles = StyleSheet.create({
   gauge: {
     width: '47%',
     backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    borderRadius: 12,
-    padding: 10,
+    borderRadius: 10,
+    padding: 7,
   },
   gaugeWide: {
     width: '97%',
@@ -263,20 +263,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   gaugeLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
     color: '#94A3B8',
     letterSpacing: 0.5,
     flex: 1,
   },
   barTrack: {
-    height: 6,
+    height: 5,
     backgroundColor: 'rgba(51, 65, 85, 0.6)',
     borderRadius: 3,
-    marginBottom: 5,
     overflow: 'hidden',
   },
   barFill: {
@@ -284,12 +283,12 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   gaugeValue: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
   },
   gaugeUnit: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
     color: '#64748B',
   },
