@@ -83,6 +83,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const latestZoneTypeRef = useRef('regular');
   const latestLocationRef = useRef(null);
   const latestSpeedRef = useRef(0);
+  const prevSpeedRef = useRef(0);
   const latestAccelerationRef = useRef({ x: 0, y: 0, z: 0 });
   const prevAccelerationRef = useRef({ x: 0, y: 0, z: 0 });
   const latestRotationRef = useRef({ x: 0, y: 0, z: 0 });
@@ -128,6 +129,23 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       .reduce((sum, entry) => sum + entry.count, 0);
     setFeedbackBadgeCount(total);
   }, []);
+
+  // Auto-flag when TelemetryPanel gauge hits red threshold
+  const handleTelemetryThreshold = useCallback((info) => {
+    const mapping = DEVICE_EVENT_TO_CODE[info.faultType];
+    if (mapping) {
+      handleFeedbackUpdate(mapping.code, 1, {
+        ...mapping,
+        timestamp: Date.now(),
+        elapsed_seconds: latestDurationRef.current,
+      });
+    }
+
+    setAutoFlagCounts(prev => ({
+      ...prev,
+      [info.faultType]: (prev[info.faultType] || 0) + 1,
+    }));
+  }, [handleFeedbackUpdate]);
 
   // Real-time feedback loop using evaluate-chunk endpoint — runs every 2 seconds.
   // IMPORTANT: only stable values (startTime, isUploading) are in the dep array.
@@ -707,6 +725,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   latestSpeedLimitRef.current = speedLimit.currentSpeedLimit;
   latestZoneTypeRef.current = speedLimit.zoneType;
   latestLocationRef.current = gpsTracking.location;
+  prevSpeedRef.current = latestSpeedRef.current;
   latestSpeedRef.current = gpsTracking.speed;
   prevAccelerationRef.current = latestAccelerationRef.current;
   latestAccelerationRef.current = deviceMotion.acceleration;
@@ -820,7 +839,10 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           prevAcceleration={prevAccelerationRef.current}
           sampleIntervalMs={100}
           heading={gpsTracking.location?.heading}
+          speed={gpsTracking.speed}
+          prevSpeed={prevSpeedRef.current}
           isActive={!!startTime}
+          onThresholdExceeded={handleTelemetryThreshold}
         />
 
         {/* Auto-Detected Flags Summary */}

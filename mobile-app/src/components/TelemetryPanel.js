@@ -38,7 +38,10 @@ function barWidth(value, thresh) {
  * @param {Object} prevAcceleration  previous frame {x, y, z} for jerk calc
  * @param {number} sampleIntervalMs  time between frames (default 100ms for 10Hz)
  * @param {number} heading       GPS heading 0–360°
+ * @param {number} speed         current GPS speed in km/h
+ * @param {number} prevSpeed     previous GPS speed in km/h
  * @param {boolean} isActive     only render during active ride
+ * @param {Function} onThresholdExceeded  callback({id, label, value, unit}) when gauge hits red
  */
 export default function TelemetryPanel({
   acceleration,
@@ -46,8 +49,12 @@ export default function TelemetryPanel({
   prevAcceleration,
   sampleIntervalMs = 100,
   heading,
+  speed,
+  prevSpeed,
   isActive,
+  onThresholdExceeded,
 }) {
+  const lastFiredRef = React.useRef({});
   const gauges = useMemo(() => {
     if (!isActive || !acceleration) return [];
 
@@ -55,33 +62,37 @@ export default function TelemetryPanel({
     const ay = acceleration.y || 0;
     const az = acceleration.z || 0;
 
-    // Lateral G — left/right
+    // Lateral G — left/right cornering force
     const lateralG = Math.abs(ax) / G;
-    const lateralDir = ax > 0.1 ? '◀' : ax < -0.1 ? '▶' : '–';
 
-    // Braking G — negative forward = deceleration
-    // Orientation-agnostic: use larger of |y|, |z|
+    // Longitudinal G — orientation-agnostic magnitude (max of |y|, |z|)
     const lonG = Math.max(Math.abs(ay), Math.abs(az)) / G;
-    const isBraking = ay < -0.5 || az < -0.5;
-    const brakingG = isBraking ? lonG : 0;
 
-    // Throttle G — positive forward = acceleration
-    const throttleG = !isBraking ? lonG : 0;
+    // Use GPS speed delta to determine braking vs acceleration.
+    // Accelerometer sign is phone-orientation-dependent and unreliable.
+    // GPS speed change is always correct: decreasing = braking, increasing = accel.
+    const currentSpeed = typeof speed === 'number' ? speed : 0;
+    const previousSpeed = typeof prevSpeed === 'number' ? prevSpeed : currentSpeed;
+    const speedDecreasing = currentSpeed < previousSpeed - 0.5;
+    const speedIncreasing = currentSpeed > previousSpeed + 0.5;
 
-    // Vertical G — deviation from 1g on Z axis (road bumps)
-    // Note: after gravity removal, az ≈ 0 at rest; spikes indicate impacts
+    const brakingG = speedDecreasing ? lonG : 0;
+    const accelG = speedIncreasing ? lonG : 0;
+
+    // Vertical G — deviation on Z axis (road bumps, potholes)
     const verticalG = Math.abs(az) / G;
 
     // Grip (Friction Circle) — combined lateral + longitudinal magnitude
     const gripG = Math.sqrt(lateralG * lateralG + lonG * lonG);
 
-    // Steering rate — gyroscope magnitude (rad/s)
+    // Turn rate — gyroscope magnitude (rad/s), measures how fast the car rotates
     const rx = rotation?.x || 0;
     const ry = rotation?.y || 0;
     const rz = rotation?.z || 0;
-    const steeringRate = Math.sqrt(rx * rx + ry * ry + rz * rz);
+    const turnRate = Math.sqrt(rx * rx + ry * ry + rz * rz);
 
-    // Jerk — rate of acceleration change (m/s³)
+    // Smoothness (jerk) — rate of acceleration change (m/s³)
+    // Low = smooth driving, high = abrupt force changes
     let jerk = 0;
     if (prevAcceleration && sampleIntervalMs > 0) {
       const dt = sampleIntervalMs / 1000;
@@ -96,59 +107,79 @@ export default function TelemetryPanel({
         id: 'left-turn', icon: 'arrow-back-circle', label: 'LEFT TURN',
         value: ax > 0.1 ? lateralG : 0, unit: 'G',
         thresh: THRESHOLDS.lateral,
-        wide: false,
+        wide: false, faultType: 'sharp_turn',
       },
       {
         id: 'right-turn', icon: 'arrow-forward-circle', label: 'RIGHT TURN',
         value: ax < -0.1 ? lateralG : 0, unit: 'G',
         thresh: THRESHOLDS.lateral,
-        wide: false,
+        wide: false, faultType: 'sharp_turn',
       },
       {
         id: 'stop-force', icon: 'stop-circle', label: 'STOP FORCE',
         value: brakingG, unit: 'G',
         thresh: THRESHOLDS.braking,
-        wide: true,
+        wide: true, faultType: 'harsh_braking',
       },
       {
-        id: 'throttle', icon: 'rocket', label: 'THROTTLE',
-        value: throttleG, unit: 'G',
+        id: 'accel', icon: 'rocket', label: 'ACCEL',
+        value: accelG, unit: 'G',
         thresh: THRESHOLDS.throttle,
-        wide: false,
+        wide: false, faultType: 'harsh_acceleration',
       },
       {
         id: 'grip', icon: 'radio-button-on', label: 'GRIP',
         value: gripG, unit: 'G',
         thresh: THRESHOLDS.grip,
-        wide: false,
+        wide: false, faultType: null,
       },
       {
-        id: 'steering', icon: 'sync', label: 'STEERING',
-        value: steeringRate, unit: 'rad/s',
+        id: 'turn-rate', icon: 'sync', label: 'TURN RATE',
+        value: turnRate, unit: 'rad/s',
         thresh: THRESHOLDS.steering,
-        wide: false,
+        wide: false, faultType: 'sharp_turn',
       },
       {
-        id: 'jerk', icon: 'flash', label: 'JERK',
+        id: 'smoothness', icon: 'flash', label: 'SMOOTHNESS',
         value: jerk, unit: 'm/s³',
         thresh: THRESHOLDS.jerk,
-        wide: false,
+        wide: false, faultType: 'erratic_speed',
       },
       {
         id: 'vertical', icon: 'trending-up', label: 'VERTICAL',
         value: verticalG, unit: 'G',
         thresh: THRESHOLDS.vertical,
-        wide: false,
+        wide: false, faultType: null,
       },
     ];
   }, [
     acceleration?.x, acceleration?.y, acceleration?.z,
     rotation?.x, rotation?.y, rotation?.z,
     prevAcceleration?.x, prevAcceleration?.y, prevAcceleration?.z,
-    sampleIntervalMs, isActive,
+    sampleIntervalMs, isActive, speed, prevSpeed,
   ]);
 
   if (!isActive || gauges.length === 0) return null;
+
+  // Fire threshold callback when any gauge hits red (with 5s cooldown per gauge)
+  if (onThresholdExceeded) {
+    const now = Date.now();
+    gauges.forEach(g => {
+      if (g.value >= g.thresh.red && g.faultType) {
+        const lastFired = lastFiredRef.current[g.id] || 0;
+        if (now - lastFired > 5000) {
+          lastFiredRef.current[g.id] = now;
+          onThresholdExceeded({
+            id: g.id,
+            label: g.label,
+            value: g.value,
+            unit: g.unit,
+            faultType: g.faultType,
+          });
+        }
+      }
+    });
+  }
 
   return (
     <View style={styles.container}>
