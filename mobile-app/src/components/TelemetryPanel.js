@@ -231,25 +231,25 @@ export default function TelemetryPanel({
       <View style={styles.infoRow}>
         {roadName ? (
           <View style={styles.infoChip}>
-            <Ionicons name="navigate" size={10} color="#64748B" />
+            <Ionicons name="navigate" size={13} color="#64748B" />
             <Text style={styles.infoText} numberOfLines={1}>{roadName}</Text>
           </View>
         ) : null}
         {zoneType && zoneType !== 'regular' ? (
           <View style={[styles.infoChip, styles.zoneChip]}>
-            <Ionicons name="warning" size={10} color="#F59E0B" />
+            <Ionicons name="warning" size={13} color="#F59E0B" />
             <Text style={[styles.infoText, { color: '#F59E0B' }]}>{zoneType.toUpperCase()}</Text>
           </View>
         ) : null}
         {altitude != null ? (
           <View style={styles.infoChip}>
-            <Ionicons name="trending-up" size={10} color="#64748B" />
+            <Ionicons name="trending-up" size={13} color="#64748B" />
             <Text style={styles.infoText}>{Math.round(altitude)}m</Text>
           </View>
         ) : null}
         {heading != null ? (
           <View style={styles.infoChip}>
-            <Ionicons name="compass" size={10} color="#64748B" />
+            <Ionicons name="compass" size={13} color="#64748B" />
             <Text style={styles.infoText}>{Math.round(heading)}°</Text>
           </View>
         ) : null}
@@ -381,47 +381,49 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 6,
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
   infoChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: 4,
     backgroundColor: 'rgba(30, 41, 59, 0.6)',
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   zoneChip: {
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.3)',
   },
   infoText: {
-    fontSize: 9,
+    fontSize: 12,
     fontWeight: '700',
-    color: '#94A3B8',
-    maxWidth: 120,
+    color: '#CBD5E1',
+    maxWidth: 140,
   },
   /* ── Speed Analysis Row ── */
   analysisRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 8,
+    justifyContent: 'center',
+    gap: 14,
+    marginBottom: 10,
   },
   analysisStat: {
     alignItems: 'center',
-    minWidth: 50,
+    minWidth: 55,
   },
   analysisLabel: {
-    fontSize: 7,
+    fontSize: 9,
     fontWeight: '800',
     color: '#64748B',
     letterSpacing: 0.5,
   },
   analysisValue: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
     color: '#94A3B8',
