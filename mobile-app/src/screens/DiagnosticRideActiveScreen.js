@@ -14,7 +14,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Card, Surface, IconButton, FAB, Portal, Dialog, Button, Badge } from 'react-native-paper';
+import { Card, Surface, IconButton, FAB, Portal, Dialog, Button } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import OSMMap from '../components/OSMMap';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -47,6 +47,14 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const [allEvents, setAllEvents] = useState([]);
   const [autoFlagCounts, setAutoFlagCounts] = useState({});
+  const [speedAnalysis, setSpeedAnalysis] = useState({
+    speedingSamples: 0,
+    totalSpeedSamples: 0,
+    maxExcessKmh: 0,
+    schoolZoneViolations: 0,
+    speedSum: 0,
+    speedSqSum: 0,
+  });
   const [rideId, setRideId] = useState(null);
   const [isWsConnected, setIsWsConnected] = useState(false);
   const [chunkErrors, setChunkErrors] = useState(0);
@@ -92,14 +100,36 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   const lastAlertByTypeRef = useRef({});
   const MAX_EVENTS = 300;
 
-  // Speed comparison color
-  const getSpeedColor = () => {
-    if (!speedLimit.currentSpeedLimit || !gpsTracking.speed) return '#1a1a1a';
-    const excess = gpsTracking.speed - speedLimit.currentSpeedLimit;
-    if (excess > 10) return '#dc3545';
-    if (excess > 0) return '#ffc107';
-    return '#28a745';
-  };
+  // Accumulate speed analysis from live GPS data
+  useEffect(() => {
+    if (!startTime || !gpsTracking.speed) return;
+    const spd = gpsTracking.speed;
+    const limit = speedLimit.currentSpeedLimit;
+    setSpeedAnalysis(prev => {
+      const total = prev.totalSpeedSamples + 1;
+      const newSum = prev.speedSum + spd;
+      const newSqSum = prev.speedSqSum + spd * spd;
+      let speeding = prev.speedingSamples;
+      let maxExc = prev.maxExcessKmh;
+      let szViolations = prev.schoolZoneViolations;
+      if (limit && spd > limit) {
+        speeding += 1;
+        const exc = spd - limit;
+        if (exc > maxExc) maxExc = exc;
+      }
+      if (limit && spd > limit && speedLimit.zoneType === 'school') {
+        szViolations += 1;
+      }
+      return {
+        speedingSamples: speeding,
+        totalSpeedSamples: total,
+        maxExcessKmh: maxExc,
+        schoolZoneViolations: szViolations,
+        speedSum: newSum,
+        speedSqSum: newSqSum,
+      };
+    });
+  }, [gpsTracking.speed, startTime]);
 
   // Feedback criteria handler — preserves full metadata
   const handleFeedbackUpdate = useCallback((code, delta, metadata) => {
@@ -802,37 +832,7 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       </View>
 
       <View style={[styles.overlay, { top: 50 + insets.top }]}>
-        {/* Stats Row */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Time</Text>
-            <Text style={styles.statValue}>{formatTime(duration)}</Text>
-            <Text style={styles.statTarget}>Target: 20:00</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Distance</Text>
-            <Text style={styles.statValue}>{gpsTracking.distance.toFixed(2)} KM</Text>
-            <Text style={styles.statTarget}>Target: 5.0 km</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Speed</Text>
-            <Text style={[styles.statValue, { color: getSpeedColor() === '#28a745' ? '#15803D' : getSpeedColor() }]}>
-              {Math.round(gpsTracking.speed)}
-            </Text>
-          </View>
-          <View style={[styles.statBox, styles.limitBox]}>
-            <Text style={styles.statLabel}>Limit</Text>
-            <Text style={styles.statValue}>{speedLimit.currentSpeedLimit || '--'}</Text>
-            {speedLimit.zoneType === 'school' && (
-              <Badge style={styles.schoolBadge} size={14}>SCHOOL</Badge>
-            )}
-            {speedLimit.zoneType !== 'school' && speedLimit.roadType && (
-              <Text style={styles.statTarget}>{speedLimit.roadType}</Text>
-            )}
-          </View>
-        </View>
-
-        {/* Live Telemetry Dashboard */}
+        {/* Live Telemetry Dashboard (includes ride stats) */}
         <TelemetryPanel
           acceleration={deviceMotion.acceleration}
           rotation={deviceMotion.rotation}
@@ -843,6 +843,21 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
           prevSpeed={prevSpeedRef.current}
           isActive={!!startTime}
           onThresholdExceeded={handleTelemetryThreshold}
+          duration={duration}
+          distance={gpsTracking.distance}
+          speedLimit={speedLimit.currentSpeedLimit}
+          zoneType={speedLimit.zoneType}
+          roadName={speedLimit.roadName}
+          altitude={gpsTracking.location?.altitude}
+          schoolZoneViolations={speedAnalysis.schoolZoneViolations}
+          speedingPercent={speedAnalysis.totalSpeedSamples > 0
+            ? (speedAnalysis.speedingSamples / speedAnalysis.totalSpeedSamples) * 100
+            : null}
+          maxExcessKmh={speedAnalysis.maxExcessKmh}
+          speedVariance={speedAnalysis.totalSpeedSamples > 2
+            ? Math.sqrt(speedAnalysis.speedSqSum / speedAnalysis.totalSpeedSamples
+                - Math.pow(speedAnalysis.speedSum / speedAnalysis.totalSpeedSamples, 2))
+            : null}
         />
 
         {/* Auto-Detected Flags Summary */}
@@ -1092,19 +1107,6 @@ const styles = StyleSheet.create({
   },
   connectionDot: { width: 6, height: 6, borderRadius: 3, marginRight: 8 },
   connectionText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-  statsContainer: { flexDirection: 'row', marginHorizontal: 16, gap: 12 },
-  statBox: { flex: 1, backgroundColor: '#131B2E', borderRadius: 20, padding: 12, alignItems: 'center' },
-  limitBox: { backgroundColor: '#1E293B' },
-  statLabel: { fontSize: 10, fontWeight: '700', color: '#94A3B8', marginBottom: 4, textTransform: 'uppercase' },
-  statValue: { fontSize: 20, fontWeight: '800', color: 'white' },
-  statTarget: { fontSize: 8, color: '#64748B', fontWeight: '700', marginTop: 4 },
-  schoolBadge: {
-    backgroundColor: '#F59E0B',
-    borderRadius: 4,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    marginTop: 2,
-  },
   eventLogContainer: { backgroundColor: 'rgba(19, 27, 46, 0.8)', marginHorizontal: 16, marginTop: 12, borderRadius: 24, padding: 16 },
   eventLogTitle: { fontSize: 12, fontWeight: '800', color: '#94A3B8', marginBottom: 12, textTransform: 'uppercase' },
   eventItem: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },

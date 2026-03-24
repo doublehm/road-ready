@@ -19,7 +19,7 @@ function getColor(value, thresh) {
   if (value >= thresh.red)    return '#EF4444';
   if (value >= thresh.yellow) return '#F59E0B';
   if (value >= thresh.green)  return '#22C55E';
-  return '#334155'; // dormant / below noise floor
+  return '#334155';
 }
 
 function barWidth(value, thresh) {
@@ -27,21 +27,22 @@ function barWidth(value, thresh) {
   return Math.min(Math.max((value / max) * 100, 0), 100);
 }
 
+function formatTime(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
+
+function speedColor(spd, limit) {
+  if (!limit || !spd) return '#94A3B8';
+  const excess = spd - limit;
+  if (excess > 10) return '#EF4444';
+  if (excess > 0) return '#F59E0B';
+  return '#22C55E';
+}
+
 /**
- * TelemetryPanel — Real-time force & sensor indicator dashboard.
- *
- * Shows labeled gauges for every measured force so the driver/supervisor
- * can monitor exactly what the system is detecting.
- *
- * @param {Object} acceleration  {x, y, z} in m/s² (gravity-removed)
- * @param {Object} rotation      {x, y, z} in rad/s
- * @param {Object} prevAcceleration  previous frame {x, y, z} for jerk calc
- * @param {number} sampleIntervalMs  time between frames (default 100ms for 10Hz)
- * @param {number} heading       GPS heading 0–360°
- * @param {number} speed         current GPS speed in km/h
- * @param {number} prevSpeed     previous GPS speed in km/h
- * @param {boolean} isActive     only render during active ride
- * @param {Function} onThresholdExceeded  callback({id, label, value, unit}) when gauge hits red
+ * TelemetryPanel — Unified live dashboard: ride stats + force gauges.
  */
 export default function TelemetryPanel({
   acceleration,
@@ -53,6 +54,16 @@ export default function TelemetryPanel({
   prevSpeed,
   isActive,
   onThresholdExceeded,
+  duration,
+  distance,
+  speedLimit,
+  zoneType,
+  roadName,
+  altitude,
+  schoolZoneViolations,
+  speedingPercent,
+  maxExcessKmh,
+  speedVariance,
 }) {
   const lastFiredRef = React.useRef({});
   const gauges = useMemo(() => {
@@ -182,15 +193,109 @@ export default function TelemetryPanel({
 
   if (!isActive || gauges.length === 0) return null;
 
+  const currentSpeed = typeof speed === 'number' ? speed : 0;
+  const spdColor = speedColor(currentSpeed, speedLimit);
+  const excess = speedLimit ? Math.round(currentSpeed - speedLimit) : null;
+
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Ionicons name="analytics" size={14} color="#64748B" />
-        <Text style={styles.headerText}>LIVE TELEMETRY</Text>
-        {heading != null && (
-          <Text style={styles.headingText}>HDG {Math.round(heading)}°</Text>
+      {/* ── Ride Stats Row ── */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCell}>
+          <Text style={styles.statLabel}>TIME</Text>
+          <Text style={styles.statValue}>{formatTime(duration || 0)}</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statCell}>
+          <Text style={styles.statLabel}>DIST</Text>
+          <Text style={styles.statValue}>{(distance || 0).toFixed(2)} km</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statCell}>
+          <Text style={styles.statLabel}>SPEED</Text>
+          <Text style={[styles.statValueBig, { color: spdColor }]}>{Math.round(currentSpeed)}</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statCell}>
+          <Text style={styles.statLabel}>LIMIT</Text>
+          <Text style={styles.statValue}>{speedLimit || '--'}</Text>
+          {zoneType === 'school' && (
+            <View style={styles.schoolBadge}>
+              <Text style={styles.schoolBadgeText}>SCHOOL</Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* ── Location & Altitude ── */}
+      <View style={styles.infoRow}>
+        {roadName ? (
+          <View style={styles.infoChip}>
+            <Ionicons name="navigate" size={10} color="#64748B" />
+            <Text style={styles.infoText} numberOfLines={1}>{roadName}</Text>
+          </View>
+        ) : null}
+        {zoneType && zoneType !== 'regular' ? (
+          <View style={[styles.infoChip, styles.zoneChip]}>
+            <Ionicons name="warning" size={10} color="#F59E0B" />
+            <Text style={[styles.infoText, { color: '#F59E0B' }]}>{zoneType.toUpperCase()}</Text>
+          </View>
+        ) : null}
+        {altitude != null ? (
+          <View style={styles.infoChip}>
+            <Ionicons name="trending-up" size={10} color="#64748B" />
+            <Text style={styles.infoText}>{Math.round(altitude)}m</Text>
+          </View>
+        ) : null}
+        {heading != null ? (
+          <View style={styles.infoChip}>
+            <Ionicons name="compass" size={10} color="#64748B" />
+            <Text style={styles.infoText}>{Math.round(heading)}°</Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* ── Speed Analysis Row ── */}
+      <View style={styles.analysisRow}>
+        {excess != null && (
+          <View style={styles.analysisStat}>
+            <Text style={styles.analysisLabel}>EXCESS</Text>
+            <Text style={[styles.analysisValue, {
+              color: excess > 10 ? '#EF4444' : excess > 0 ? '#F59E0B' : '#22C55E'
+            }]}>{excess > 0 ? '+' : ''}{excess} km/h</Text>
+          </View>
+        )}
+        {speedingPercent != null && (
+          <View style={styles.analysisStat}>
+            <Text style={styles.analysisLabel}>OVER LIMIT</Text>
+            <Text style={[styles.analysisValue, {
+              color: speedingPercent > 10 ? '#EF4444' : speedingPercent > 0 ? '#F59E0B' : '#22C55E'
+            }]}>{Math.round(speedingPercent)}%</Text>
+          </View>
+        )}
+        {maxExcessKmh != null && maxExcessKmh > 0 && (
+          <View style={styles.analysisStat}>
+            <Text style={styles.analysisLabel}>MAX EXCESS</Text>
+            <Text style={[styles.analysisValue, { color: '#EF4444' }]}>+{Math.round(maxExcessKmh)}</Text>
+          </View>
+        )}
+        {speedVariance != null && (
+          <View style={styles.analysisStat}>
+            <Text style={styles.analysisLabel}>VARIANCE</Text>
+            <Text style={[styles.analysisValue, {
+              color: speedVariance > 3 ? '#F59E0B' : '#94A3B8'
+            }]}>{speedVariance.toFixed(1)}</Text>
+          </View>
+        )}
+        {schoolZoneViolations > 0 && (
+          <View style={styles.analysisStat}>
+            <Text style={[styles.analysisLabel, { color: '#EF4444' }]}>SCHOOL ZONE</Text>
+            <Text style={[styles.analysisValue, { color: '#EF4444' }]}>{schoolZoneViolations}s</Text>
+          </View>
         )}
       </View>
+
+      {/* ── Force Gauges ── */}
       <View style={styles.gaugeGrid}>
         {gauges.map(g => {
           const color = getColor(g.value, g.thresh);
@@ -226,25 +331,102 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(100, 116, 139, 0.2)',
   },
-  headerRow: {
+  /* ── Ride Stats Row (Time | Dist | Speed | Limit) ── */
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  statCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#64748B',
+    letterSpacing: 1,
+  },
+  statValue: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#E2E8F0',
+    fontVariant: ['tabular-nums'],
+  },
+  statValueBig: {
+    fontSize: 22,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(100, 116, 139, 0.25)',
+  },
+  schoolBadge: {
+    backgroundColor: '#F59E0B',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    marginTop: 2,
+  },
+  schoolBadgeText: {
+    fontSize: 7,
+    fontWeight: '900',
+    color: '#0F172A',
+    letterSpacing: 0.5,
+  },
+  /* ── Info Chips (road, zone, altitude, heading) ── */
+  infoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
     marginBottom: 6,
   },
-  headerText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#64748B',
-    letterSpacing: 1,
-    flex: 1,
+  infoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(30, 41, 59, 0.6)',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
-  headingText: {
-    fontSize: 11,
+  zoneChip: {
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  infoText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#94A3B8',
+    maxWidth: 120,
+  },
+  /* ── Speed Analysis Row ── */
+  analysisRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  analysisStat: {
+    alignItems: 'center',
+    minWidth: 50,
+  },
+  analysisLabel: {
+    fontSize: 7,
     fontWeight: '800',
     color: '#64748B',
-    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.5,
   },
+  analysisValue: {
+    fontSize: 12,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    color: '#94A3B8',
+  },
+  /* ── Force Gauges ── */
   gaugeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
