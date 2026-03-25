@@ -755,10 +755,18 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   latestSpeedLimitRef.current = speedLimit.currentSpeedLimit;
   latestZoneTypeRef.current = speedLimit.zoneType;
   latestLocationRef.current = gpsTracking.location;
-  prevSpeedRef.current = latestSpeedRef.current;
-  latestSpeedRef.current = gpsTracking.speed;
-  prevAccelerationRef.current = latestAccelerationRef.current;
-  latestAccelerationRef.current = deviceMotion.acceleration;
+  // Only update prev values when GPS/sensor provides a genuinely new reading.
+  // Accelerometer re-renders happen ~10× more often than GPS updates; updating
+  // prevSpeed on every render collapses it to the current speed, making the
+  // stop-force and accel gauges perpetually read 0.
+  if (gpsTracking.speed !== latestSpeedRef.current) {
+    prevSpeedRef.current = latestSpeedRef.current;
+    latestSpeedRef.current = gpsTracking.speed;
+  }
+  if (deviceMotion.acceleration !== latestAccelerationRef.current) {
+    prevAccelerationRef.current = latestAccelerationRef.current;
+    latestAccelerationRef.current = deviceMotion.acceleration;
+  }
   latestRotationRef.current = deviceMotion.rotation;
   latestDurationRef.current = duration;
 
