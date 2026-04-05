@@ -10,7 +10,7 @@ const StudentProgressScreen = ({ navigation }) => {
   const [diagnosticRides, setDiagnosticRides] = useState([]);
   const [progressSummary, setProgressSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState({ totalSessions: 0, overallScore: 0, totalHours: 0, trend: 'Stable' });
 
   useEffect(() => {
     fetchData();
@@ -191,7 +191,7 @@ const StudentProgressScreen = ({ navigation }) => {
 
         <Text style={styles.sectionTitle}>Diagnostic Rides</Text>
         {diagnosticRides.length > 0 ? (
-            diagnosticRides.map(r => (
+            diagnosticRides.filter(Boolean).map(r => (
                 <TouchableOpacity 
                   key={r.id} 
                   style={styles.diagCard}
@@ -199,12 +199,12 @@ const StudentProgressScreen = ({ navigation }) => {
                 >
                     <View style={{flex: 1}}>
                         <View style={styles.rowBetween}>
-                            <Text style={styles.date}>{new Date(r.created_at).toLocaleDateString()}</Text>
+                            <Text style={styles.date}>{r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Unknown'}</Text>
                             <View style={[styles.badge, {backgroundColor: r.passed ? '#15803D' : '#EF4444'}]}>
                                 <Text style={styles.badgeText}>{r.passed ? 'PASS' : 'FAIL'}</Text>
                             </View>
                         </View>
-                        <Text style={styles.diagType}>{r.ride_type.replace('_', ' ').toUpperCase()}</Text>
+                        <Text style={styles.diagType}>{(r.ride_type || '').replace('_', ' ').toUpperCase()}</Text>
                         <View style={styles.scoreContainer}>
                           <Text style={styles.scoreLabel}>OVERALL SCORE</Text>
                           <Text style={[styles.scoreText, {color: r.passed ? '#15803D' : '#EF4444'}]}>{r.overall_score?.toFixed(1)}%</Text>
