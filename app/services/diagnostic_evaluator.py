@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Tuple
 import math
 import numpy as np
 from app.services.nosql_repo import NoSQLRepository
+from app.services.ml_evaluator import MLEvaluator
 
 class DiagnosticEvaluator:
     """
@@ -107,12 +108,15 @@ class DiagnosticEvaluator:
     # ── Erratic driving thresholds ──
     # At 0.30g (2.94 m/s²) passengers are noticeably pushed into seats.
     HARSH_ACCELERATION_THRESHOLD = 0.30  # g
-    SPEED_OSCILLATION_WINDOW = 10  # data points to analyze for patterns
-    SPEED_OSCILLATION_MIN_CHANGES = 4  # accel/decel direction changes for erratic flag
-    SPEED_OSCILLATION_AMPLITUDE = 5  # km/h minimum speed range in window
+    SPEED_OSCILLATION_WINDOW = 15  # data points (15s at 1Hz) to analyze for patterns
+    SPEED_OSCILLATION_MIN_CHANGES = 3  # significant direction changes for erratic flag
+    SPEED_OSCILLATION_AMPLITUDE = 8  # km/h minimum speed range in window
+    SPEED_OSCILLATION_MIN_DELTA = 2.0  # km/h min change to count as a direction shift
+    SPEED_OSCILLATION_MIN_SPEED = 20.0 # km/h floor; ignore oscillations in stop-and-go traffic
 
     def __init__(self):
         self.nosql_repo = NoSQLRepository()
+        self.ml_evaluator = MLEvaluator()
 
     @staticmethod
     def _median_filter(data: List[Dict], window: int = 5) -> List[Dict]:
@@ -355,6 +359,7 @@ class DiagnosticEvaluator:
                         point['longitude'] = closest.get('longitude')
 
         # 0. Pre-filter: median filter removes single-sample spikes (potholes, vibration)
+        unfiltered_accel = [dict(p) for p in acceleration_data] # Deep copy
         acceleration_data = self._median_filter(acceleration_data)
 
         # 1. Calibrate Orientation (first 5 minutes / 3000 samples approx)
@@ -388,6 +393,9 @@ class DiagnosticEvaluator:
             heading_data, speed_data
         )
 
+        # 5. ML-based Evaluation
+        ml_events = self.ml_evaluator.evaluate_ride(unfiltered_accel)
+
         # Incorporate Friction Circle and Vertical Impacts as penalties into scores
         braking_score = max(0, braking_score - combined_feedback['violations'] * 5)
         cornering_score = max(0, cornering_score - combined_feedback['violations'] * 5)
@@ -420,6 +428,7 @@ class DiagnosticEvaluator:
         all_events.extend(impact_feedback.get('events', []))
         all_events.extend(erratic_feedback.get('events', []))
         all_events.extend(lane_feedback.get('events', []))
+        all_events.extend(ml_events)
         
         # Add NoSQL system events
         for e in nosql_events:
@@ -1191,14 +1200,19 @@ class DiagnosticEvaluator:
                 window_data = speed_data[start:start + window]
                 speeds = [p.get('speed', 0) for p in window_data]
 
-                if max(speeds) < 10:
+                # If driving slow in traffic (stop-and-go), oscillations are normal.
+                # Only flag if mean speed is high enough to warrant steady throttle.
+                if sum(speeds)/len(speeds) < self.SPEED_OSCILLATION_MIN_SPEED:
                     continue
 
                 direction_changes = 0
                 for j in range(2, len(speeds)):
                     prev_delta = speeds[j - 1] - speeds[j - 2]
                     curr_delta = speeds[j] - speeds[j - 1]
-                    if abs(prev_delta) > 1 and abs(curr_delta) > 1:
+                    
+                    # Physicist: Only count if the change is above the noise floor (e.g. 2 km/h)
+                    if abs(prev_delta) >= self.SPEED_OSCILLATION_MIN_DELTA and \
+                       abs(curr_delta) >= self.SPEED_OSCILLATION_MIN_DELTA:
                         if (prev_delta > 0 and curr_delta < 0) or (prev_delta < 0 and curr_delta > 0):
                             direction_changes += 1
 
@@ -1211,7 +1225,9 @@ class DiagnosticEvaluator:
 
                 if (direction_changes >= self.SPEED_OSCILLATION_MIN_CHANGES and
                         speed_range >= self.SPEED_OSCILLATION_AMPLITUDE):
-                    if last_erratic_ts is None or (ts - last_erratic_ts) >= self.EVENT_COOLDOWN_MS * 2:
+                    # Instructor: Erratic driving is a sustained pattern, not a one-off.
+                    # Use a longer cooldown (10s) between erratic flags.
+                    if last_erratic_ts is None or (ts - last_erratic_ts) >= 10000:
                         erratic_count += 1
                         penalty += 5
                         last_erratic_ts = ts
@@ -1222,9 +1238,9 @@ class DiagnosticEvaluator:
                             'lng': window_data[0].get('longitude'),
                             'value': round(speed_range, 1),
                             'direction_changes': direction_changes,
-                            'severity': 'medium' if direction_changes < 6 else 'high',
+                            'severity': 'medium' if direction_changes < 5 else 'high',
                             'description': (
-                                f'Erratic speed: {direction_changes} direction changes, '
+                                f'Erratic speed: {direction_changes} significant surges, '
                                 f'{round(speed_range, 1)} km/h range'
                             )
                         })

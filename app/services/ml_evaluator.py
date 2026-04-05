@@ -59,6 +59,11 @@ class MLEvaluator:
         # Convert to DataFrame with same column order as training
         X = pd.DataFrame([features])
         
+        # Sanitize: replace any remaining NaN/inf and clamp to float32 range
+        X = X.replace([float('inf'), float('-inf')], float('nan')).fillna(0)
+        f32_max = np.finfo(np.float32).max
+        X = X.clip(-f32_max, f32_max)
+        
         # Prediction
         label_id = self.model.predict(X)[0]
         probs = self.model.predict_proba(X)[0]
@@ -77,6 +82,7 @@ class MLEvaluator:
         """
         Runs ML model across the entire ride in sliding windows.
         Returns a list of ML-detected events.
+        Never raises — returns [] on any failure so the main evaluator keeps working.
         """
         if self.model is None or not acceleration_data:
             return []
@@ -86,19 +92,21 @@ class MLEvaluator:
         
         ml_events = []
         
-        for i in range(0, len(acceleration_data) - WINDOW_SIZE, STEP_SIZE):
-            window = acceleration_data[i : i + WINDOW_SIZE]
-            prediction = self.predict_window(window)
-            
-            if prediction['label_id'] != 0 and prediction['confidence'] > self.threshold:
-                # Flag this as an ML event
-                ml_events.append({
-                    'type': f"ml_{prediction['type'].lower().replace(' ', '_')}",
-                    'timestamp': window[-1]['timestamp'],
-                    'confidence': prediction['confidence'],
-                    'lat': window[-1].get('latitude'),
-                    'lng': window[-1].get('longitude'),
-                    'description': f"ML detected: {prediction['type']} (Confidence: {prediction['confidence']:.2f})"
-                })
+        try:
+            for i in range(0, len(acceleration_data) - WINDOW_SIZE, STEP_SIZE):
+                window = acceleration_data[i : i + WINDOW_SIZE]
+                prediction = self.predict_window(window)
+                
+                if prediction['label_id'] != 0 and prediction['confidence'] > self.threshold:
+                    ml_events.append({
+                        'type': f"ml_{prediction['type'].lower().replace(' ', '_')}",
+                        'timestamp': window[-1]['timestamp'],
+                        'confidence': prediction['confidence'],
+                        'lat': window[-1].get('latitude'),
+                        'lng': window[-1].get('longitude'),
+                        'description': f"ML detected: {prediction['type']} (Confidence: {prediction['confidence']:.2f})"
+                    })
+        except Exception:
+            pass
                 
         return ml_events
