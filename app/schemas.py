@@ -419,6 +419,35 @@ class InstructorReview(BaseModel):
     override_speed_score: Optional[float] = None
     override_cornering_score: Optional[float] = None
 
+class DiagnosticRideSummary(DiagnosticRideBase):
+    """Lightweight schema for list endpoints — excludes bulk sensor data."""
+    id: int
+    student_id: int
+    booking_id: Optional[int] = None
+    instructor_id: Optional[int] = None
+    student: Optional[User] = None
+    instructor: Optional["InstructorProfile"] = None
+    start_time: str
+    end_time: Optional[str] = None
+    duration_minutes: Optional[float] = None
+    distance_km: Optional[float] = None
+    braking_score: Optional[float] = None
+    speed_score: Optional[float] = None
+    cornering_score: Optional[float] = None
+    smoothness_score: Optional[float] = None
+    overall_score: Optional[float] = None
+    passed: Optional[bool] = None
+    criteria_results: Optional[str] = None
+    evaluator_notes: Optional[str] = None
+    human_feedback: Optional[str] = None
+    instructor_override: bool = False
+    status: str
+    created_at: str
+    evaluated_at: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class DiagnosticRide(DiagnosticRideBase):
     id: int
     student_id: int

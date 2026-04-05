@@ -483,7 +483,7 @@ async def evaluate_chunk(
     }
 
 
-@router.get("/", response_model=List[schemas.DiagnosticRide])
+@router.get("/", response_model=List[schemas.DiagnosticRideSummary])
 async def list_diagnostic_rides(
     current_user: models.User = Depends(deps.get_current_user),
     db: Session = Depends(deps.get_db)
@@ -968,7 +968,7 @@ async def instructor_review(
     }
 
 
-@router.get("/student/{student_id}/rides", response_model=List[schemas.DiagnosticRide])
+@router.get("/student/{student_id}/rides", response_model=List[schemas.DiagnosticRideSummary])
 async def get_student_rides(
     student_id: int,
     current_user: models.User = Depends(deps.get_current_user),
