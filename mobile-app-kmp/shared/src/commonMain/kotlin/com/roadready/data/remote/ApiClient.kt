@@ -1,0 +1,131 @@
+package com.roadready.data.remote
+
+import com.roadready.createPlatformHttpClient
+import com.roadready.data.model.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.*
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+
+class ApiClient(
+    private val baseUrl: String,
+    private val tokenProvider: () -> String?,
+) {
+    val httpClient: HttpClient = createPlatformHttpClient().config {
+        defaultRequest {
+            url(baseUrl)
+            contentType(ContentType.Application.Json)
+            tokenProvider()?.let { token ->
+                header("Authorization", "Bearer $token")
+            }
+        }
+    }
+
+    // --- Auth ---
+
+    suspend fun login(request: LoginRequest): Result<AuthResponse> = safeCall {
+        httpClient.post("users/login") {
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun register(request: RegisterRequest): Result<AuthResponse> = safeCall {
+        httpClient.post("users/") {
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun getCurrentUser(): Result<User> = safeCall {
+        httpClient.get("users/me").body()
+    }
+
+    // --- Bookings ---
+
+    suspend fun getBookings(status: String? = null): Result<List<Booking>> = safeCall {
+        httpClient.get("bookings/") {
+            status?.let { parameter("status", it) }
+        }.body()
+    }
+
+    suspend fun createBooking(booking: Map<String, String>): Result<Booking> = safeCall {
+        httpClient.post("bookings/") {
+            setBody(booking)
+        }.body()
+    }
+
+    suspend fun updateBookingAction(bookingId: Int, action: String): Result<Booking> = safeCall {
+        httpClient.post("bookings/$bookingId/action") {
+            setBody(mapOf("action" to action))
+        }.body()
+    }
+
+    // --- Diagnostic Rides ---
+
+    suspend fun getDiagnosticRides(status: String? = null): Result<List<DiagnosticRide>> = safeCall {
+        httpClient.get("diagnostic-rides/") {
+            status?.let { parameter("status", it) }
+        }.body()
+    }
+
+    suspend fun getDiagnosticRide(rideId: Int): Result<DiagnosticRide> = safeCall {
+        httpClient.get("diagnostic-rides/$rideId").body()
+    }
+
+    // --- Messages ---
+
+    suspend fun getMessages(recipientId: Int? = null): Result<List<Message>> = safeCall {
+        httpClient.get("messages/") {
+            recipientId?.let { parameter("recipient_id", it) }
+        }.body()
+    }
+
+    suspend fun sendMessage(recipientId: Int, content: String): Result<Message> = safeCall {
+        httpClient.post("messages/") {
+            setBody(mapOf("recipient_id" to recipientId.toString(), "content" to content))
+        }.body()
+    }
+
+    suspend fun markMessageRead(messageId: Int): Result<Message> = safeCall {
+        httpClient.put("messages/$messageId/read").body()
+    }
+
+    // --- Notifications ---
+
+    suspend fun getNotifications(): Result<List<Notification>> = safeCall {
+        httpClient.get("notifications/").body()
+    }
+
+    suspend fun markNotificationRead(notificationId: Int): Result<Notification> = safeCall {
+        httpClient.post("notifications/$notificationId/read").body()
+    }
+
+    // --- Instructors ---
+
+    suspend fun getInstructors(): Result<List<User>> = safeCall {
+        httpClient.get("instructors/").body()
+    }
+
+    // --- Modules ---
+
+    suspend fun getModules(): Result<List<Module>> = safeCall {
+        httpClient.get("modules/").body()
+    }
+
+    suspend fun getModuleProgress(): Result<List<ModuleProgress>> = safeCall {
+        httpClient.get("modules/student-progress").body()
+    }
+
+    // --- Helpers ---
+
+    private suspend inline fun <reified T> safeCall(block: () -> T): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+}
