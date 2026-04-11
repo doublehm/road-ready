@@ -68,6 +68,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
+            implementation("com.google.android.gms:play-services-location:21.3.0")
         }
 
         iosMain.dependencies {
