@@ -10,6 +10,7 @@
         android:allowBackup="true"
         android:label="Road Ready"
         android:supportsRtl="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.RoadReady">
         <activity
             android:name=".MainActivity"
