@@ -2,6 +2,7 @@ package com.roadready.data.remote
 
 import com.roadready.createPlatformHttpClient
 import com.roadready.data.model.*
+import com.roadready.data.repository.SpeedLimitResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.defaultRequest
@@ -117,6 +118,15 @@ class ApiClient(
 
     suspend fun getModuleProgress(): Result<List<ModuleProgress>> = safeCall {
         httpClient.get("modules/student-progress").body()
+    }
+
+    // --- Speed Limit ---
+
+    suspend fun getSpeedLimit(lat: Double, lon: Double): Result<SpeedLimitResponse> = safeCall {
+        httpClient.get("diagnostic-rides/speed-limit") {
+            parameter("lat", lat)
+            parameter("lon", lon)
+        }.body()
     }
 
     // --- Helpers ---
