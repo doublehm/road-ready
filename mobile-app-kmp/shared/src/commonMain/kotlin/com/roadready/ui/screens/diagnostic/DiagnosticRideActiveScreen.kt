@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.roadready.data.remote.ApiClient
 import com.roadready.ui.components.PrimaryButton
 import com.roadready.ui.theme.*
+import com.roadready.ui.util.pad2
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -86,7 +87,7 @@ fun DiagnosticRideActiveScreen(
                     color = TextPrimary,
                 )
                 Text(
-                    String.format("%02d:%02d", minutes, seconds),
+                    "${pad2(minutes)}:${pad2(seconds)}",
                     style = MaterialTheme.typography.headlineMedium,
                     color = TextPrimary,
                 )

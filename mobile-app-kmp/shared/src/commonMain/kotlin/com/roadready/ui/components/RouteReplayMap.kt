@@ -1,11 +1,8 @@
 package com.roadready.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,99 +68,49 @@ fun RouteReplayMap(
         return
     }
 
+    val coordPairs = remember(routeCoordinates) {
+        routeCoordinates.map { it.latitude to it.longitude }
+    }
+
     val routeStats = remember(routeCoordinates, events) {
         computeRouteStats(routeCoordinates, events)
     }
 
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface),
-    ) {
-        Column(
+    Column(modifier = modifier.fillMaxWidth()) {
+        // Render the real platform map
+        PlatformOsmMap(
+            coordinates = coordPairs,
+            events = events,
+            height = height,
+            modifier = Modifier.clip(RoundedCornerShape(12.dp)),
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Stats bar below map
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(height)
-                .padding(16.dp),
+                .clip(RoundedCornerShape(8.dp))
+                .background(SurfaceVariant.copy(alpha = 0.5f))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            // Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("🗺", fontSize = 20.sp)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Route Map",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                if (events.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Primary)
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text = "${events.size} events",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Stats grid
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                RouteStatItem(
-                    label = "DISTANCE",
-                    value = "${formatDouble(routeStats.distanceKm, 2)} km",
-                    color = Primary,
-                )
-                RouteStatItem(
-                    label = "COORDINATES",
-                    value = routeStats.pointCount.toString(),
-                    color = AccentLight,
-                )
-                RouteStatItem(
-                    label = "EVENTS",
-                    value = events.size.toString(),
-                    color = if (events.isEmpty()) TextSecondary else Warning,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Event summary by type
-            if (events.isNotEmpty()) {
-                EventCountSummary(events)
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Platform note
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(SurfaceVariant.copy(alpha = 0.5f))
-                    .padding(12.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "📍 Map view available on device",
-                    fontSize = 13.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center,
-                )
-            }
+            RouteStatItem(
+                label = "DISTANCE",
+                value = "${formatDouble(routeStats.distanceKm, 2)} km",
+                color = Primary,
+            )
+            RouteStatItem(
+                label = "POINTS",
+                value = routeStats.pointCount.toString(),
+                color = AccentLight,
+            )
+            RouteStatItem(
+                label = "EVENTS",
+                value = events.size.toString(),
+                color = if (events.isEmpty()) TextSecondary else Warning,
+            )
         }
     }
 }

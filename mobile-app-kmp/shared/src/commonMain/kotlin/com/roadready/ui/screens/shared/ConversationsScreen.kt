@@ -50,7 +50,7 @@ fun ConversationsScreen(
         val convMap = mutableMapOf<Int, Conversation>()
         bookings.filter { it.status in listOf("accepted", "completed", "pending") }.forEach { booking ->
             val isStudent = authState.role == "student"
-            val recipientId = if (isStudent) booking.instructorId else booking.studentId
+            val recipientId = if (isStudent) (booking.instructorId ?: return@forEach) else booking.studentId
             val recipientName = if (isStudent) {
                 booking.instructor?.fullName ?: "Instructor #${booking.instructorId}"
             } else {

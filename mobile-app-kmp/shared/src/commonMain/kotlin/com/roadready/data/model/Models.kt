@@ -54,6 +54,9 @@ data class StudentProfile(
 @Serializable
 data class InstructorProfile(
     val id: Int? = null,
+    @SerialName("user_id") val userId: Int? = null,
+    @SerialName("is_verified") val isVerified: Boolean = false,
+    val user: User? = null,
     val city: String = "Unknown",
     val province: String? = null,
     @SerialName("license_number") val licenseNumber: String? = null,
@@ -69,7 +72,10 @@ data class InstructorProfile(
     @SerialName("stripe_account_id") val stripeAccountId: String? = null,
     @SerialName("stripe_onboarded") val stripeOnboarded: Boolean = false,
     @SerialName("average_rating") val averageRating: Double? = null,
-)
+) {
+    /** Display name from the nested user, or fallback. */
+    val fullName: String get() = user?.fullName ?: "Instructor"
+}
 
 // --- Booking ---
 
@@ -77,7 +83,7 @@ data class InstructorProfile(
 data class Booking(
     val id: Int,
     @SerialName("student_id") val studentId: Int,
-    @SerialName("instructor_id") val instructorId: Int,
+    @SerialName("instructor_id") val instructorId: Int? = null,
     val status: String, // pending, accepted, completed, cancelled
     @SerialName("scheduled_date") val scheduledDate: String? = null,
     @SerialName("scheduled_time") val scheduledTime: String? = null,
@@ -88,10 +94,11 @@ data class Booking(
     @SerialName("dropoff_lat") val dropoffLat: Double? = null,
     @SerialName("dropoff_lon") val dropoffLon: Double? = null,
     @SerialName("dropoff_address") val dropoffAddress: String? = null,
+    @SerialName("total_amount") val totalAmount: Double? = null,
     @SerialName("total_price") val totalPrice: Double? = null,
     @SerialName("for_diagnostic_ride") val forDiagnosticRide: Boolean = false,
     val student: User? = null,
-    val instructor: User? = null,
+    val instructor: InstructorProfile? = null,
     @SerialName("instructor_rating") val instructorRating: Int? = null,
     @SerialName("instructor_notes") val instructorNotes: String? = null,
     @SerialName("fault_codes") val faultCodes: List<String>? = null,
@@ -105,32 +112,35 @@ data class DiagnosticRide(
     val id: Int,
     @SerialName("student_id") val studentId: Int,
     @SerialName("instructor_id") val instructorId: Int? = null,
-    @SerialName("supervisor_name") val supervisorName: String? = null,
-    @SerialName("supervisor_type") val supervisorType: String? = null,
-    val status: String, // active, completed, graded
-    val score: Double? = null,
-    @SerialName("overall_score") val overallScore: Double? = null,
+    @SerialName("booking_id") val bookingId: Int? = null,
+    @SerialName("ride_type") val rideType: String? = null,
+    val status: String, // active, completed, evaluated
+    @SerialName("start_time") val startTime: String? = null,
+    @SerialName("end_time") val endTime: String? = null,
+    @SerialName("duration_minutes") val durationMinutes: Double? = null,
+    @SerialName("distance_km") val distanceKm: Double? = null,
     @SerialName("braking_score") val brakingScore: Double? = null,
     @SerialName("speed_score") val speedScore: Double? = null,
     @SerialName("cornering_score") val corneringScore: Double? = null,
-    @SerialName("ride_type") val rideType: String? = null,
-    @SerialName("route_data") val routeData: String? = null,
-    @SerialName("sensor_data") val sensorData: String? = null,
-    val events: String? = null,
-    @SerialName("event_count") val eventCount: Int? = null,
-    @SerialName("human_feedback") val humanFeedback: String? = null,
+    @SerialName("smoothness_score") val smoothnessScore: Double? = null,
+    @SerialName("overall_score") val overallScore: Double? = null,
+    val passed: Boolean? = null,
+    @SerialName("evaluation_result") val evaluationResult: String? = null,
+    @SerialName("criteria_results") val criteriaResults: String? = null,
     @SerialName("evaluator_notes") val evaluatorNotes: String? = null,
+    @SerialName("human_feedback") val humanFeedback: String? = null,
+    @SerialName("instructor_override") val instructorOverride: Boolean = false,
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("evaluated_at") val evaluatedAt: String? = null,
+    // Blob fields — present in detail, null in list
+    @SerialName("route_coords") val routeCoords: String? = null,
+    @SerialName("acceleration_data") val accelerationData: String? = null,
+    @SerialName("rotation_data") val rotationData: String? = null,
     @SerialName("speed_data") val speedData: String? = null,
     @SerialName("speed_limit_data") val speedLimitData: String? = null,
-    val duration: Int? = null,
-    @SerialName("duration_seconds") val durationSeconds: Int? = null,
-    val distance: Double? = null,
-    @SerialName("distance_km") val distanceKm: Double? = null,
-    @SerialName("max_speed_kmh") val maxSpeedKmh: Double? = null,
-    @SerialName("average_speed_kmh") val averageSpeedKmh: Double? = null,
-    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("heading_data") val headingData: String? = null,
     val student: User? = null,
-    val instructor: User? = null,
+    val instructor: InstructorProfile? = null,
 )
 
 // --- Message ---

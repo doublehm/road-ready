@@ -15,6 +15,7 @@ import com.roadready.data.model.DiagnosticRide
 import com.roadready.data.remote.ApiClient
 import com.roadready.ui.components.LoadingOverlay
 import com.roadready.ui.theme.*
+import com.roadready.ui.util.fmtDollar
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -74,7 +75,7 @@ private fun EarningsOverview(total: Double, lessons: Int, rides: Int) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("Total Earnings", style = MaterialTheme.typography.bodyMedium)
-                Text("$${String.format("%.2f", total)}", style = MaterialTheme.typography.displayLarge, color = AccentLight)
+                Text(fmtDollar(total), style = MaterialTheme.typography.displayLarge, color = AccentLight)
             }
         }
 
@@ -126,7 +127,7 @@ private fun LessonEarnings(bookings: List<Booking>) {
                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(booking.scheduledDate ?: "", style = MaterialTheme.typography.bodySmall)
                     }
-                    Text("$${booking.totalPrice?.let { String.format("%.2f", it) } ?: "0.00"}",
+                    Text(booking.totalPrice?.let { fmtDollar(it) } ?: "$0.00",
                         style = MaterialTheme.typography.titleMedium, color = AccentLight)
                 }
             }
@@ -154,7 +155,7 @@ private fun DiagnosticEarnings(rides: List<DiagnosticRide>) {
                         Text(ride.student?.fullName ?: "Student #${ride.studentId}", style = MaterialTheme.typography.titleMedium)
                         Text(ride.createdAt ?: "", style = MaterialTheme.typography.bodySmall)
                     }
-                    ride.score?.let { score ->
+                    ride.overallScore?.let { score ->
                         val color = when { score >= 80 -> AccentLight; score >= 60 -> Warning; else -> Error }
                         Surface(color = color.copy(alpha = 0.15f), shape = RoundedCornerShape(8.dp)) {
                             Text("${score.toInt()}%", modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),

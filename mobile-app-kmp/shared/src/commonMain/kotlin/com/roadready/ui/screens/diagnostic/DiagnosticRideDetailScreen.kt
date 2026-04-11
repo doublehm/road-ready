@@ -13,6 +13,7 @@ import com.roadready.data.model.DiagnosticRide
 import com.roadready.data.remote.ApiClient
 import com.roadready.ui.components.LoadingOverlay
 import com.roadready.ui.theme.*
+import com.roadready.ui.util.fmtDouble
 import org.koin.compose.koinInject
 
 @Composable
@@ -100,12 +101,9 @@ fun DiagnosticRideDetailScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Trip Details", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-                r.durationSeconds?.let { DetailRow("Duration", "${it / 60}m ${it % 60}s") }
-                r.distanceKm?.let { DetailRow("Distance", String.format("%.2f km", it)) }
-                r.maxSpeedKmh?.let { DetailRow("Max Speed", "${it.toInt()} km/h") }
-                r.averageSpeedKmh?.let { DetailRow("Avg Speed", "${it.toInt()} km/h") }
+                r.durationMinutes?.let { DetailRow("Duration", "${it.toInt()} min") }
+                r.distanceKm?.let { DetailRow("Distance", "${fmtDouble(it, 2)} km") }
                 r.rideType?.let { DetailRow("Type", it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }) }
-                r.eventCount?.let { DetailRow("Events", "$it flagged") }
             }
         }
 

@@ -15,6 +15,7 @@ import com.roadready.data.remote.ApiClient
 import com.roadready.ui.components.LoadingOverlay
 import com.roadready.ui.components.PrimaryButton
 import com.roadready.ui.theme.*
+import com.roadready.ui.util.fmtDouble
 import org.koin.compose.koinInject
 
 @Composable
@@ -108,11 +109,8 @@ fun DiagnosticRideResultsScreen(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Ride Summary", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-                r.durationSeconds?.let { InfoRow("Duration", "${it / 60}m ${it % 60}s") }
-                r.distanceKm?.let { InfoRow("Distance", String.format("%.1f km", it)) }
-                r.maxSpeedKmh?.let { InfoRow("Max Speed", "${it.toInt()} km/h") }
-                r.averageSpeedKmh?.let { InfoRow("Avg Speed", "${it.toInt()} km/h") }
-                r.eventCount?.let { InfoRow("Events", "$it flagged") }
+                r.durationMinutes?.let { InfoRow("Duration", "${it.toInt()} min") }
+                r.distanceKm?.let { InfoRow("Distance", "${fmtDouble(it)} km") }
             }
         }
 

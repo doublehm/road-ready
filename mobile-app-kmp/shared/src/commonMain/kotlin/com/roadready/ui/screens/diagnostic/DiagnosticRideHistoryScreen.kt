@@ -123,7 +123,8 @@ private fun RideCard(ride: DiagnosticRide, onClick: () -> Unit) {
                     Text(it.take(10), style = MaterialTheme.typography.bodySmall, color = TextMuted)
                 }
                 ride.distanceKm?.let {
-                    Text(String.format("%.1f km", it), style = MaterialTheme.typography.bodySmall, color = TextMuted)
+                    val km = (it * 10).toInt() / 10.0
+                    Text("$km km", style = MaterialTheme.typography.bodySmall, color = TextMuted)
                 }
             }
             Text("→", style = MaterialTheme.typography.titleLarge, color = Primary)

@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.roadready.data.model.User
 import com.roadready.ui.components.PrimaryButton
 import com.roadready.ui.theme.*
+import com.roadready.ui.util.fmtDouble
 
 @Composable
 fun InstructorProfileScreen(
@@ -52,7 +53,7 @@ fun InstructorProfileScreen(
                 Spacer(Modifier.height(12.dp))
                 Text(instructor.fullName, style = MaterialTheme.typography.headlineMedium)
                 profile?.averageRating?.let {
-                    Text("⭐ ${String.format("%.1f", it)}", style = MaterialTheme.typography.titleMedium, color = Warning)
+                    Text("⭐ ${fmtDouble(it)}", style = MaterialTheme.typography.titleMedium, color = Warning)
                 }
                 Text("${profile?.city ?: ""}, ${profile?.province ?: ""}", style = MaterialTheme.typography.bodyMedium)
             }

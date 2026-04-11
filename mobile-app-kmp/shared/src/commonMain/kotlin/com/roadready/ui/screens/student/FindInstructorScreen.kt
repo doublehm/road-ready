@@ -18,6 +18,7 @@ import com.roadready.data.remote.ApiClient
 import com.roadready.ui.components.LoadingOverlay
 import com.roadready.ui.components.RoadReadyTextField
 import com.roadready.ui.theme.*
+import com.roadready.ui.util.fmtDouble
 import org.koin.compose.koinInject
 
 @Composable
@@ -111,7 +112,7 @@ private fun InstructorCard(instructor: User, onClick: () -> Unit) {
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     profile?.averageRating?.let {
-                        Text("⭐ ${String.format("%.1f", it)} • ", style = MaterialTheme.typography.bodySmall, color = Warning)
+                        Text("⭐ ${fmtDouble(it)} • ", style = MaterialTheme.typography.bodySmall, color = Warning)
                     }
                     Text(profile?.city ?: "", style = MaterialTheme.typography.bodySmall)
                 }
