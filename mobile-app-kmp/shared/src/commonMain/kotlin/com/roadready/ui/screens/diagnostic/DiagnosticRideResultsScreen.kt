@@ -288,11 +288,11 @@ fun DiagnosticRideResultsScreen(
     val allEvents = remember(evalResult) { extractEvents(evalResult) }
     val routeEvents = remember(evalResult) { extractRouteEvents(evalResult) }
 
-    val brakingFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "braking") }
-    val speedFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "speed") }
-    val corneringFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "cornering") }
-    val erraticFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "erratic_driving") }
-    val laneFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "lane_discipline") }
+    val brakingFeedback: ResultCategoryFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "braking") }
+    val speedFeedback: ResultCategoryFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "speed") }
+    val corneringFeedback: ResultCategoryFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "cornering") }
+    val erraticFeedback: ResultCategoryFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "erratic_driving") }
+    val laneFeedback: ResultCategoryFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "lane_discipline") }
 
     val brakingExtraInfo = remember(evalResult) { extractCategoryExtraInfo(evalResult, "braking") }
     val speedExtraInfo = remember(evalResult) { extractCategoryExtraInfo(evalResult, "speed") }

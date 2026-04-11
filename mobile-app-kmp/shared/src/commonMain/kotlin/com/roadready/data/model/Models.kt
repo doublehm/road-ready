@@ -206,6 +206,29 @@ data class QuizQuestion(
     val explanation: String? = null,
 )
 
+// --- Progress Trends ---
+
+@Serializable
+data class ProgressTrends(
+    @SerialName("total_rides") val totalRides: Int = 0,
+    @SerialName("pass_rate") val passRate: Double = 0.0,
+    @SerialName("average_overall") val averageOverall: Double = 0.0,
+    @SerialName("best_overall") val bestOverall: Double = 0.0,
+    @SerialName("recent_score") val recentScore: Double = 0.0,
+    @SerialName("avg_duration_minutes") val avgDurationMinutes: Double = 0.0,
+    @SerialName("category_averages") val categoryAverages: CategoryAverages? = null,
+    @SerialName("improvement_areas") val improvementAreas: List<String> = emptyList(),
+    @SerialName("total_distance_km") val totalDistanceKm: Double = 0.0,
+    @SerialName("total_time_hours") val totalTimeHours: Double = 0.0,
+)
+
+@Serializable
+data class CategoryAverages(
+    val braking: Double = 0.0,
+    val speed: Double = 0.0,
+    val cornering: Double = 0.0,
+)
+
 // --- Drive Log ---
 
 @Serializable
