@@ -66,12 +66,6 @@ class ApiClient(
 
     // --- Diagnostic Rides ---
 
-    suspend fun getDiagnosticRides(status: String? = null): Result<List<DiagnosticRide>> = safeCall {
-        httpClient.get("diagnostic-rides/") {
-            status?.let { parameter("status", it) }
-        }.body()
-    }
-
     suspend fun getDiagnosticRide(rideId: Int): Result<DiagnosticRide> = safeCall {
         httpClient.get("diagnostic-rides/$rideId").body()
     }
@@ -118,6 +112,57 @@ class ApiClient(
 
     suspend fun getModuleProgress(): Result<List<ModuleProgress>> = safeCall {
         httpClient.get("modules/student-progress").body()
+    }
+
+    // --- Quiz ---
+
+    suspend fun getQuiz(moduleId: Int): Result<Quiz> = safeCall {
+        httpClient.get("modules/$moduleId/quiz").body()
+    }
+
+    suspend fun submitQuiz(moduleId: Int, data: Map<String, Int>): Result<Unit> = safeCall {
+        httpClient.post("modules/$moduleId/quiz/submit") { setBody(data) }
+    }
+
+    // --- Diagnostic Rides (extended) ---
+
+    suspend fun getDiagnosticRides(studentId: Int? = null, status: String? = null): Result<List<DiagnosticRide>> = safeCall {
+        httpClient.get("diagnostic-rides/") {
+            studentId?.let { parameter("student_id", it) }
+            status?.let { parameter("status", it) }
+        }.body()
+    }
+
+    suspend fun completeRide(data: Map<String, String>): Result<DiagnosticRide> = safeCall {
+        httpClient.post("diagnostic-rides/complete") { setBody(data) }.body()
+    }
+
+    // --- Grading ---
+
+    suspend fun gradeSession(bookingId: Int, data: Map<String, Any>): Result<Unit> = safeCall {
+        httpClient.post("bookings/$bookingId/grade") { setBody(data) }
+    }
+
+    suspend fun gradeRide(rideId: Int, data: Map<String, Any>): Result<Unit> = safeCall {
+        httpClient.post("diagnostic-rides/$rideId/grade") { setBody(data) }
+    }
+
+    // --- Bookings (single) ---
+
+    suspend fun getBooking(bookingId: Int): Result<Booking> = safeCall {
+        httpClient.get("bookings/$bookingId").body()
+    }
+
+    // --- Profile ---
+
+    suspend fun updateProfile(data: Map<String, String>): Result<User> = safeCall {
+        httpClient.put("users/me") { setBody(data) }.body()
+    }
+
+    // --- Drive Logs ---
+
+    suspend fun createDriveLog(data: Map<String, String>): Result<DriveLog> = safeCall {
+        httpClient.post("drivelogs/") { setBody(data) }.body()
     }
 
     // --- Speed Limit ---

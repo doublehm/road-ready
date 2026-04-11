@@ -1,0 +1,91 @@
+package com.roadready.ui.screens.instructor
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import com.roadready.data.remote.ApiClient
+import com.roadready.data.repository.AuthRepository
+import com.roadready.ui.components.ErrorBanner
+import com.roadready.ui.components.PrimaryButton
+import com.roadready.ui.components.RoadReadyTextField
+import com.roadready.ui.theme.*
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
+
+@Composable
+fun EditProfileScreen(
+    onBack: () -> Unit,
+) {
+    val apiClient: ApiClient = koinInject()
+    val authRepository: AuthRepository = koinInject()
+    val authState by authRepository.authState.collectAsState()
+    val user = authState.user
+    val profile = user?.instructorProfile
+    val scope = rememberCoroutineScope()
+
+    var fullName by remember { mutableStateOf(user?.fullName ?: "") }
+    var email by remember { mutableStateOf(user?.email ?: "") }
+    var phone by remember { mutableStateOf(user?.phone ?: "") }
+    var bio by remember { mutableStateOf(profile?.bio ?: "") }
+    var hourlyRate by remember { mutableStateOf(profile?.hourlyRate?.toString() ?: "") }
+    var city by remember { mutableStateOf(profile?.city ?: "") }
+    var province by remember { mutableStateOf(profile?.province ?: "") }
+    var carMake by remember { mutableStateOf(profile?.carMake ?: "") }
+    var carModel by remember { mutableStateOf(profile?.carModel ?: "") }
+    var carYear by remember { mutableStateOf(profile?.carYear?.toString() ?: "") }
+    var isLoading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var success by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+    ) {
+        TextButton(onClick = onBack) { Text("← Back", color = Primary) }
+        Text("Edit Profile", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(bottom = 24.dp))
+
+        error?.let { ErrorBanner(it, Modifier.padding(bottom = 16.dp)) }
+        if (success) {
+            Card(colors = CardDefaults.cardColors(containerColor = Accent.copy(alpha = 0.15f))) {
+                Text("✅ Profile updated!", modifier = Modifier.padding(12.dp), color = Accent)
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        RoadReadyTextField(value = fullName, onValueChange = { fullName = it }, label = "Full Name", modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = email, onValueChange = { email = it }, label = "Email", modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = phone, onValueChange = { phone = it }, label = "Phone", modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = bio, onValueChange = { bio = it }, label = "Bio", modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = hourlyRate, onValueChange = { hourlyRate = it }, label = "Hourly Rate ($)", keyboardType = KeyboardType.Number, modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = city, onValueChange = { city = it }, label = "City", modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = province, onValueChange = { province = it }, label = "Province", modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = carMake, onValueChange = { carMake = it }, label = "Car Make", modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = carModel, onValueChange = { carModel = it }, label = "Car Model", modifier = Modifier.padding(bottom = 12.dp))
+        RoadReadyTextField(value = carYear, onValueChange = { carYear = it }, label = "Car Year", keyboardType = KeyboardType.Number, modifier = Modifier.padding(bottom = 24.dp))
+
+        PrimaryButton(
+            text = "Save Changes",
+            isLoading = isLoading,
+            onClick = {
+                isLoading = true; error = null; success = false
+                scope.launch {
+                    apiClient.updateProfile(mapOf(
+                        "full_name" to fullName, "email" to email, "phone" to phone,
+                        "bio" to bio, "hourly_rate" to hourlyRate, "city" to city,
+                        "province" to province, "car_make" to carMake, "car_model" to carModel,
+                        "car_year" to carYear,
+                    )).onSuccess { success = true }
+                        .onFailure { error = it.message ?: "Update failed" }
+                    isLoading = false
+                }
+            },
+            color = Accent,
+        )
+
+        Spacer(Modifier.height(32.dp))
+    }
+}
