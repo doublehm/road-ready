@@ -7,8 +7,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.Parameters
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 
@@ -29,9 +31,13 @@ class ApiClient(
     // --- Auth ---
 
     suspend fun login(request: LoginRequest): Result<AuthResponse> = safeCall {
-        httpClient.post("users/login") {
-            setBody(request)
-        }.body()
+        httpClient.submitForm(
+            url = "auth/login",
+            formParameters = Parameters.build {
+                append("username", request.email)
+                append("password", request.password)
+            }
+        ).body()
     }
 
     suspend fun register(request: RegisterRequest): Result<AuthResponse> = safeCall {
