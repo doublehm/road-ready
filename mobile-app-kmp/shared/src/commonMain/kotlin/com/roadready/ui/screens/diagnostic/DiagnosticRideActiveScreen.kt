@@ -69,13 +69,22 @@ fun DiagnosticRideActiveScreen(
     var showEndConfirm by remember { mutableStateOf(false) }
     var isSubmitting by remember { mutableStateOf(false) }
     var gpsAvailable by remember { mutableStateOf(true) }
+    var locationPermissionGranted by remember { mutableStateOf(false) }
     var events by remember { mutableStateOf<List<RideEvent>>(emptyList()) }
     var prevAcceleration by remember { mutableStateOf<Vec3?>(null) }
     var prevSpeed by remember { mutableStateOf(0.0) }
 
-    // ── Start services on mount, stop on unmount ────────────────────────────
-    DisposableEffect(Unit) {
-        gpsService.startTracking()
+    // ── Request location permission, then start sensors ─────────────────────
+    RequestLocationPermission { granted ->
+        locationPermissionGranted = granted
+        if (!granted) gpsAvailable = false
+    }
+
+    // ── Start services once permission is granted ───────────────────────────
+    DisposableEffect(locationPermissionGranted) {
+        if (locationPermissionGranted) {
+            gpsService.startTracking()
+        }
         motionService.startTracking()
         onDispose {
             gpsService.stopTracking()
