@@ -13,6 +13,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import kotlinx.serialization.json.JsonObject
 
 class ApiClient(
     private val baseUrl: String,
@@ -139,10 +140,10 @@ class ApiClient(
         }.body()
     }
 
-    suspend fun completeRide(data: Map<String, Any?>): Result<DiagnosticRide> = safeCall {
+    suspend fun completeRide(data: JsonObject): Result<DiagnosticRide> = safeCall {
         httpClient.post("diagnostic-rides/") {
             contentType(ContentType.Application.Json)
-            setBody(data)
+            setBody(data.toString())
         }.body()
     }
 

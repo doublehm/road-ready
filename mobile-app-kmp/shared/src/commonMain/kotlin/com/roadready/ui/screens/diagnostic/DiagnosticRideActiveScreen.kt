@@ -200,22 +200,22 @@ fun DiagnosticRideActiveScreen(
                         }
                     }.toString()
 
-                    val payload = mapOf<String, Any?>(
-                        "ride_type" to rideType,
-                        "start_time" to startTimeStr,
-                        "end_time" to now,
-                        "duration_minutes" to (elapsedSeconds / 60.0),
-                        "distance_km" to finalGps.distance,
-                        "booking_id" to bookingId,
-                        "route_coords" to routeJson,
-                        "speed_data" to speedJson,
-                        "acceleration_data" to accelJson,
-                        "rotation_data" to rotationJson,
-                        "speed_limit_data" to speedLimitJson,
-                        "evaluator_notes" to if (events.isNotEmpty()) {
-                            events.joinToString("; ") { "${it.type}: ${it.description}" }
-                        } else null,
-                    )
+                    val payload = buildJsonObject {
+                        put("ride_type", rideType)
+                        put("start_time", startTimeStr)
+                        put("end_time", now)
+                        put("duration_minutes", elapsedSeconds / 60.0)
+                        put("distance_km", finalGps.distance)
+                        if (bookingId != null) put("booking_id", bookingId)
+                        put("route_coords", routeJson)
+                        put("speed_data", speedJson)
+                        put("acceleration_data", accelJson)
+                        put("rotation_data", rotationJson)
+                        put("speed_limit_data", speedLimitJson)
+                        if (events.isNotEmpty()) {
+                            put("evaluator_notes", events.joinToString("; ") { "${it.type}: ${it.description}" })
+                        }
+                    }
                     apiClient.completeRide(payload)
                         .onSuccess { onRideComplete(it.id) }
                         .onFailure { onRideComplete(null) }
