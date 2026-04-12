@@ -139,11 +139,11 @@ class DeviceMotionService(
         )
         gravity = newGravity
 
-        // User acceleration = (total - gravity) * 9.81
+        // User acceleration = total - gravity (already in m/s² on Android)
         val rawUserAccel = Vec3(
-            (ax - newGravity.x) * 9.81,
-            (ay - newGravity.y) * 9.81,
-            (az - newGravity.z) * 9.81,
+            ax - newGravity.x,
+            ay - newGravity.y,
+            az - newGravity.z,
         )
 
         // 3-sample moving average ring buffer

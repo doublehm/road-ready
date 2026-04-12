@@ -260,7 +260,14 @@ fun DiagnosticRideResultsScreen(
     var ride by remember { mutableStateOf<DiagnosticRide?>(null) }
 
     LaunchedEffect(rideId) {
-        apiClient.getDiagnosticRide(rideId).onSuccess { ride = it }
+        // Fetch ride, then poll until evaluated (status = "completed")
+        var attempts = 0
+        while (attempts < 15) {
+            apiClient.getDiagnosticRide(rideId).onSuccess { ride = it }
+            if (ride?.status == "completed" && ride?.overallScore != null) break
+            attempts++
+            kotlinx.coroutines.delay(2000L)
+        }
         isLoading = false
     }
 

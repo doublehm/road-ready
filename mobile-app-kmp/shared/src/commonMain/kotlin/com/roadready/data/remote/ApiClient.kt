@@ -147,6 +147,10 @@ class ApiClient(
         }.body()
     }
 
+    suspend fun evaluateRide(rideId: Int): Result<Unit> = safeCall {
+        httpClient.post("diagnostic-rides/$rideId/evaluate")
+    }
+
     suspend fun getProgressTrends(studentId: Int? = null): Result<ProgressTrends> = safeCall {
         httpClient.get("diagnostic-rides/progress-trends") {
             studentId?.let { parameter("student_id", it) }

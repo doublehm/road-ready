@@ -375,14 +375,19 @@ private fun computeGauges(
     val ay = acc.y
     val az = acc.z
 
-    val lateralG = abs(ax) / G
-    val lonG = max(abs(ay), abs(az)) / G
+    // Dead-zone: ignore noise below 0.15 m/s² (~0.015 G)
+    val dax = if (abs(ax) < 0.15) 0.0 else ax
+    val day = if (abs(ay) < 0.15) 0.0 else ay
+    val daz = if (abs(az) < 0.15) 0.0 else az
+
+    val lateralG = abs(dax) / G
+    val lonG = max(abs(day), abs(daz)) / G
 
     // Braking vs acceleration from dominant longitudinal axis sign
-    val primaryAxisSign = if (abs(ay) >= abs(az)) {
-        if (ay >= 0) 1.0 else -1.0
+    val primaryAxisSign = if (abs(day) >= abs(daz)) {
+        if (day >= 0) 1.0 else -1.0
     } else {
-        if (az >= 0) 1.0 else -1.0
+        if (daz >= 0) 1.0 else -1.0
     }
 
     val brakingG: Double
@@ -399,7 +404,7 @@ private fun computeGauges(
         brakingG = 0.0; accelG = 0.0
     }
 
-    val verticalG = abs(az) / G
+    val verticalG = abs(daz) / G
     val gripG = sqrt(lateralG * lateralG + lonG * lonG)
     val turnRate = sqrt(rot.x * rot.x + rot.y * rot.y + rot.z * rot.z)
 
@@ -415,8 +420,8 @@ private fun computeGauges(
     }
 
     return listOf(
-        GaugeData("left-turn",  "LEFT TURN",  if (ax > 0.1) lateralG else 0.0, "G",     THRESHOLDS["lateral"]!!,  faultType = "C1"),
-        GaugeData("right-turn", "RIGHT TURN", if (ax < -0.1) lateralG else 0.0, "G",    THRESHOLDS["lateral"]!!,  faultType = "C2"),
+        GaugeData("left-turn",  "LEFT TURN",  if (dax > 0) lateralG else 0.0,  "G",     THRESHOLDS["lateral"]!!,  faultType = "C1"),
+        GaugeData("right-turn", "RIGHT TURN", if (dax < 0) lateralG else 0.0,  "G",    THRESHOLDS["lateral"]!!,  faultType = "C2"),
         GaugeData("stop-force", "STOP FORCE", brakingG,                          "G",    THRESHOLDS["braking"]!!,  wide = true, faultType = "A1"),
         GaugeData("accel",      "ACCEL",      accelG,                            "G",    THRESHOLDS["throttle"]!!, faultType = "A2"),
         GaugeData("grip",       "GRIP",       gripG,                             "G",    THRESHOLDS["grip"]!!,     faultType = "C3"),

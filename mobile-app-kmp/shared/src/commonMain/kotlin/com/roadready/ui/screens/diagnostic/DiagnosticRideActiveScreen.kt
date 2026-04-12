@@ -217,7 +217,11 @@ fun DiagnosticRideActiveScreen(
                         }
                     }
                     apiClient.completeRide(payload)
-                        .onSuccess { onRideComplete(it.id) }
+                        .onSuccess { created ->
+                            // Trigger backend evaluation to compute scores
+                            apiClient.evaluateRide(created.id)
+                            onRideComplete(created.id)
+                        }
                         .onFailure { onRideComplete(null) }
                 }
             },
@@ -313,7 +317,11 @@ fun DiagnosticRideActiveScreen(
             Spacer(Modifier.height(8.dp))
 
             // 3. Live map
-            LiveMapSection(gpsState, events)
+            LiveMapSection(
+                gpsState,
+                events,
+                gpsState.location?.let { it.latitude to it.longitude },
+            )
 
             Spacer(Modifier.height(8.dp))
 
@@ -377,16 +385,18 @@ private fun RecordingBanner(isActive: Boolean, elapsedSeconds: Int) {
 // ── Live map section ────────────────────────────────────────────────────────────
 
 @Composable
-private fun LiveMapSection(gpsState: GPSTrackingState, events: List<RideEvent>) {
+private fun LiveMapSection(gpsState: GPSTrackingState, events: List<RideEvent>, currentLocation: Pair<Double, Double>?) {
     val coords = remember(gpsState.routeCoordinates) {
         gpsState.routeCoordinates.map { it.latitude to it.longitude }
     }
     val routeEvents = remember(events) {
-        events.map { e ->
+        events.mapNotNull { e ->
+            // Only include events that have valid coordinates
+            val loc = currentLocation ?: return@mapNotNull null
             RouteEvent(
                 type = e.type,
-                lat = 0.0,
-                lng = 0.0,
+                lat = loc.first,
+                lng = loc.second,
                 severity = e.severity,
                 description = e.description,
                 timestamp = e.timestamp,
@@ -394,7 +404,7 @@ private fun LiveMapSection(gpsState: GPSTrackingState, events: List<RideEvent>) 
         }
     }
 
-    if (coords.size >= 2) {
+    if (coords.isNotEmpty()) {
         PlatformOsmMap(
             coordinates = coords,
             events = routeEvents,
