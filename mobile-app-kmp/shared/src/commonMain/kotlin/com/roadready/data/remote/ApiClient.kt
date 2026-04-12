@@ -139,8 +139,11 @@ class ApiClient(
         }.body()
     }
 
-    suspend fun completeRide(data: Map<String, String>): Result<DiagnosticRide> = safeCall {
-        httpClient.post("diagnostic-rides/complete") { setBody(data) }.body()
+    suspend fun completeRide(data: Map<String, Any?>): Result<DiagnosticRide> = safeCall {
+        httpClient.post("diagnostic-rides/") {
+            contentType(ContentType.Application.Json)
+            setBody(data)
+        }.body()
     }
 
     suspend fun getProgressTrends(studentId: Int? = null): Result<ProgressTrends> = safeCall {

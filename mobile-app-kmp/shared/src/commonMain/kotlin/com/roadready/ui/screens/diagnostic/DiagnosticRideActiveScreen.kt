@@ -22,6 +22,9 @@ import com.roadready.ui.theme.*
 import com.roadready.ui.util.pad2
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.koin.compose.koinInject
 
 // ── Tracked event during the ride ───────────────────────────────────────────────
@@ -139,20 +142,79 @@ fun DiagnosticRideActiveScreen(
                 val speedLimitData = speedLimitService.getSpeedLimitData()
 
                 scope.launch {
-                    val routeJson = finalGps.routeCoordinates.map {
-                        mapOf("latitude" to it.latitude.toString(), "longitude" to it.longitude.toString())
-                    }
-                    val payload = mapOf(
+                    val now = kotlinx.datetime.Clock.System.now().toString()
+                    val startTimeStr = kotlinx.datetime.Instant.fromEpochMilliseconds(
+                        finalGps.speedData.firstOrNull()?.timestamp
+                            ?: (kotlinx.datetime.Clock.System.now().toEpochMilliseconds() - elapsedSeconds * 1000L)
+                    ).toString()
+
+                    val routeJson = buildJsonArray {
+                        finalGps.routeCoordinates.forEach {
+                            add(buildJsonObject {
+                                put("latitude", it.latitude)
+                                put("longitude", it.longitude)
+                            })
+                        }
+                    }.toString()
+
+                    val speedJson = buildJsonArray {
+                        finalGps.speedData.forEach {
+                            add(buildJsonObject {
+                                put("timestamp", it.timestamp.toDouble())
+                                put("speed", it.speed)
+                                put("latitude", it.latitude)
+                                put("longitude", it.longitude)
+                            })
+                        }
+                    }.toString()
+
+                    val accelJson = buildJsonArray {
+                        finalMotion.forEach {
+                            add(buildJsonObject {
+                                put("timestamp", it.timestamp.toDouble())
+                                put("x", it.userAccelX)
+                                put("y", it.userAccelY)
+                                put("z", it.userAccelZ)
+                            })
+                        }
+                    }.toString()
+
+                    val rotationJson = buildJsonArray {
+                        finalMotion.forEach {
+                            add(buildJsonObject {
+                                put("timestamp", it.timestamp.toDouble())
+                                put("x", it.rotationX)
+                                put("y", it.rotationY)
+                                put("z", it.rotationZ)
+                            })
+                        }
+                    }.toString()
+
+                    val speedLimitJson = buildJsonArray {
+                        speedLimitData.forEach {
+                            add(buildJsonObject {
+                                put("latitude", it.latitude)
+                                put("longitude", it.longitude)
+                                put("speed_limit", it.speedLimit)
+                            })
+                        }
+                    }.toString()
+
+                    val payload = mapOf<String, Any?>(
                         "ride_type" to rideType,
-                        "duration_seconds" to elapsedSeconds.toString(),
-                        "distance_km" to finalGps.distance.toString(),
-                        "supervisor_name" to (supervisorName ?: ""),
-                        "booking_id" to (bookingId?.toString() ?: ""),
-                        "events" to events.joinToString(",") { it.type },
-                        "route_coordinates" to routeJson.toString(),
-                        "speed_data" to finalGps.speedData.size.toString(),
-                        "motion_data" to finalMotion.size.toString(),
-                        "speed_limit_data" to speedLimitData.size.toString(),
+                        "start_time" to startTimeStr,
+                        "end_time" to now,
+                        "duration_minutes" to (elapsedSeconds / 60.0),
+                        "distance_km" to finalGps.distance,
+                        "booking_id" to bookingId,
+                        "route_coords" to routeJson,
+                        "speed_data" to speedJson,
+                        "acceleration_data" to accelJson,
+                        "rotation_data" to rotationJson,
+                        "speed_limit_data" to speedLimitJson,
+                        "evaluator_notes" to if (events.isNotEmpty()) {
+                            events.joinToString("; ") { "${it.type}: ${it.description}" }
+                        } else null,
                     )
                     apiClient.completeRide(payload)
                         .onSuccess { onRideComplete(it.id) }
