@@ -13,6 +13,7 @@ actual class PlatformMotionProvider actual constructor() {
 
     private var latestAccel: FloatArray? = null
     private var latestGyro: FloatArray? = null
+    private var usingLinearAccel = false
 
     actual fun startTracking(onUpdate: (RawSensorData) -> Unit) {
         val context = AndroidContextHolder.applicationContext
@@ -22,7 +23,12 @@ actual class PlatformMotionProvider actual constructor() {
         latestAccel = null
         latestGyro = null
 
-        val accelerometer = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        // Prefer TYPE_LINEAR_ACCELERATION — uses hardware sensor fusion (gyro + accel)
+        // to properly separate gravity. Handles sustained braking/turning without the
+        // zero-drift problem of a pure high-pass filter on TYPE_ACCELEROMETER.
+        val linearSensor = sm.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
+        val accelSensor = linearSensor ?: sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        usingLinearAccel = linearSensor != null
         val gyroscope = sm.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
 
         accelListener = object : SensorEventListener {
@@ -41,7 +47,7 @@ actual class PlatformMotionProvider actual constructor() {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
         }
 
-        accelerometer?.let {
+        accelSensor?.let {
             sm.registerListener(accelListener, it, SensorManager.SENSOR_DELAY_GAME)
         }
         gyroscope?.let {
@@ -60,6 +66,7 @@ actual class PlatformMotionProvider actual constructor() {
                 gyroX = gyr[0],
                 gyroY = gyr[1],
                 gyroZ = gyr[2],
+                isLinearAcceleration = usingLinearAccel,
             )
         )
     }
@@ -72,5 +79,6 @@ actual class PlatformMotionProvider actual constructor() {
         sensorManager = null
         latestAccel = null
         latestGyro = null
+        usingLinearAccel = false
     }
 }

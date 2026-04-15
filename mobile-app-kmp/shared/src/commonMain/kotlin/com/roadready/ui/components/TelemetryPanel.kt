@@ -8,6 +8,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.*
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -82,6 +86,31 @@ private data class GaugeData(
     val faultType: String = "",
 )
 
+// ── Gauge display smoother (attack-decay EMA) ──────────────────────────────────
+
+/**
+ * Exponential moving average with asymmetric alpha: fast attack for rising values
+ * (responsive to braking/turning), slow decay for falling values (smooth fade-out).
+ * Prevents gauges from snapping to zero during sustained events.
+ */
+private class GaugeSmoother(
+    private val attackAlpha: Double = 0.5,
+    private val decayAlpha: Double = 0.18,
+    private val snapToZeroThreshold: Double = 0.003,
+) {
+    private val values = mutableMapOf<String, Double>()
+
+    fun smooth(gauges: List<GaugeData>): List<GaugeData> = gauges.map { g ->
+        val prev = values[g.id] ?: 0.0
+        val target = g.value
+        val alpha = if (target > prev) attackAlpha else decayAlpha
+        var smoothed = prev + alpha * (target - prev)
+        if (smoothed < snapToZeroThreshold) smoothed = 0.0
+        values[g.id] = smoothed
+        g.copy(value = smoothed)
+    }
+}
+
 // ── Main composable ─────────────────────────────────────────────────────────────
 
 /**
@@ -111,18 +140,18 @@ fun TelemetryPanel(
     modifier: Modifier = Modifier,
     onThresholdExceeded: ((GaugeEvent) -> Unit)? = null,
 ) {
-    val gauges = remember(
-        acceleration.x, acceleration.y, acceleration.z,
-        rotation.x, rotation.y, rotation.z,
-        prevAcceleration?.x, prevAcceleration?.y, prevAcceleration?.z,
-        sampleIntervalMs, speed, prevSpeed,
-    ) {
-        computeGauges(acceleration, rotation, prevAcceleration, sampleIntervalMs, speed, prevSpeed)
-    }
+    val smoother = remember { GaugeSmoother() }
 
-    LaunchedEffect(gauges) {
+    // Raw gauges for event detection (no display smoothing)
+    val rawGauges = computeGauges(acceleration, rotation, prevAcceleration, sampleIntervalMs, speed, prevSpeed)
+
+    // Smoothed gauges for display (attack-decay EMA)
+    val gauges = smoother.smooth(rawGauges)
+
+    // Fire threshold events from RAW values (no smoothing delay)
+    LaunchedEffect(rawGauges) {
         if (onThresholdExceeded != null && isActive) {
-            for (g in gauges) {
+            for (g in rawGauges) {
                 if (g.value >= g.thresh.red) {
                     onThresholdExceeded(
                         GaugeEvent(
@@ -384,8 +413,16 @@ private fun GaugeGrid(gauges: List<GaugeData>) {
 
 @Composable
 private fun GaugeItem(gauge: GaugeData, modifier: Modifier = Modifier) {
-    val color = thresholdColor(gauge.value, gauge.thresh)
-    val fraction = barFraction(gauge.value, gauge.thresh)
+    val targetColor = thresholdColor(gauge.value, gauge.thresh)
+    val color by animateColorAsState(
+        targetValue = targetColor,
+        animationSpec = tween(durationMillis = 300),
+    )
+    val targetFraction = barFraction(gauge.value, gauge.thresh)
+    val fraction by animateFloatAsState(
+        targetValue = targetFraction,
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+    )
     val valueText = if (gauge.value < 10.0) fmtDouble(gauge.value, 2) else fmtDouble(gauge.value, 1)
 
     Column(
@@ -431,10 +468,11 @@ private fun computeGauges(
     val ay = acc.y
     val az = acc.z
 
-    // Dead-zone: ignore noise below 0.15 m/s² (~0.015 G)
-    val dax = if (abs(ax) < 0.15) 0.0 else ax
-    val day = if (abs(ay) < 0.15) 0.0 else ay
-    val daz = if (abs(az) < 0.15) 0.0 else az
+    // Dead-zone: ignore sensor noise below 0.08 m/s² (~0.008 G)
+    // Lowered from 0.15 since TYPE_LINEAR_ACCELERATION has better noise floor
+    val dax = if (abs(ax) < 0.08) 0.0 else ax
+    val day = if (abs(ay) < 0.08) 0.0 else ay
+    val daz = if (abs(az) < 0.08) 0.0 else az
 
     val lateralG = abs(dax) / G
     val lonG = max(abs(day), abs(daz)) / G

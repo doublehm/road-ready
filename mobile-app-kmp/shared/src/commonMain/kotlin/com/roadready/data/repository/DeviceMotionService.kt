@@ -14,6 +14,7 @@ data class RawSensorData(
     val gyroX: Float,
     val gyroY: Float,
     val gyroZ: Float,
+    val isLinearAcceleration: Boolean = false,
 )
 
 @Serializable
@@ -46,14 +47,15 @@ expect class PlatformMotionProvider() {
 // ── Service ─────────────────────────────────────────────────────────────────────
 
 /**
- * Kotlin port of useDeviceMotion.js.
+ * Processes raw accelerometer + gyroscope data, exposes smoothed user-acceleration
+ * and rotation via [StateFlow].
  *
- * Processes raw accelerometer + gyroscope data, removes gravity via a seeded
- * high-pass filter, applies a 3-sample moving-average ring buffer for noise
- * pre-filtering, and exposes smoothed user-acceleration and rotation via
- * [StateFlow].
- *
- * All thresholds and constants match the React Native hook exactly.
+ * Signal processing pipeline:
+ * 1. Gravity removal: uses Android TYPE_LINEAR_ACCELERATION (hardware sensor fusion)
+ *    when available, falling back to a high-pass α-filter otherwise.
+ * 2. Noise rejection: 5-sample sliding median filter (rejects impulse spikes while
+ *    preserving sustained forces during braking/turning).
+ * 3. State throttle: UI updates capped at ~6.7 Hz (150 ms interval).
  */
 class DeviceMotionService(
     private val motionProvider: PlatformMotionProvider,
@@ -66,8 +68,8 @@ class DeviceMotionService(
         const val STATE_THROTTLE_MS = 150L
         /** High-pass filter coefficient (α = 0.98 → ~5 s time constant at 10 Hz). */
         const val GRAVITY_ALPHA = 0.98
-        /** Ring buffer size for moving-average noise filter. */
-        const val RING_BUFFER_SIZE = 3
+        /** Ring buffer size for sliding median noise filter. */
+        const val RING_BUFFER_SIZE = 5
     }
 
     // ── Reactive state ──────────────────────────────────────────────────────────
@@ -114,46 +116,50 @@ class DeviceMotionService(
     // ── Internal ────────────────────────────────────────────────────────────────
 
     private fun onSensorUpdate(raw: RawSensorData) {
-        processAccelerometer(raw.accX.toDouble(), raw.accY.toDouble(), raw.accZ.toDouble())
+        processAccelerometer(raw.accX.toDouble(), raw.accY.toDouble(), raw.accZ.toDouble(), raw.isLinearAcceleration)
         processGyroscope(raw.gyroX.toDouble(), raw.gyroY.toDouble(), raw.gyroZ.toDouble())
         syncData()
     }
 
     /**
-     * High-pass filter to remove gravity, followed by 3-sample moving average.
-     * Mirrors the JS Accelerometer listener exactly.
+     * Processes accelerometer data with optional gravity removal and median filtering.
+     *
+     * When [isLinear] is true (TYPE_LINEAR_ACCELERATION), gravity is already removed
+     * via Android's hardware sensor fusion (gyro + accel + magnetometer), which handles
+     * sustained events correctly. When false, falls back to a high-pass α-filter.
+     *
+     * Uses a 5-sample sliding median filter to remove impulse noise while preserving
+     * sustained force values (unlike a moving average which blurs them).
      */
-    private fun processAccelerometer(ax: Double, ay: Double, az: Double) {
-        // Seed gravity from first reading
-        val g = gravity
-        if (g == null) {
-            gravity = Vec3(ax, ay, az)
+    private fun processAccelerometer(ax: Double, ay: Double, az: Double, isLinear: Boolean) {
+        val userAccel: Vec3
+        if (isLinear) {
+            // TYPE_LINEAR_ACCELERATION: gravity already removed via sensor fusion
+            userAccel = Vec3(ax, ay, az)
+        } else {
+            // Fallback: high-pass gravity filter for devices without sensor fusion
+            if (gravity == null) {
+                gravity = Vec3(ax, ay, az)
+            }
+            val cg = gravity!!
+            val ng = Vec3(
+                GRAVITY_ALPHA * cg.x + (1 - GRAVITY_ALPHA) * ax,
+                GRAVITY_ALPHA * cg.y + (1 - GRAVITY_ALPHA) * ay,
+                GRAVITY_ALPHA * cg.z + (1 - GRAVITY_ALPHA) * az,
+            )
+            gravity = ng
+            userAccel = Vec3(ax - ng.x, ay - ng.y, az - ng.z)
         }
 
-        // α-filter to track gravity
-        val currentGravity = gravity!!
-        val newGravity = Vec3(
-            GRAVITY_ALPHA * currentGravity.x + (1 - GRAVITY_ALPHA) * ax,
-            GRAVITY_ALPHA * currentGravity.y + (1 - GRAVITY_ALPHA) * ay,
-            GRAVITY_ALPHA * currentGravity.z + (1 - GRAVITY_ALPHA) * az,
-        )
-        gravity = newGravity
-
-        // User acceleration = total - gravity (already in m/s² on Android)
-        val rawUserAccel = Vec3(
-            ax - newGravity.x,
-            ay - newGravity.y,
-            az - newGravity.z,
-        )
-
-        // 3-sample moving average ring buffer
-        accelRing.add(rawUserAccel)
+        // 5-sample sliding median filter (component-wise).
+        // Median rejects impulse spikes without attenuating sustained forces.
+        accelRing.add(userAccel)
         if (accelRing.size > RING_BUFFER_SIZE) accelRing.removeAt(0)
 
         val smoothed = Vec3(
-            accelRing.sumOf { it.x } / accelRing.size,
-            accelRing.sumOf { it.y } / accelRing.size,
-            accelRing.sumOf { it.z } / accelRing.size,
+            medianOf(accelRing.map { it.x }),
+            medianOf(accelRing.map { it.y }),
+            medianOf(accelRing.map { it.z }),
         )
         lastUserAccel = smoothed
 
@@ -163,6 +169,14 @@ class DeviceMotionService(
             _state.value = _state.value.copy(acceleration = lastUserAccel)
             lastAccelStateUpdate = now
         }
+    }
+
+    private fun medianOf(values: List<Double>): Double {
+        if (values.isEmpty()) return 0.0
+        val sorted = values.sorted()
+        val mid = sorted.size / 2
+        return if (sorted.size % 2 == 0) (sorted[mid - 1] + sorted[mid]) / 2.0
+        else sorted[mid]
     }
 
     private fun processGyroscope(gx: Double, gy: Double, gz: Double) {
