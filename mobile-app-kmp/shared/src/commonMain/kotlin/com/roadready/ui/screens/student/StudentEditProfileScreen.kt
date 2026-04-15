@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.roadready.data.model.StudentProfileCreateRequest
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.AuthRepository
 import com.roadready.ui.components.ErrorBanner
@@ -29,7 +30,7 @@ fun StudentEditProfileScreen(
 
     var fullName by remember { mutableStateOf(user?.fullName ?: "") }
     var email by remember { mutableStateOf(user?.email ?: "") }
-    var phone by remember { mutableStateOf(user?.phone ?: "") }
+    var phone by remember { mutableStateOf(user?.phoneNumber ?: "") }
     var city by remember { mutableStateOf(profile?.city ?: "") }
     var province by remember { mutableStateOf(profile?.province ?: "") }
     var isLoading by remember { mutableStateOf(false) }
@@ -62,11 +63,34 @@ fun StudentEditProfileScreen(
             onClick = {
                 isLoading = true; error = null; success = false
                 scope.launch {
-                    apiClient.updateProfile(mapOf(
-                        "full_name" to fullName, "email" to email, "phone" to phone,
-                        "city" to city, "province" to province,
-                    )).onSuccess { success = true }
-                        .onFailure { error = it.message ?: "Update failed" }
+                    // 1. Update User basic info
+                    val userResult = apiClient.updateProfile(mapOf(
+                        "full_name" to fullName,
+                        "email" to email,
+                        "phone_number" to phone,
+                    ))
+                    
+                    if (userResult.isFailure) {
+                        error = userResult.exceptionOrNull()?.message ?: "User update failed"
+                        isLoading = false
+                        return@launch
+                    }
+
+                    // 2. Update Student specific info
+                    val profileResult = apiClient.setupStudentProfile(StudentProfileCreateRequest(
+                        age = profile?.age ?: 0,
+                        licenseNumber = profile?.licenseNumber ?: "",
+                        licenseClass = profile?.licenseClass,
+                        city = city,
+                        province = province,
+                    ))
+
+                    if (profileResult.isSuccess) {
+                        success = true
+                        authRepository.initialize() // Refresh local user state
+                    } else {
+                        error = profileResult.exceptionOrNull()?.message ?: "Profile update failed"
+                    }
                     isLoading = false
                 }
             },

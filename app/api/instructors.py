@@ -1,13 +1,5 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from typing import List
-from app import schemas, models
-from app.api import deps
-
-router = APIRouter()
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 import stripe
 import os
@@ -66,14 +58,12 @@ async def initiate_stripe_onboarding(
 
     # 2. Create Account Link for onboarding
     try:
-        # These URLs should be configured in .env or passed from frontend
-        # For now using placeholders that we'll handle in app/main.py later
         base_url = os.getenv("APP_URL", "http://localhost:8000")
         
         account_link = stripe.AccountLink.create(
             account=instructor_profile.stripe_account_id,
-            refresh_url=f"{base_url}/api/v1/instructors/me/stripe-onboarding", # Retry if expires
-            return_url=f"{base_url}/stripe-callback?session_id=mock", # Placeholder for Phase 1 Task 3
+            refresh_url=f"{base_url}/api/v1/instructors/me/stripe-onboarding", 
+            return_url=f"{base_url}/stripe-callback?session_id=mock", 
             type="account_onboarding",
         )
         return {"url": account_link.url}
@@ -83,15 +73,18 @@ async def initiate_stripe_onboarding(
             detail=f"Stripe onboarding link creation failed: {str(e)}"
         )
 
-@router.get("/", response_model=List[schemas.InstructorProfile])
+@router.get("/", response_model=List[schemas.UserWithProfile])
 async def read_instructors(
     skip: int = 0, 
     limit: int = 100, 
     city: str = None, 
     db: Session = Depends(deps.get_db)
 ):
-    query = db.query(models.InstructorProfile)
+    query = db.query(models.User).filter(models.User.role == "instructor")
+    
     if city:
-        query = query.filter(models.InstructorProfile.city.ilike(f"%{city}%"))
-    instructors = query.offset(skip).limit(limit).all()
+        query = query.join(models.User.instructor_profile).filter(models.InstructorProfile.city.ilike(f"%{city}%"))
+    
+    # Preload profile to avoid N+1 queries
+    instructors = query.options(joinedload(models.User.instructor_profile)).offset(skip).limit(limit).all()
     return instructors

@@ -1,5 +1,6 @@
 package com.roadready
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import com.roadready.data.model.Booking
 import com.roadready.data.model.Module
@@ -72,6 +73,7 @@ sealed class Screen {
 class Navigator {
     private val _backStack = mutableStateListOf<Screen>()
     val currentScreen: Screen get() = _backStack.lastOrNull() ?: Screen.Loading
+    val backStackSize: Int get() = _backStack.size
 
     fun push(screen: Screen) { _backStack.add(screen) }
     fun pop(): Boolean {
@@ -116,6 +118,10 @@ fun RootContent() {
         }
     }
 
+    BackHandler(enabled = navigator.backStackSize > 1) {
+        navigator.pop()
+    }
+
     CompositionLocalProvider(LocalNavigator provides navigator) {
         when (val screen = navigator.currentScreen) {
             // Loading / Auth ------------------------------------------------
@@ -126,7 +132,8 @@ fun RootContent() {
             )
 
             Screen.Register -> RegisterScreen(
-                onNavigateToLogin = { navigator.replaceAll(Screen.Login) },
+                onNavigateToLogin = { navigator.pop() },
+                onRegisterSuccess = { /* authState will navigate to setup */ },
             )
 
             Screen.SetupStudent -> SetupStudentScreen()

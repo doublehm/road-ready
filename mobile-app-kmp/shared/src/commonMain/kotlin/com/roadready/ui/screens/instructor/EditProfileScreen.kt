@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.roadready.data.model.InstructorProfileCreateRequest
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.AuthRepository
 import com.roadready.ui.components.ErrorBanner
@@ -30,7 +31,7 @@ fun EditProfileScreen(
 
     var fullName by remember { mutableStateOf(user?.fullName ?: "") }
     var email by remember { mutableStateOf(user?.email ?: "") }
-    var phone by remember { mutableStateOf(user?.phone ?: "") }
+    var phone by remember { mutableStateOf(user?.phoneNumber ?: "") }
     var bio by remember { mutableStateOf(profile?.bio ?: "") }
     var hourlyRate by remember { mutableStateOf(profile?.hourlyRate?.toString() ?: "") }
     var city by remember { mutableStateOf(profile?.city ?: "") }
@@ -73,13 +74,41 @@ fun EditProfileScreen(
             onClick = {
                 isLoading = true; error = null; success = false
                 scope.launch {
-                    apiClient.updateProfile(mapOf(
-                        "full_name" to fullName, "email" to email, "phone" to phone,
-                        "bio" to bio, "hourly_rate" to hourlyRate, "city" to city,
-                        "province" to province, "car_make" to carMake, "car_model" to carModel,
-                        "car_year" to carYear,
-                    )).onSuccess { success = true }
-                        .onFailure { error = it.message ?: "Update failed" }
+                    // 1. Update User basic info
+                    val userResult = apiClient.updateProfile(mapOf(
+                        "full_name" to fullName,
+                        "email" to email,
+                        "phone_number" to phone,
+                    ))
+                    
+                    if (userResult.isFailure) {
+                        error = userResult.exceptionOrNull()?.message ?: "User update failed"
+                        isLoading = false
+                        return@launch
+                    }
+
+                    // 2. Update Instructor specific info
+                    val profileResult = apiClient.setupInstructorProfile(InstructorProfileCreateRequest(
+                        city = city,
+                        province = province,
+                        licenseNumber = profile?.licenseNumber ?: "",
+                        licenseClasses = profile?.licenseClasses ?: emptyList(),
+                        yearsExperience = profile?.yearsExperience ?: 0,
+                        insurancePolicy = profile?.insurancePolicy ?: "",
+                        certificationId = profile?.certificationId ?: "",
+                        hourlyRate = hourlyRate.toDoubleOrNull() ?: 0.0,
+                        bio = bio,
+                        carMake = carMake,
+                        carModel = carModel,
+                        carYear = carYear.toIntOrNull() ?: 0,
+                    ))
+
+                    if (profileResult.isSuccess) {
+                        success = true
+                        authRepository.initialize() // Refresh local user state
+                    } else {
+                        error = profileResult.exceptionOrNull()?.message ?: "Profile update failed"
+                    }
                     isLoading = false
                 }
             },

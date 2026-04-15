@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.roadready.data.model.InstructorLicenseClass
 import com.roadready.data.repository.AuthRepository
 import com.roadready.ui.components.ErrorBanner
 import com.roadready.ui.components.PrimaryButton
@@ -24,25 +25,75 @@ class RegisterViewModel(
 ) : androidx.lifecycle.ViewModel() {
     var fullName by mutableStateOf("")
     var email by mutableStateOf("")
+    var phoneNumber by mutableStateOf("")
     var password by mutableStateOf("")
     var confirmPassword by mutableStateOf("")
     var selectedRole by mutableStateOf("student")
+    
+    // Additional Fields
+    var city by mutableStateOf("")
+    var province by mutableStateOf("British Columbia")
+    var bio by mutableStateOf("")
+    var hourlyRate by mutableStateOf("")
+    var carMake by mutableStateOf("")
+    var carModel by mutableStateOf("")
+    var carYear by mutableStateOf("")
+    var insurancePolicy by mutableStateOf("")
+    var certificationId by mutableStateOf("")
+    var licenseClasses by mutableStateOf("Class 5")
+    var age by mutableStateOf("")
+    var licenseNumber by mutableStateOf("")
+
     var isLoading by mutableStateOf(false)
     var error by mutableStateOf<String?>(null)
 
-    fun register() {
+    fun register(onSuccess: () -> Unit) {
         when {
             fullName.isBlank() -> { error = "Please enter your full name"; return }
             email.isBlank() -> { error = "Please enter your email"; return }
-            password.length < 6 -> { error = "Password must be at least 6 characters"; return }
+            phoneNumber.isBlank() -> { error = "Please enter your phone number"; return }
+            password.length < 8 -> { error = "Password must be at least 8 characters"; return }
             password != confirmPassword -> { error = "Passwords don't match"; return }
+            city.isBlank() -> { error = "Please enter your city"; return }
         }
+        
+        if (selectedRole == "instructor") {
+            if (hourlyRate.isBlank()) { error = "Please enter your hourly rate"; return }
+            if (insurancePolicy.isBlank()) { error = "Please enter your insurance policy"; return }
+            if (certificationId.isBlank()) { error = "Please enter your certification ID"; return }
+        } else {
+            if (age.isBlank()) { error = "Please enter your age"; return }
+            if (licenseNumber.isBlank()) { error = "Please enter your license number"; return }
+        }
+
         isLoading = true
         error = null
         kotlinx.coroutines.MainScope().launch {
-            val result = authRepository.register(fullName.trim(), email.trim(), password, selectedRole)
+            val result = authRepository.register(
+                fullName = fullName.trim(),
+                email = email.trim(),
+                password = password,
+                phoneNumber = phoneNumber.trim(),
+                role = selectedRole,
+                city = city.trim(),
+                province = province.trim(),
+                bio = bio.trim().takeIf { it.isNotBlank() },
+                hourlyRate = hourlyRate.toDoubleOrNull(),
+                carMake = carMake.trim().takeIf { it.isNotBlank() },
+                carModel = carModel.trim().takeIf { it.isNotBlank() },
+                carYear = carYear.toIntOrNull(),
+                insurancePolicy = insurancePolicy.trim(),
+                certificationId = certificationId.trim(),
+                licenseClasses = if (selectedRole == "instructor") {
+                    listOf(InstructorLicenseClass(licenseClass = licenseClasses.trim(), price = hourlyRate.toDoubleOrNull() ?: 0.0))
+                } else null,
+                age = age.toIntOrNull(),
+                licenseNumber = licenseNumber.trim()
+            )
             isLoading = false
-            result.onFailure { e ->
+            result.onSuccess {
+                onSuccess()
+            }.onFailure { e ->
                 error = e.message ?: "Registration failed"
             }
         }
@@ -52,6 +103,7 @@ class RegisterViewModel(
 @Composable
 fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
+    onRegisterSuccess: () -> Unit,
     viewModel: RegisterViewModel = koinViewModel(),
 ) {
     Column(
@@ -130,6 +182,15 @@ fun RegisterScreen(
             modifier = Modifier.padding(bottom = 12.dp),
         )
 
+        // Phone Number
+        RoadReadyTextField(
+            value = viewModel.phoneNumber,
+            onValueChange = { viewModel.phoneNumber = it },
+            label = "Phone Number",
+            keyboardType = KeyboardType.Phone,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+
         // Password
         RoadReadyTextField(
             value = viewModel.password,
@@ -145,15 +206,102 @@ fun RegisterScreen(
             onValueChange = { viewModel.confirmPassword = it },
             label = "Confirm Password",
             isPassword = true,
-            imeAction = ImeAction.Done,
-            onImeAction = { viewModel.register() },
-            modifier = Modifier.padding(bottom = 24.dp),
+            modifier = Modifier.padding(bottom = 12.dp),
         )
 
-        // Register Button
+        // City
+        RoadReadyTextField(
+            value = viewModel.city,
+            onValueChange = { viewModel.city = it },
+            label = "City",
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+
+        // Province
+        RoadReadyTextField(
+            value = viewModel.province,
+            onValueChange = { viewModel.province = it },
+            label = "Province",
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+
+        // Role Specific Fields
+        if (viewModel.selectedRole == "student") {
+            RoadReadyTextField(
+                value = viewModel.age,
+                onValueChange = { viewModel.age = it.filter { c -> c.isDigit() } },
+                label = "Age",
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            RoadReadyTextField(
+                value = viewModel.licenseNumber,
+                onValueChange = { viewModel.licenseNumber = it },
+                label = "BC Driver's License (7 digits)",
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+        } else {
+            RoadReadyTextField(
+                value = viewModel.hourlyRate,
+                onValueChange = { viewModel.hourlyRate = it.filter { c -> c.isDigit() || c == '.' } },
+                label = "Hourly Rate ($)",
+                keyboardType = KeyboardType.Decimal,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            RoadReadyTextField(
+                value = viewModel.licenseClasses,
+                onValueChange = { viewModel.licenseClasses = it },
+                label = "Instructor License Class (e.g. Class 5)",
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                RoadReadyTextField(
+                    value = viewModel.carMake,
+                    onValueChange = { viewModel.carMake = it },
+                    label = "Car Make",
+                    modifier = Modifier.weight(1f)
+                )
+                RoadReadyTextField(
+                    value = viewModel.carModel,
+                    onValueChange = { viewModel.carModel = it },
+                    label = "Model",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            RoadReadyTextField(
+                value = viewModel.carYear,
+                onValueChange = { viewModel.carYear = it.filter { c -> c.isDigit() } },
+                label = "Car Year",
+                keyboardType = KeyboardType.Number,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            RoadReadyTextField(
+                value = viewModel.insurancePolicy,
+                onValueChange = { viewModel.insurancePolicy = it },
+                label = "Insurance Policy Number",
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            RoadReadyTextField(
+                value = viewModel.certificationId,
+                onValueChange = { viewModel.certificationId = it },
+                label = "Instructor Certification ID",
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            RoadReadyTextField(
+                value = viewModel.bio,
+                onValueChange = { viewModel.bio = it },
+                label = "Professional Bio",
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
         PrimaryButton(
             text = "Create Account",
-            onClick = { viewModel.register() },
+            onClick = { viewModel.register(onRegisterSuccess) },
             isLoading = viewModel.isLoading,
             color = if (viewModel.selectedRole == "instructor") Accent else Primary,
             modifier = Modifier.padding(bottom = 16.dp),

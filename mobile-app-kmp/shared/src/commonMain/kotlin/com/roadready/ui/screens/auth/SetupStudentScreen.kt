@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.roadready.data.model.StudentProfileCreateRequest
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.AuthRepository
 import com.roadready.ui.components.ErrorBanner
@@ -183,19 +184,15 @@ fun SetupStudentScreen() {
                 isLoading = true
                 error = null
                 scope.launch {
-                    try {
-                        apiClient.httpClient.put("student-profile/") {
-                            contentType(ContentType.Application.Json)
-                            setBody(mapOf(
-                                "age" to age,
-                                "license_number" to licenseNumber,
-                                "license_class" to licenseClass,
-                                "city" to city,
-                                "province" to province,
-                            ))
-                        }
+                    apiClient.setupStudentProfile(StudentProfileCreateRequest(
+                        age = age.toIntOrNull() ?: 0,
+                        licenseNumber = licenseNumber,
+                        licenseClass = licenseClass,
+                        city = city,
+                        province = province,
+                    )).onSuccess {
                         authRepository.initialize()
-                    } catch (e: Exception) {
+                    }.onFailure { e ->
                         error = e.message ?: "Setup failed"
                     }
                     isLoading = false

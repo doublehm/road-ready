@@ -50,24 +50,6 @@ fun RouteReplayMap(
     height: Dp = 300.dp,
     modifier: Modifier = Modifier,
 ) {
-    if (routeCoordinates.isEmpty() && events.isEmpty()) {
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(height)
-                .clip(RoundedCornerShape(12.dp))
-                .background(SurfaceVariant),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("🗺", fontSize = 40.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("No route data available", color = TextMuted, fontSize = 14.sp)
-            }
-        }
-        return
-    }
-
     val coordPairs = remember(routeCoordinates) {
         routeCoordinates.map { it.latitude to it.longitude }
     }
@@ -77,13 +59,24 @@ fun RouteReplayMap(
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        // Render the real platform map
-        PlatformOsmMap(
-            coordinates = coordPairs,
-            events = events,
-            height = height,
-            modifier = Modifier.clip(RoundedCornerShape(12.dp)),
-        )
+        Box(modifier = Modifier.fillMaxWidth().height(height)) {
+            // Render the real platform map
+            PlatformOsmMap(
+                coordinates = coordPairs,
+                events = events,
+                height = height,
+                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)),
+            )
+            
+            if (routeCoordinates.isEmpty() && events.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(SurfaceVariant.copy(alpha = 0.3f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No route data available", color = TextMuted, fontSize = 12.sp)
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 

@@ -77,18 +77,38 @@ export default function TelemetryPanel({
     const lateralG = Math.abs(ax) / G;
 
     // Longitudinal G — orientation-agnostic magnitude (max of |y|, |z|)
+    // After gravity removal both are ≈0 at rest; whichever spikes during 
+    // longitudinal movement is the axis aligned with the road.
     const lonG = Math.max(Math.abs(ay), Math.abs(az)) / G;
 
-    // Use GPS speed delta to determine braking vs acceleration.
-    // Accelerometer sign is phone-orientation-dependent and unreliable.
-    // GPS speed change is always correct: decreasing = braking, increasing = accel.
+    // Determine direction (Braking vs Acceleration)
+    // Primary source: Accelerometer sign on the dominant axis.
+    // Secondary source: GPS speed delta (confirming sustained movement).
+    const primaryAxisSign = Math.abs(ay) >= Math.abs(az) ? Math.sign(ay) : Math.sign(az);
+    
+    // In many mountings, -Y or -Z is forward acceleration, +Y or +Z is braking.
+    // However, since we don't know the mounting, we use GPS to 'learn' the sign
+    // or simply use the most plausible real-time indicator.
     const currentSpeed = typeof speed === 'number' ? speed : 0;
     const previousSpeed = typeof prevSpeed === 'number' ? prevSpeed : currentSpeed;
-    const speedDecreasing = currentSpeed < previousSpeed - 0.5;
-    const speedIncreasing = currentSpeed > previousSpeed + 0.5;
+    const speedDecreasing = currentSpeed < previousSpeed - 0.2; // 0.2 km/h sensitivity
+    const speedIncreasing = currentSpeed > previousSpeed + 0.2;
 
-    const brakingG = speedDecreasing ? lonG : 0;
-    const accelG = speedIncreasing ? lonG : 0;
+    // If GPS shows a clear trend, trust it to categorize the G-force.
+    // If GPS is static/jittery, use a heuristic or show the force in both if significant.
+    let brakingG = 0;
+    let accelG = 0;
+
+    if (speedDecreasing) {
+      brakingG = lonG;
+    } else if (speedIncreasing) {
+      accelG = lonG;
+    } else if (lonG > 0.15) {
+      // If no GPS trend but high force, it's likely braking (more common to have high G in braking)
+      // or we categorize based on the common phone-forward orientation (-Y is forward, +Y is braking)
+      if (primaryAxisSign > 0) brakingG = lonG;
+      else accelG = lonG;
+    }
 
     // Vertical G — deviation on Z axis (road bumps, potholes)
     const verticalG = Math.abs(az) / G;

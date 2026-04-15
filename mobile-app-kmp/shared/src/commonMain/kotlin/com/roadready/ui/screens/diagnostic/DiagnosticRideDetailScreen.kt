@@ -17,6 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.*
 import com.roadready.data.model.DiagnosticRide
 import com.roadready.data.remote.ApiClient
 import com.roadready.ui.components.*
@@ -122,6 +125,15 @@ private fun extractCategoryFeedback(evalObj: JsonObject?, key: String): Category
 private fun countEventsByType(events: List<DrivingEvent>, vararg types: String): Int =
     events.count { it.type in types }
 
+private fun parseAccelData(raw: String?): List<AccelDataPoint> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return try {
+        jsonParser.decodeFromString<List<AccelDataPoint>>(raw)
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
 // ── Main screen ─────────────────────────────────────────────────────
 
 @Composable
@@ -151,9 +163,9 @@ fun DiagnosticRideDetailScreen(
 
     val r = ride!!
 
-    // Parse all JSON fields once
     val routeCoords = remember(r.routeCoords) { parseRouteCoords(r.routeCoords) }
     val speedData = remember(r.speedData) { parseSpeedData(r.speedData) }
+    val accelData = remember(r.accelerationData) { parseAccelData(r.accelerationData) }
     val speedLimitData = remember(r.speedLimitData) { parseSpeedLimitData(r.speedLimitData) }
     val humanFeedbackItems = remember(r.humanFeedback) { parseHumanFeedback(r.humanFeedback) }
     val evalResult = remember(r.evaluationResult) { parseEvaluationResult(r.evaluationResult) }
@@ -175,30 +187,24 @@ fun DiagnosticRideDetailScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 24.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
+            IconButton(
+                onClick = onBack,
                 modifier = Modifier
-                    .size(44.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.05f)),
-                contentAlignment = Alignment.Center,
+                    .background(Surface)
             ) {
-                TextButton(onClick = onBack, contentPadding = PaddingValues(0.dp)) {
-                    Text("‹", fontSize = 22.sp, color = TextPrimary)
-                }
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = TextPrimary)
             }
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.width(16.dp))
             Text(
-                "DIAGNOSTIC REPORT",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 2.sp,
+                "RIDE ANALYSIS",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
                 color = TextPrimary,
             )
-            Spacer(Modifier.weight(1f))
-            Spacer(Modifier.width(44.dp))
         }
 
         // ── 1. Hero Score Card ──────────────────────────────────
@@ -207,72 +213,71 @@ fun DiagnosticRideDetailScreen(
         Spacer(Modifier.height(24.dp))
 
         // ── 2. Trip Details ─────────────────────────────────────
-        if (r.durationMinutes != null || r.distanceKm != null || r.rideType != null) {
-            SectionLabel("TRIP DETAILS")
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                shape = RoundedCornerShape(20.dp),
+        SectionLabel("TRIP OVERVIEW")
+        GlassCard(modifier = Modifier.padding(horizontal = 20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    r.durationMinutes?.let { TripStat("⏱", "${it.toInt()}", "MIN", Primary) }
-                    r.distanceKm?.let { TripStat("📍", fmtDouble(it, 1), "KM", AccentLight) }
-                    r.rideType?.let {
-                        val label = it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
-                        TripStat("🚗", label, "TYPE", Warning)
-                    }
+                r.durationMinutes?.let { TripStat("⏱", "${it.toInt()}", "MIN", Primary) }
+                r.distanceKm?.let { TripStat("📍", fmtDouble(it, 1), "KM", Secondary) }
+                r.rideType?.let {
+                    val label = it.replace("_", " ").replaceFirstChar { c -> c.uppercase() }
+                    TripStat("🚗", label, "TYPE", Warning)
                 }
             }
-            Spacer(Modifier.height(24.dp))
         }
+        
+        Spacer(Modifier.height(24.dp))
 
         // ── 3. Route Map ────────────────────────────────────────
         if (routeCoords.isNotEmpty()) {
-            SectionLabel("ROUTE ANALYSIS")
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                shape = RoundedCornerShape(20.dp),
+            SectionLabel("GPS TRACKING")
+            GlassCard(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                containerColor = Color.Transparent
             ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    RouteReplayMap(
-                        routeCoordinates = routeCoords,
-                        events = routeEvents,
-                        height = 280.dp,
-                    )
-                }
+                RouteReplayMap(
+                    routeCoordinates = routeCoords,
+                    events = routeEvents,
+                    height = 300.dp,
+                    modifier = Modifier.clip(RoundedCornerShape(16.dp))
+                )
             }
             Spacer(Modifier.height(24.dp))
         }
 
-        // ── 4. Speed Graph ──────────────────────────────────────
+        // ── 4. Velocity Telemetry ──────────────────────────────
         if (speedData.isNotEmpty()) {
             SectionLabel("VELOCITY TELEMETRY")
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                shape = RoundedCornerShape(20.dp),
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    SpeedGraph(
-                        speedData = speedData,
-                        speedLimitData = speedLimitData,
-                        height = 200.dp,
-                    )
-                }
+            GlassCard(modifier = Modifier.padding(horizontal = 20.dp)) {
+                SpeedGraph(
+                    speedData = speedData,
+                    speedLimitData = speedLimitData,
+                    height = 200.dp,
+                )
             }
             Spacer(Modifier.height(24.dp))
         }
 
-        // ── 5. Evaluation Breakdown Cards ───────────────────────
+        // ── 5. G-Force Analysis ────────────────────────────────
+        if (accelData.isNotEmpty()) {
+            SectionLabel("FORCE ANALYSIS (G-FORCE)")
+            GlassCard(modifier = Modifier.padding(horizontal = 20.dp)) {
+                GForceGraph(
+                    accelData = accelData,
+                    height = 200.dp,
+                )
+            }
+            Spacer(Modifier.height(24.dp))
+        }
+
+        // ── 6. Evaluation Breakdown Cards ───────────────────────
         val hasAnyFeedback = listOf(brakingFeedback, speedFeedback, corneringFeedback, smoothnessFeedback)
             .any { it.notes.isNotEmpty() || it.tips.isNotEmpty() }
 
         if (hasAnyFeedback || allEvents.isNotEmpty()) {
-            SectionLabel("SYSTEM FEEDBACK")
+            SectionLabel("SKILLS BREAKDOWN")
 
             EvaluationBreakdownCard(
                 symbol = "🛑",
@@ -313,76 +318,90 @@ fun DiagnosticRideDetailScreen(
             Spacer(Modifier.height(24.dp))
         }
 
-        // ── 6. Event Timeline ───────────────────────────────────
-        if (allEvents.isNotEmpty()) {
-            SectionLabel("EVENT LOG")
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                shape = RoundedCornerShape(20.dp),
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    val feedbackSummary = humanFeedbackItems.map {
-                        HumanFeedbackSummary(code = it.code, label = it.label, count = it.count)
-                    }
-                    val startTs = speedData.firstOrNull()?.timestamp ?: 0L
-                    EventTimeline(
-                        events = allEvents.sortedBy { it.timestamp },
-                        startTime = startTs,
-                        humanFeedback = feedbackSummary,
-                    )
-                }
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-
-        // ── 7. Human Feedback Section ───────────────────────────
-        if (humanFeedbackItems.isNotEmpty()) {
-            SectionLabel("SUPERVISOR FEEDBACK")
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                shape = RoundedCornerShape(20.dp),
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    HumanFeedbackSection(humanFeedback = humanFeedbackItems)
-                }
-            }
-            Spacer(Modifier.height(24.dp))
-        }
-
-        // ── 8. Evaluator Notes ──────────────────────────────────
+        // ── 7. Evaluator Notes ──────────────────────────────────
         r.evaluatorNotes?.takeIf { it.isNotBlank() }?.let { notes ->
-            SectionLabel("EVALUATOR NOTES")
-            Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                colors = CardDefaults.cardColors(containerColor = Surface),
-                shape = RoundedCornerShape(20.dp),
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("💬", fontSize = 18.sp)
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            "Coach Notes",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                        )
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        notes,
-                        fontSize = 14.sp,
-                        color = TextSecondary,
-                        lineHeight = 22.sp,
-                    )
-                }
-            }
+            SectionLabel("INSTRUCTOR FEEDBACK")
+            InstructorNotesSection(notes)
             Spacer(Modifier.height(24.dp))
         }
 
         Spacer(Modifier.height(60.dp))
+    }
+}
+
+@Composable
+private fun InstructorNotesSection(notes: String) {
+    // Parse semicolon separated notes: "type: description; type: description"
+    val parsedNotes = remember(notes) {
+        notes.split(";").map { it.trim() }.filter { it.isNotBlank() }.map { note ->
+            if (note.contains(":")) {
+                val parts = note.split(":", limit = 2)
+                parts[0].trim() to parts[1].trim()
+            } else {
+                "Observation" to note
+            }
+        }
+    }
+
+    Column(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        parsedNotes.forEach { (type, description) ->
+            val (icon, tint) = when (type.lowercase().replace(" ", "_")) {
+                "hard_brake", "braking", "stop" -> "🛑" to Error
+                "speeding", "speed", "velocity" -> "⚡" to Warning
+                "sharp_turn", "cornering", "turning" -> "↻" to Secondary
+                "smoothness", "jerk", "accel" -> "〰" to Primary
+                "manual", "comment", "note" -> "📝" to Primary
+                else -> "📌" to Primary
+            }
+            
+            GlassCard(
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = Surface.copy(alpha = 0.4f)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    // Left Icon with tinted background
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(tint.copy(alpha = 0.15f))
+                            .border(1.dp, tint.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(icon, fontSize = 22.sp)
+                    }
+                    
+                    Spacer(Modifier.width(16.dp))
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = type.replace("_", " ").uppercase(),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = tint,
+                            letterSpacing = 1.2.sp
+                        )
+                        
+                        Spacer(Modifier.height(8.dp))
+                        
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                lineHeight = 24.sp
+                            ),
+                            color = TextPrimary.copy(alpha = 0.9f),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -392,10 +411,10 @@ fun DiagnosticRideDetailScreen(
 private fun SectionLabel(text: String) {
     Text(
         text = text,
-        fontSize = 11.sp,
+        style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.Black,
-        letterSpacing = 2.sp,
-        color = TextSecondary,
+        letterSpacing = 1.5.sp,
+        color = TextMuted,
         modifier = Modifier.padding(start = 24.dp, bottom = 12.dp),
     )
 }
@@ -406,134 +425,46 @@ private fun SectionLabel(text: String) {
 private fun HeroScoreCard(r: DiagnosticRide) {
     val overallScore = (r.overallScore ?: 0.0).toFloat()
 
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface),
-        shape = RoundedCornerShape(24.dp),
+    GlassCard(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        containerColor = Surface.copy(alpha = 0.6f)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
-            // Main score + pass/fail badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ScoreGauge(
-                    score = overallScore,
-                    label = "Safety Score",
-                    size = 130.dp,
-                )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ScoreGauge(
+                score = overallScore,
+                label = "Safety Score",
+                size = 140.dp,
+            )
 
-                Column(horizontalAlignment = Alignment.End) {
-                    val passed = r.passed ?: (overallScore >= 70f)
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (passed) Accent else Error)
-                            .padding(horizontal = 18.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            text = if (passed) "PASS" else "FAIL",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 16.sp,
-                            color = Color.White,
-                        )
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    r.createdAt?.let {
-                        Text(
-                            text = it.take(10),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = TextMuted,
-                        )
-                    }
-                    r.status.let {
-                        Spacer(Modifier.height(4.dp))
-                        val statusColor = when (it) {
-                            "completed" -> AccentLight
-                            "in_progress" -> Warning
-                            else -> TextMuted
-                        }
-                        Text(
-                            text = it.replace("_", " ").uppercase(),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
-                            color = statusColor,
-                        )
-                    }
+            Column(horizontalAlignment = Alignment.End) {
+                val passed = r.passed ?: (overallScore >= 70f)
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (passed) Secondary else Error)
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                ) {
+                    Text(
+                        text = if (passed) "PASSED" else "FAILED",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White,
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                r.createdAt?.let {
+                    Text(
+                        text = it.take(10),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextMuted,
+                    )
                 }
             }
-
-            Spacer(Modifier.height(24.dp))
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-            Spacer(Modifier.height(20.dp))
-
-            // Sub-gauges: Braking, Speed, Cornering
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                ScoreGauge(
-                    score = (r.brakingScore ?: 0.0).toFloat(),
-                    label = "Braking",
-                    size = 80.dp,
-                )
-                ScoreGauge(
-                    score = (r.speedScore ?: 0.0).toFloat(),
-                    label = "Speed",
-                    size = 80.dp,
-                )
-                ScoreGauge(
-                    score = (r.corneringScore ?: 0.0).toFloat(),
-                    label = "Cornering",
-                    size = 80.dp,
-                )
-            }
-
-            // Smoothness bar (if available)
-            r.smoothnessScore?.let { smooth ->
-                Spacer(Modifier.height(16.dp))
-                HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-                Spacer(Modifier.height(12.dp))
-                CategoryProgressRow("〰  Smoothness", smooth)
-            }
         }
-    }
-}
-
-// ── Category progress bar row ───────────────────────────────────────
-
-@Composable
-private fun CategoryProgressRow(label: String, score: Double) {
-    val s = score.toFloat().coerceIn(0f, 100f)
-    val color = when {
-        s >= 80f -> AccentLight
-        s >= 60f -> Warning
-        else -> Error
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, fontSize = 13.sp, color = TextSecondary, modifier = Modifier.weight(1f))
-        LinearProgressIndicator(
-            progress = { s / 100f },
-            modifier = Modifier.width(100.dp).height(6.dp).clip(RoundedCornerShape(3.dp)),
-            color = color,
-            trackColor = SurfaceVariant,
-        )
-        Spacer(Modifier.width(10.dp))
-        Text(
-            text = "${s.toInt()}%",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = color,
-            modifier = Modifier.width(36.dp),
-            textAlign = TextAlign.End,
-        )
     }
 }
 
@@ -542,19 +473,18 @@ private fun CategoryProgressRow(label: String, score: Double) {
 @Composable
 private fun TripStat(symbol: String, value: String, unit: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(symbol, fontSize = 20.sp)
-        Spacer(Modifier.height(6.dp))
+        Text(symbol, fontSize = 24.sp)
+        Spacer(Modifier.height(8.dp))
         Text(
             text = value,
-            fontSize = 20.sp,
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Black,
             color = color,
         )
         Text(
             text = unit,
-            fontSize = 10.sp,
+            style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp,
             color = TextMuted,
         )
     }
@@ -576,105 +506,72 @@ private fun EvaluationBreakdownCard(
 
     val s = (score ?: 0.0).toFloat().coerceIn(0f, 100f)
     val scoreColor = when {
-        s >= 80f -> AccentLight
+        s >= 80f -> Secondary
         s >= 60f -> Warning
         else -> Error
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
-        colors = CardDefaults.cardColors(containerColor = Surface),
-        shape = RoundedCornerShape(20.dp),
+    GlassCard(
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        containerColor = Surface.copy(alpha = 0.4f)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            // Header with symbol, title, score badge
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(symbol, fontSize = 24.sp)
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+                modifier = Modifier.weight(1f),
+            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(scoreColor.copy(alpha = 0.15f))
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    text = "${s.toInt()}%",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black,
+                    color = scoreColor,
+                )
+            }
+        }
+
+        if (eventCount > 0) {
+            Spacer(Modifier.height(12.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Error.copy(alpha = 0.1f))
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(symbol, fontSize = 20.sp)
-                Spacer(Modifier.width(10.dp))
+                Text("⚠️", fontSize = 14.sp)
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = title,
-                    fontSize = 16.sp,
+                    text = "$eventCount $eventLabel",
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
-                    modifier = Modifier.weight(1f),
+                    color = Error,
                 )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(scoreColor.copy(alpha = 0.15f))
-                        .border(1.dp, scoreColor.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        text = "${s.toInt()}%",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Black,
-                        color = scoreColor,
-                    )
-                }
             }
+        }
 
-            // Event count badge
-            if (eventCount > 0) {
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Warning.copy(alpha = 0.1f))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("⚠", fontSize = 12.sp)
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = "$eventCount $eventLabel detected",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Warning,
-                    )
-                }
-            }
-
-            // Notes
-            if (feedback.notes.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                for (note in feedback.notes) {
-                    Text(
-                        text = note,
-                        fontSize = 14.sp,
-                        color = TextSecondary,
-                        lineHeight = 20.sp,
-                        modifier = Modifier.padding(bottom = 4.dp),
-                    )
-                }
-            }
-
-            // Tips
-            if (feedback.tips.isNotEmpty()) {
-                Spacer(Modifier.height(10.dp))
+        if (feedback.notes.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            feedback.notes.forEach { note ->
                 Text(
-                    text = "TIPS TO IMPROVE",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp,
-                    color = Primary,
+                    text = note,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    modifier = Modifier.padding(bottom = 6.dp)
                 )
-                Spacer(Modifier.height(6.dp))
-                for (tip in feedback.tips) {
-                    Row(modifier = Modifier.padding(bottom = 4.dp)) {
-                        Text("💡", fontSize = 12.sp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = tip,
-                            fontSize = 13.sp,
-                            color = TextSecondary,
-                            lineHeight = 18.sp,
-                        )
-                    }
-                }
             }
         }
     }

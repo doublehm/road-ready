@@ -3,11 +3,12 @@ package com.roadready.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -119,7 +120,6 @@ fun TelemetryPanel(
         computeGauges(acceleration, rotation, prevAcceleration, sampleIntervalMs, speed, prevSpeed)
     }
 
-    // Fire threshold events for any gauge that crosses into red
     LaunchedEffect(gauges) {
         if (onThresholdExceeded != null && isActive) {
             for (g in gauges) {
@@ -139,31 +139,87 @@ fun TelemetryPanel(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Background.copy(alpha = 0.92f))
-            .border(1.dp, SurfaceVariant.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
-            .padding(10.dp),
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // ── Stats row ──
-        StatsRow(duration, distance, speed, speedLimit)
-
-        Spacer(Modifier.height(6.dp))
-
-        // ── Info row ──
-        InfoRow(roadName, zoneType, speedLimit, speed)
-
-        Spacer(Modifier.height(6.dp))
-
-        // ── Speed analysis row ──
-        if (speedLimit != null && speedLimit > 0) {
-            SpeedAnalysisRow(speed, speedLimit, zoneType)
-            Spacer(Modifier.height(6.dp))
+        // Main Speed & Limit Display
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = Background.copy(alpha = 0.8f)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("SPEED", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = speed.toInt().toString(),
+                            style = MaterialTheme.typography.displayLarge,
+                            color = speedColor(speed, speedLimit)
+                        )
+                        Text(
+                            " km/h",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = TextMuted,
+                            modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
+                        )
+                    }
+                }
+                
+                if (speedLimit != null) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("LIMIT", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .border(2.dp, Color.Red, CircleShape)
+                                .background(Color.White, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                speedLimit.toString(),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color.Black,
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                        }
+                    }
+                }
+            }
+            
+            if (!roadName.isNullOrBlank()) {
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Rounded.LocationOn,
+                        contentDescription = null,
+                        tint = Primary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        roadName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                }
+            }
         }
 
-        // ── Force gauges grid ──
-        GaugeGrid(gauges)
+        // Gauges Grid
+        GlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = Background.copy(alpha = 0.6f)
+        ) {
+            Text("FORCE SENSORS", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+            Spacer(Modifier.height(12.dp))
+            GaugeGrid(gauges)
+        }
     }
 }
 

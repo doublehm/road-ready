@@ -5,14 +5,13 @@ import com.roadready.data.model.*
 import com.roadready.data.repository.SpeedLimitResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.submitForm
-import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
 import io.ktor.http.contentType
-import io.ktor.http.isSuccess
 import kotlinx.serialization.json.JsonObject
 
 class ApiClient(
@@ -128,7 +127,7 @@ class ApiClient(
     }
 
     suspend fun submitQuiz(moduleId: Int, data: Map<String, Int>): Result<Unit> = safeCall {
-        httpClient.post("modules/$moduleId/quiz/submit") { setBody(data) }
+        httpClient.post("modules/$moduleId/quiz/submit") { setBody(data) }.body()
     }
 
     // --- Diagnostic Rides (extended) ---
@@ -148,7 +147,7 @@ class ApiClient(
     }
 
     suspend fun evaluateRide(rideId: Int): Result<Unit> = safeCall {
-        httpClient.post("diagnostic-rides/$rideId/evaluate")
+        httpClient.post("diagnostic-rides/$rideId/evaluate").body()
     }
 
     suspend fun getProgressTrends(studentId: Int? = null): Result<ProgressTrends> = safeCall {
@@ -160,11 +159,11 @@ class ApiClient(
     // --- Grading ---
 
     suspend fun gradeSession(bookingId: Int, data: Map<String, Any>): Result<Unit> = safeCall {
-        httpClient.post("bookings/$bookingId/grade") { setBody(data) }
+        httpClient.post("bookings/$bookingId/grade") { setBody(data) }.body()
     }
 
     suspend fun gradeRide(rideId: Int, data: Map<String, Any>): Result<Unit> = safeCall {
-        httpClient.post("diagnostic-rides/$rideId/grade") { setBody(data) }
+        httpClient.post("diagnostic-rides/$rideId/grade") { setBody(data) }.body()
     }
 
     // --- Bookings (single) ---
@@ -194,12 +193,26 @@ class ApiClient(
         }.body()
     }
 
+    suspend fun setupStudentProfile(data: StudentProfileCreateRequest): Result<Unit> = safeCall {
+        httpClient.put("users/me/student-profile") {
+            setBody(data)
+        }.body()
+    }
+
+    suspend fun setupInstructorProfile(data: InstructorProfileCreateRequest): Result<Unit> = safeCall {
+        httpClient.put("users/me/instructor-profile") {
+            setBody(data)
+        }.body()
+    }
+
     // --- Helpers ---
 
     private suspend inline fun <reified T> safeCall(block: () -> T): Result<T> {
         return try {
-            Result.success(block())
+            val result = block()
+            Result.success(result)
         } catch (e: Exception) {
+            com.roadready.logError("ApiClient", "API Error: ${e.message}", e)
             Result.failure(e)
         }
     }

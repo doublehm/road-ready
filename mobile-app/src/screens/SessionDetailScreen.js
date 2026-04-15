@@ -92,7 +92,7 @@ const SessionDetailScreen = ({ route, navigation }) => {
         
         {/* Summary Card */}
         <View style={styles.summaryCard}>
-          <Text style={styles.date}>{formatDate(session.created_at)}</Text>
+          <Text style={styles.date}>{formatDate(session?.created_at)}</Text>
           <View style={styles.row}>
             <View style={styles.stat}>
               <Ionicons name="time-outline" size={20} color="#94A3B8" />

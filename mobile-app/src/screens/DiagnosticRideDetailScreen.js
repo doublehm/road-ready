@@ -98,7 +98,7 @@ const DiagnosticRideDetailScreen = ({ route, navigation }) => {
               <View style={[styles.passBadge, { backgroundColor: ride.passed ? '#15803D' : '#EF4444' }]}>
                 <Text style={styles.passBadgeText}>{ride.passed ? 'PASS' : 'FAIL'}</Text>
               </View>
-              <Text style={styles.dateText}>{new Date(ride.created_at).toLocaleDateString()}</Text>
+              <Text style={styles.dateText}>{ride.created_at ? new Date(ride.created_at).toLocaleDateString() : ''}</Text>
             </View>
           </View>
           

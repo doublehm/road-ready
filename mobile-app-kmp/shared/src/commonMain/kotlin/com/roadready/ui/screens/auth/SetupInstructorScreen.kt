@@ -9,6 +9,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.roadready.data.model.InstructorLicenseClass
+import com.roadready.data.model.InstructorProfileCreateRequest
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.AuthRepository
 import com.roadready.ui.components.ErrorBanner
@@ -16,10 +18,6 @@ import com.roadready.ui.components.PrimaryButton
 import com.roadready.ui.components.RoadReadyTextField
 import com.roadready.ui.components.SectionHeader
 import com.roadready.ui.theme.*
-import io.ktor.client.request.put
-import io.ktor.client.request.setBody
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -34,6 +32,8 @@ fun SetupInstructorScreen() {
     var province by remember { mutableStateOf("British Columbia") }
     var licenseNumber by remember { mutableStateOf("") }
     var licenseClasses by remember { mutableStateOf("Class 5") }
+    var insurancePolicy by remember { mutableStateOf("") }
+    var certificationId by remember { mutableStateOf("") }
     var yearsExperience by remember { mutableStateOf("") }
     var hourlyRate by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
@@ -116,7 +116,7 @@ fun SetupInstructorScreen() {
         RoadReadyTextField(
             value = licenseClasses,
             onValueChange = { licenseClasses = it },
-            label = "License Classes (e.g., Class 5, Class 7)",
+            label = "License Classes (e.g., Class 5)",
             modifier = Modifier.padding(bottom = 12.dp),
         )
 
@@ -125,6 +125,22 @@ fun SetupInstructorScreen() {
             onValueChange = { yearsExperience = it.filter { c -> c.isDigit() } },
             label = "Years of Experience",
             keyboardType = KeyboardType.Number,
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+
+        SectionHeader("Compliance")
+
+        RoadReadyTextField(
+            value = insurancePolicy,
+            onValueChange = { insurancePolicy = it },
+            label = "Insurance Policy Number",
+            modifier = Modifier.padding(bottom = 12.dp),
+        )
+
+        RoadReadyTextField(
+            value = certificationId,
+            onValueChange = { certificationId = it },
+            label = "Instructor Certification ID",
             modifier = Modifier.padding(bottom = 12.dp),
         )
 
@@ -176,21 +192,6 @@ fun SetupInstructorScreen() {
             modifier = Modifier.padding(bottom = 24.dp),
         )
 
-        // Image placeholders
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
-            colors = CardDefaults.cardColors(containerColor = Surface),
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text("📸", style = MaterialTheme.typography.headlineLarge)
-                Text("Insurance & Certification Photos", style = MaterialTheme.typography.titleMedium)
-                Text("Image upload coming soon", style = MaterialTheme.typography.bodySmall, color = TextMuted)
-            }
-        }
-
         PrimaryButton(
             text = "Complete Setup",
             onClick = {
@@ -201,24 +202,26 @@ fun SetupInstructorScreen() {
                 isLoading = true
                 error = null
                 scope.launch {
-                    try {
-                        apiClient.httpClient.put("instructor-profile/") {
-                            contentType(ContentType.Application.Json)
-                            setBody(mapOf(
-                                "city" to city,
-                                "province" to province,
-                                "license_number" to licenseNumber,
-                                "license_classes" to licenseClasses,
-                                "years_experience" to yearsExperience,
-                                "hourly_rate" to hourlyRate,
-                                "bio" to bio,
-                                "car_make" to carMake,
-                                "car_model" to carModel,
-                                "car_year" to carYear,
-                            ))
-                        }
+                    val rate = hourlyRate.toDoubleOrNull() ?: 0.0
+                    val setupData = InstructorProfileCreateRequest(
+                        city = city,
+                        province = province,
+                        licenseNumber = licenseNumber,
+                        licenseClasses = listOf(
+                            InstructorLicenseClass(licenseClass = licenseClasses, price = rate)
+                        ),
+                        yearsExperience = yearsExperience.toIntOrNull() ?: 0,
+                        insurancePolicy = insurancePolicy,
+                        certificationId = certificationId,
+                        hourlyRate = rate,
+                        bio = bio,
+                        carMake = carMake,
+                        carModel = carModel,
+                        carYear = carYear.toIntOrNull() ?: 0,
+                    )
+                    apiClient.setupInstructorProfile(setupData).onSuccess {
                         authRepository.initialize()
-                    } catch (e: Exception) {
+                    }.onFailure { e ->
                         error = e.message ?: "Setup failed"
                     }
                     isLoading = false

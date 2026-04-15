@@ -49,21 +49,35 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(deps.get_db)):
     if user.role == "student":
         profile = models.StudentProfile(
             user_id=db_user.id,
-            age=0, # Default, to be updated later
-            l_license_number="0000000"
+            age=user.age or 0,
+            l_license_number=user.l_license_number or "0000000"
         )
         db.add(profile)
     elif user.role == "instructor":
         profile = models.InstructorProfile(
             user_id=db_user.id,
-            bio="New instructor",
-            hourly_rate=0.0,
-            city="Unknown",
-            car_model="Unknown",
-            insurance_policy="PENDING",
-            certification_id="PENDING"
+            bio=user.bio or "New instructor",
+            hourly_rate=user.hourly_rate or 0.0,
+            city=user.city or "Unknown",
+            province=user.province or "British Columbia",
+            car_make=user.car_make or "Unknown",
+            car_model=user.car_model or "Unknown",
+            car_year=user.car_year or 0,
+            insurance_policy=user.insurance_policy or "PENDING",
+            certification_id=user.certification_id or "PENDING"
         )
         db.add(profile)
+        db.flush() # Get profile.id
+        
+        # Add license classes
+        if user.license_classes:
+            for lc in user.license_classes:
+                db_lc = models.InstructorLicenseClass(
+                    instructor_id=profile.id,
+                    license_class=lc.license_class,
+                    price=lc.price
+                )
+                db.add(db_lc)
     
     db.commit()
     return db_user

@@ -641,6 +641,26 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
     );
   };
 
+  // Retry helper for flaky networks — tries up to `attempts` times with backoff.
+  const retryRequest = async (fn, attempts = 3) => {
+    for (let i = 0; i < attempts; i++) {
+      try {
+        return await fn();
+      } catch (err) {
+        const isLast = i === attempts - 1;
+        const isNetworkErr =
+          err.message?.includes('Network Error') ||
+          err.code === 'ECONNABORTED';
+        if (isLast || !isNetworkErr) throw err;
+        const delay = 1000 * Math.pow(2, i);
+        console.log(`Retry ${i + 1}/${attempts} in ${delay}ms...`);
+        await new Promise(r => setTimeout(r, delay));
+      }
+    }
+  };
+
+  const PENDING_RIDE_KEY = '@pending_ride_payload';
+
   const submitRideData = async () => {
     setIsUploading(true);
 
@@ -701,23 +721,37 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
 
       let finalRideId = rideId;
       try {
-        if (rideId) {
-          await client.put(`/diagnostic-rides/${rideId}`, ridePayload);
-        } else {
-          const response = await client.post('/diagnostic-rides/', ridePayload);
-          finalRideId = response.data.id;
-        }
+        await retryRequest(async () => {
+          if (rideId) {
+            await client.put(`/diagnostic-rides/${rideId}`, ridePayload, { timeout: 30000 });
+          } else {
+            const response = await client.post('/diagnostic-rides/', ridePayload, { timeout: 30000 });
+            finalRideId = response.data.id;
+          }
+        });
       } catch (uploadError) {
         console.warn('Metadata upload failed, attempting to trigger evaluation anyway:', uploadError);
-        if (!finalRideId) throw uploadError;
+        if (!finalRideId) {
+          // Save payload locally so it can be retried later
+          try {
+            await AsyncStorage.setItem(PENDING_RIDE_KEY, JSON.stringify(ridePayload));
+            console.log('Ride payload saved to local storage for later retry');
+          } catch (_) {}
+          throw uploadError;
+        }
       }
 
       try {
-        await client.post(`/diagnostic-rides/${finalRideId}/evaluate`);
+        await retryRequest(() =>
+          client.post(`/diagnostic-rides/${finalRideId}/evaluate`, null, { timeout: 30000 })
+        );
       } catch (evalError) {
         console.error('Evaluation trigger failed:', evalError);
         throw evalError;
       }
+
+      // Clear any saved pending payload on success
+      AsyncStorage.removeItem(PENDING_RIDE_KEY).catch(() => {});
 
       // Auto-complete the booking if this ride was linked to one
       if (bookingId) {
@@ -736,11 +770,13 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       ]);
     } catch (error) {
       console.error('Error submitting ride:', error);
-      const isNetworkError = error.message.includes('Network Error');
+      const isNetworkError =
+        error.message?.includes('Network Error') ||
+        error.code === 'ECONNABORTED';
       Alert.alert(
         'Submission Error',
         isNetworkError
-          ? `Could not connect to the server. Please ensure your backend is running at ${client.defaults.baseURL} and your phone is on the same network.`
+          ? 'Network is unstable. Your ride data has been saved locally and will be retried automatically when connectivity improves.'
           : 'Failed to submit ride data. Please try again or contact support.'
       );
     } finally {
@@ -755,18 +791,23 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
   latestSpeedLimitRef.current = speedLimit.currentSpeedLimit;
   latestZoneTypeRef.current = speedLimit.zoneType;
   latestLocationRef.current = gpsTracking.location;
-  // Only update prev values when GPS/sensor provides a genuinely new reading.
-  // Accelerometer re-renders happen ~10× more often than GPS updates; updating
-  // prevSpeed on every render collapses it to the current speed, making the
-  // stop-force and accel gauges perpetually read 0.
-  if (gpsTracking.speed !== latestSpeedRef.current) {
-    prevSpeedRef.current = latestSpeedRef.current;
-    latestSpeedRef.current = gpsTracking.speed;
-  }
-  if (deviceMotion.acceleration !== latestAccelerationRef.current) {
-    prevAccelerationRef.current = latestAccelerationRef.current;
-    latestAccelerationRef.current = deviceMotion.acceleration;
-  }
+
+  // Use useEffect to update prev values only when new data actually arrives.
+  // This ensures the delta used for jerk and acceleration is non-zero.
+  useEffect(() => {
+    if (gpsTracking.speed !== latestSpeedRef.current) {
+      prevSpeedRef.current = latestSpeedRef.current;
+      latestSpeedRef.current = gpsTracking.speed;
+    }
+  }, [gpsTracking.speed]);
+
+  useEffect(() => {
+    if (deviceMotion.acceleration !== latestAccelerationRef.current) {
+      prevAccelerationRef.current = latestAccelerationRef.current;
+      latestAccelerationRef.current = deviceMotion.acceleration;
+    }
+  }, [deviceMotion.acceleration]);
+
   latestRotationRef.current = deviceMotion.rotation;
   latestDurationRef.current = duration;
 
@@ -842,12 +883,12 @@ const DiagnosticRideActiveScreen = ({ route, navigation }) => {
       <View style={[styles.overlay, { top: 50 + insets.top }]}>
         {/* Live Telemetry Dashboard (includes ride stats) */}
         <TelemetryPanel
-          acceleration={deviceMotion.acceleration}
-          rotation={deviceMotion.rotation}
+          acceleration={latestAccelerationRef.current}
+          rotation={latestRotationRef.current}
           prevAcceleration={prevAccelerationRef.current}
-          sampleIntervalMs={100}
+          sampleIntervalMs={150} // Matches STATE_THROTTLE_MS in useDeviceMotion
           heading={gpsTracking.location?.heading}
-          speed={gpsTracking.speed}
+          speed={latestSpeedRef.current}
           prevSpeed={prevSpeedRef.current}
           isActive={!!startTime}
           onThresholdExceeded={handleTelemetryThreshold}

@@ -3,6 +3,7 @@
 This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
 
 ## Active Tracks
+- [Sensor ML Optimization](./tracks/sensor_ml_optimization_20260404/index.md) (Planned: 2026-04-04) - *Optimize the diagnostic ride evaluation by training a machine learning model on sensor data to improve mistake detection accuracy.*
 
 ## Archived Tracks
 - [Database Redesign (Hybrid SQL + NoSQL)](./archive/db_redesign_hybrid_20260221/spec.md) (Completed: 2026-02-21) - *Implemented a hybrid architecture using SQLite for business processes and MongoDB for high-throughput sensor telemetry, with mobile app buffering.*

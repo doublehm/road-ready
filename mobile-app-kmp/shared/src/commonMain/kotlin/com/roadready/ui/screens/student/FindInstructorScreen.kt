@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.roadready.data.model.User
 import com.roadready.data.remote.ApiClient
+import com.roadready.ui.components.ErrorBanner
 import com.roadready.ui.components.LoadingOverlay
 import com.roadready.ui.components.RoadReadyTextField
 import com.roadready.ui.theme.*
@@ -29,10 +30,16 @@ fun FindInstructorScreen(
     val apiClient: ApiClient = koinInject()
     var isLoading by remember { mutableStateOf(true) }
     var instructors by remember { mutableStateOf<List<User>>(emptyList()) }
+    var error by remember { mutableStateOf<String?>(null) }
     var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        apiClient.getInstructors().onSuccess { instructors = it }
+        apiClient.getInstructors().onSuccess { 
+            instructors = it 
+        }.onFailure { 
+            error = it.message ?: "Failed to load instructors"
+            println("FindInstructor Error: ${it.message}")
+        }
         isLoading = false
     }
 
@@ -57,6 +64,10 @@ fun FindInstructorScreen(
                 onValueChange = { searchQuery = it },
                 label = "Search by name or city",
             )
+        }
+
+        error?.let {
+            ErrorBanner(message = it, modifier = Modifier.padding(horizontal = 16.dp))
         }
 
         if (isLoading) { LoadingOverlay(); return }

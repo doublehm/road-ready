@@ -9,7 +9,7 @@ import com.roadready.ui.screens.student.StudentHomeViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
-const val DEFAULT_BASE_URL = "http://10.66.66.2:8000/api/v1/"
+const val DEFAULT_BASE_URL = "http://10.66.66.2:8001/api/v1/"
 
 val sharedModule = module {
     single {

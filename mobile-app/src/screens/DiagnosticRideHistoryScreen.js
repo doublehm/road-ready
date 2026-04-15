@@ -118,6 +118,8 @@ const DiagnosticRideHistoryScreen = ({ navigation }) => {
                        (item.overall_score || 0) >= 60 ? '#ffc107' : '#dc3545';
     const flagCount = getFlagCount(item);
 
+    if (!item) return null;
+
     return (
       <TouchableOpacity
         style={styles.rideCard}

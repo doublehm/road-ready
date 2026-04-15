@@ -1,19 +1,35 @@
 package com.roadready.ui.screens.student
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.rounded.DirectionsCar
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Logout
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.roadready.data.model.Booking
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.AuthRepository
+import com.roadready.ui.components.GlassCard
 import com.roadready.ui.components.LoadingOverlay
 import com.roadready.ui.components.SectionHeader
 import com.roadready.ui.theme.*
@@ -66,14 +82,17 @@ fun StudentHomeScreen(
         return
     }
 
+    val nextLesson = viewModel.upcomingBookings.firstOrNull()
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .background(Background)
+            .padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(top = 24.dp, bottom = 40.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        // Greeting
+        // Top Bar / Greeting
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -83,99 +102,128 @@ fun StudentHomeScreen(
                 Column {
                     Text(
                         text = "Hey, ${viewModel.userName} 👋",
-                        style = MaterialTheme.typography.headlineLarge,
+                        style = MaterialTheme.typography.displayMedium,
+                        color = TextPrimary
                     )
                     Text(
                         text = "Ready to hit the road?",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = TextSecondary
                     )
                 }
-                IconButton(onClick = onOpenNotifications) {
-                    Text("🔔", style = MaterialTheme.typography.headlineMedium)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Surface)
+                        .clickable { onOpenNotifications() }
+                        .padding(12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = "Notifications",
+                        tint = TextPrimary
+                    )
                 }
             }
         }
 
-        // Quick Actions
+        // Stats Summary
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                QuickActionCard(
-                    emoji = "🛞",
+                GlassCard(modifier = Modifier.weight(1f)) {
+                    Text("12.5", style = MaterialTheme.typography.headlineLarge, color = Primary)
+                    Text("Hours Logged", style = MaterialTheme.typography.bodySmall)
+                }
+                GlassCard(modifier = Modifier.weight(1f)) {
+                    Text("75%", style = MaterialTheme.typography.headlineLarge, color = Secondary)
+                    Text("Skills Mastery", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+
+        // Quick Actions Bento Grid
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                BentoActionCard(
                     title = "Diagnostic Ride",
-                    subtitle = "Test your skills",
-                    color = Primary,
+                    subtitle = "Test your skills with AI",
+                    icon = Icons.Rounded.DirectionsCar,
+                    gradient = Brush.linearGradient(listOf(Primary, PrimaryContainer)),
                     onClick = onStartDiagnostic,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth().height(140.dp)
                 )
-                QuickActionCard(
-                    emoji = "🔍",
-                    title = "Find Instructor",
-                    subtitle = "Book a lesson",
-                    color = Accent,
-                    onClick = onFindInstructor,
-                    modifier = Modifier.weight(1f),
-                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    BentoActionCard(
+                        title = "Find Instructor",
+                        subtitle = "Book a lesson",
+                        icon = Icons.Rounded.Search,
+                        gradient = Brush.linearGradient(listOf(Secondary, SecondaryContainer)),
+                        onClick = onFindInstructor,
+                        modifier = Modifier.weight(1f).height(120.dp)
+                    )
+                    BentoActionCard(
+                        title = "History",
+                        subtitle = "Your progress",
+                        icon = Icons.Rounded.History,
+                        gradient = Brush.linearGradient(listOf(SurfaceVariant, Surface)),
+                        onClick = onViewHistory,
+                        modifier = Modifier.weight(1f).height(120.dp)
+                    )
+                }
             }
         }
 
-        // Upcoming Lessons
-        if (viewModel.upcomingBookings.isNotEmpty()) {
-            item { SectionHeader("Upcoming Lessons") }
-            items(viewModel.upcomingBookings) { booking ->
-                BookingCard(booking = booking)
+        // Next Lesson Spotlight
+        if (nextLesson != null) {
+            item {
+                SectionHeader("Next Lesson")
+                SpotlightBookingCard(booking = nextLesson)
             }
         }
 
-        // Pending Requests
-        if (viewModel.pendingBookings.isNotEmpty()) {
-            item { SectionHeader("Pending Requests") }
+        // Upcoming & Pending
+        if (viewModel.upcomingBookings.size > 1 || viewModel.pendingBookings.isNotEmpty()) {
+            item { SectionHeader("All Lessons") }
+            
+            val otherUpcoming = if (viewModel.upcomingBookings.isNotEmpty()) 
+                viewModel.upcomingBookings.drop(1) else emptyList()
+            
+            items(otherUpcoming) { booking ->
+                ModernBookingCard(booking = booking)
+            }
+            
             items(viewModel.pendingBookings) { booking ->
-                BookingCard(booking = booking, isPending = true)
+                ModernBookingCard(booking = booking, isPending = true)
             }
         }
 
         // Empty State
         if (viewModel.upcomingBookings.isEmpty() && viewModel.pendingBookings.isEmpty()) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Surface),
-                    shape = RoundedCornerShape(16.dp),
-                ) {
+                GlassCard(modifier = Modifier.fillMaxWidth()) {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("📚", style = MaterialTheme.typography.displayLarge)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("📚", fontSize = 48.sp)
+                        Spacer(Modifier.height(16.dp))
+                        Text("No upcoming lessons", style = MaterialTheme.typography.titleLarge)
                         Text(
-                            text = "No upcoming lessons",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        Text(
-                            text = "Start a diagnostic ride or find an instructor to begin",
+                            "Start a diagnostic ride to begin",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = TextMuted,
+                            color = TextMuted
                         )
                     }
                 }
-            }
-        }
-
-        // Ride History shortcut
-        item {
-            OutlinedButton(
-                onClick = onViewHistory,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Primary),
-            ) {
-                Text("View Diagnostic Ride History")
             }
         }
 
@@ -183,8 +231,10 @@ fun StudentHomeScreen(
         item {
             TextButton(
                 onClick = { viewModel.logout() },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
             ) {
+                Icon(Icons.Rounded.Logout, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
                 Text("Sign Out", color = TextMuted)
             }
         }
@@ -192,81 +242,139 @@ fun StudentHomeScreen(
 }
 
 @Composable
-private fun QuickActionCard(
-    emoji: String,
+private fun BentoActionCard(
     title: String,
     subtitle: String,
-    color: androidx.compose.ui.graphics.Color,
+    icon: ImageVector,
+    gradient: Brush,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier.clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.12f)),
-        shape = RoundedCornerShape(16.dp),
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(gradient)
+            .clickable { onClick() }
+            .padding(20.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(emoji, style = MaterialTheme.typography.headlineLarge)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(title, style = MaterialTheme.typography.titleMedium, color = color)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall)
+        Column(modifier = Modifier.align(Alignment.BottomStart)) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(Modifier.height(12.dp))
+            Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
         }
     }
 }
 
 @Composable
-private fun BookingCard(
+private fun SpotlightBookingCard(booking: Booking) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Surface),
+        shape = RoundedCornerShape(24.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, GlassStroke)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(Primary.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        booking.instructor?.fullName?.firstOrNull()?.toString() ?: "I",
+                        color = Primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(
+                        booking.instructor?.fullName ?: "Instructor",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Text(
+                        "Certified Professional",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Secondary
+                    )
+                }
+            }
+            
+            Spacer(Modifier.height(20.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                InfoItem(label = "Date", value = booking.scheduledDate ?: "TBD")
+                InfoItem(label = "Time", value = booking.scheduledTime ?: "TBD")
+                InfoItem(label = "Pickup", value = booking.pickupAddress?.split(",")?.firstOrNull() ?: "TBD")
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoItem(label: String, value: String) {
+    Column {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = TextMuted)
+        Text(value, style = MaterialTheme.typography.labelLarge)
+    }
+}
+
+@Composable
+private fun ModernBookingCard(
     booking: Booking,
     isPending: Boolean = false,
 ) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Surface),
-        shape = RoundedCornerShape(12.dp),
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        color = Surface.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, GlassStroke.copy(alpha = 0.5f))
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = booking.instructor?.fullName ?: "Instructor",
                     style = MaterialTheme.typography.titleMedium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    overflow = TextOverflow.Ellipsis
                 )
-                booking.scheduledDate?.let {
-                    Text(
-                        text = "$it • ${booking.scheduledTime ?: ""}",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-                booking.pickupAddress?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                Text(
+                    text = "${booking.scheduledDate} • ${booking.scheduledTime}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
             }
 
-            // Status chip
             val (statusColor, statusText) = if (isPending) {
                 Warning to "Pending"
             } else {
-                AccentLight to "Confirmed"
+                Secondary to "Confirmed"
             }
-            Surface(
-                color = statusColor.copy(alpha = 0.15f),
-                shape = RoundedCornerShape(8.dp),
+            
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(statusColor.copy(alpha = 0.15f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = statusText,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = statusColor,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = statusColor
                 )
             }
         }

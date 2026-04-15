@@ -21,6 +21,20 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
     role: str  # "student" or "instructor"
+    
+    # Optional Profile Fields during creation
+    city: Optional[str] = "Unknown"
+    province: Optional[str] = "British Columbia"
+    bio: Optional[str] = "New User"
+    hourly_rate: Optional[float] = 0.0
+    car_make: Optional[str] = "Not Specified"
+    car_model: Optional[str] = "Not Specified"
+    car_year: Optional[int] = 0
+    insurance_policy: Optional[str] = "PENDING"
+    certification_id: Optional[str] = "PENDING"
+    license_classes: List[InstructorLicenseClassCreate] = []
+    age: Optional[int] = 0
+    l_license_number: Optional[str] = "0000000"
 
     @validator('password')
     def validate_password(cls, v):
@@ -84,7 +98,10 @@ class InstructorProfileBase(BaseModel):
     bio: str
     hourly_rate: float
     city: str
+    province: str = "British Columbia"
+    car_make: str = "Unknown"
     car_model: str
+    car_year: int = 0
     insurance_policy: str
     certification_id: str
     certification_expiry: Optional[str] = None

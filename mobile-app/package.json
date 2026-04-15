@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "node node_modules/expo/bin/cli start --offline",
-    "android": "node node_modules/expo/bin/cli start --android --offline",
-    "ios": "node node_modules/expo/bin/cli start --ios --offline",
+    "start": "REACT_NATIVE_PACKAGER_HOSTNAME=10.66.66.2 node node_modules/expo/bin/cli start --offline",
+    "android": "REACT_NATIVE_PACKAGER_HOSTNAME=10.66.66.2 node node_modules/expo/bin/cli start --android --offline",
+    "ios": "REACT_NATIVE_PACKAGER_HOSTNAME=10.66.66.2 node node_modules/expo/bin/cli start --ios --offline",
     "web": "node node_modules/expo/bin/cli start --web --offline",
     "test": "jest"
   },
@@ -55,7 +55,7 @@
     "@testing-library/react-native": "^13.3.3",
     "babel-preset-expo": "^55.0.11",
     "jest": "^29.7.0",
-    "jest-expo": "^47.0.1",
+    "jest-expo": "^55.0.11",
     "react-test-renderer": "19.2.0"
   },
   "overrides": {

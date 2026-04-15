@@ -1,5 +1,9 @@
-import joblib
-import pandas as pd
+try:
+    import joblib
+    import pandas as pd
+except ImportError:
+    joblib = None
+    pd = None
 import numpy as np
 import os
 from typing import List, Dict, Any

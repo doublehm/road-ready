@@ -36,3 +36,5 @@ fpdf2
 motor==3.7.1
 numpy
 httpx
+joblib
+pandas

@@ -71,7 +71,7 @@ fun InstructorProfileScreen(
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             DetailCard("🚗", "Vehicle", "${profile?.carMake ?: ""} ${profile?.carModel ?: ""}", Modifier.weight(1f))
-            DetailCard("📜", "License", profile?.licenseClasses ?: "N/A", Modifier.weight(1f))
+            DetailCard("📜", "License", profile?.licenseClasses?.joinToString { it.licenseClass } ?: "N/A", Modifier.weight(1f))
         }
 
         // Bio

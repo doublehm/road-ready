@@ -16,7 +16,49 @@ data class RegisterRequest(
     val email: String,
     val password: String,
     @SerialName("full_name") val fullName: String,
+    @SerialName("phone_number") val phoneNumber: String,
     val role: String, // "student" or "instructor"
+    
+    // Additional Profile Fields (Required by Backend)
+    val city: String = "Unknown",
+    val province: String = "British Columbia",
+    val bio: String = "New User",
+    @SerialName("hourly_rate") val hourlyRate: Double = 0.0,
+    @SerialName("car_make") val carMake: String = "Not Specified",
+    @SerialName("car_model") val carModel: String = "Not Specified",
+    @SerialName("car_year") val carYear: Int = 0,
+    @SerialName("insurance_policy") val insurancePolicy: String = "PENDING",
+    @SerialName("certification_id") val certificationId: String = "PENDING",
+    @SerialName("license_classes") val licenseClasses: List<InstructorLicenseClass> = emptyList(),
+    
+    // Student specific
+    val age: Int = 0,
+    @SerialName("l_license_number") val licenseNumber: String = "0000000",
+)
+
+@Serializable
+data class StudentProfileCreateRequest(
+    val age: Int,
+    @SerialName("l_license_number") val licenseNumber: String,
+    @SerialName("license_class") val licenseClass: String? = null,
+    val city: String? = null,
+    val province: String? = null,
+)
+
+@Serializable
+data class InstructorProfileCreateRequest(
+    val city: String,
+    val province: String,
+    @SerialName("license_number") val licenseNumber: String,
+    @SerialName("license_classes") val licenseClasses: List<InstructorLicenseClass>,
+    @SerialName("years_experience") val yearsExperience: Int,
+    @SerialName("insurance_policy") val insurancePolicy: String,
+    @SerialName("certification_id") val certificationId: String,
+    @SerialName("hourly_rate") val hourlyRate: Double,
+    val bio: String,
+    @SerialName("car_make") val carMake: String,
+    @SerialName("car_model") val carModel: String,
+    @SerialName("car_year") val carYear: Int,
 )
 
 @Serializable
@@ -31,9 +73,9 @@ data class AuthResponse(
 data class User(
     val id: Int,
     val email: String,
-    @SerialName("full_name") val fullName: String,
+    @SerialName("full_name") val fullName: String = "User",
     val role: String,
-    val phone: String? = null,
+    @SerialName("phone_number") val phoneNumber: String? = null,
     @SerialName("profile_image") val profileImage: String? = null,
     @SerialName("student_profile") val studentProfile: StudentProfile? = null,
     @SerialName("instructor_profile") val instructorProfile: InstructorProfile? = null,
@@ -43,7 +85,7 @@ data class User(
 data class StudentProfile(
     val id: Int? = null,
     val age: Int = 0,
-    @SerialName("license_number") val licenseNumber: String? = null,
+    @SerialName("l_license_number") val licenseNumber: String? = null,
     @SerialName("license_class") val licenseClass: String? = null,
     @SerialName("license_image") val licenseImage: String? = null,
     @SerialName("license_expiry") val licenseExpiry: String? = null,
@@ -52,25 +94,38 @@ data class StudentProfile(
 )
 
 @Serializable
+data class InstructorLicenseClass(
+    val id: Int? = null,
+    @SerialName("instructor_id") val instructorId: Int? = null,
+    @SerialName("license_class") val licenseClass: String,
+    val price: Double,
+)
+
+@Serializable
 data class InstructorProfile(
     val id: Int? = null,
     @SerialName("user_id") val userId: Int? = null,
     @SerialName("is_verified") val isVerified: Boolean = false,
+    @SerialName("is_available") val isAvailable: Boolean = true,
     val user: User? = null,
     val city: String = "Unknown",
     val province: String? = null,
     @SerialName("license_number") val licenseNumber: String? = null,
-    @SerialName("license_classes") val licenseClasses: String? = null,
+    @SerialName("license_classes") val licenseClasses: List<InstructorLicenseClass> = emptyList(),
     @SerialName("years_experience") val yearsExperience: Int = 0,
     @SerialName("hourly_rate") val hourlyRate: Double = 0.0,
     val bio: String? = null,
     @SerialName("car_make") val carMake: String? = null,
     @SerialName("car_model") val carModel: String? = null,
     @SerialName("car_year") val carYear: Int? = null,
-    @SerialName("insurance_image") val insuranceImage: String? = null,
-    @SerialName("certification_image") val certificationImage: String? = null,
+    @SerialName("insurance_policy") val insurancePolicy: String? = null,
+    @SerialName("certification_id") val certificationId: String? = null,
+    @SerialName("business_registration_number") val businessRegistrationNumber: String? = null,
+    @SerialName("tax_id") val taxId: String? = null,
+    @SerialName("worksafe_bc_id") val worksafeBcId: String? = null,
+    @SerialName("legal_entity_name") val legalEntityName: String? = null,
     @SerialName("stripe_account_id") val stripeAccountId: String? = null,
-    @SerialName("stripe_onboarded") val stripeOnboarded: Boolean = false,
+    @SerialName("stripe_onboarding_completed") val stripeOnboardingCompleted: Boolean = false,
     @SerialName("average_rating") val averageRating: Double? = null,
 ) {
     /** Display name from the nested user, or fallback. */

@@ -12,7 +12,13 @@
         android:label="Road Ready"
         android:supportsRtl="true"
         android:networkSecurityConfig="@xml/network_security_config"
-        android:theme="@style/Theme.RoadReady">
+        android:theme="@style/Theme.RoadReady"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true">
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyC_jIk3sA0d_O2j9lomi1Pgm6wz77Y_2yw" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

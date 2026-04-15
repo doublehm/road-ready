@@ -1,0 +1,1299 @@
+type,timestamp,lat,lng,value,severity,description,limit,excess,zone_type,speed,ride_id
+vertical_impact,1771107923098.0,49.1193878,-122.6243024,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771107924098.0,49.1193878,-122.6243024,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771107925176.0,49.1195297,-122.6243051,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771107926233.0,49.1196677,-122.6243095,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771107927310.0,49.1198042,-122.6243147,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771107928393.0,49.1199425,-122.6243202,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771107929462.0,49.1200858,-122.6243211,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771107930520.0,49.1202353,-122.6243188,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107931588.0,49.1205448,-122.6243121,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771107932664.0,49.120702,-122.624309,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771107933722.0,49.1208617,-122.6243095,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771107934792.0,49.1210193,-122.6243097,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771107935874.0,49.1211668,-122.6243108,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107936942.0,49.1213074,-122.6243129,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771107938009.0,49.1214408,-122.6243109,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771107939077.0,49.121569,-122.624309,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107940144.0,49.121692,-122.6243074,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107941212.0,49.1218128,-122.6243047,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107942280.0,49.1219313,-122.624301,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107943339.0,49.1220492,-122.6242957,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107944407.0,49.1221688,-122.6242935,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107945476.0,49.1222931,-122.6242891,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107946541.0,49.1224199,-122.6242892,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107947610.0,49.122688,-122.6242888,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107948685.0,49.1228242,-122.6242853,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771107949761.0,49.1229613,-122.6242851,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107950821.0,49.1231038,-122.6242838,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771107951873.0,49.123246,-122.6242825,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107952956.0,49.123379,-122.6242764,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107954035.0,49.1235006,-122.6242733,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771107955128.0,49.1236146,-122.624273,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771107956159.0,49.1237196,-122.6242728,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107957226.0,49.1238205,-122.6242727,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771107958294.0,49.1239149,-122.6242729,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771107959371.0,49.1240048,-122.6242734,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771107960457.0,49.1240895,-122.6242715,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771107961530.0,49.1241704,-122.6242669,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771107962598.0,49.1243527,-122.624261,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771107963657.0,49.1244592,-122.6242571,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771107964734.0,49.1245702,-122.6242522,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771107965792.0,49.1246894,-122.6242435,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771107966877.0,49.1248167,-122.6242331,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107967953.0,49.1249442,-122.6242226,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771107969030.0,49.1250664,-122.6242133,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107970123.0,49.1251829,-122.6242103,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771107971189.0,49.1252924,-122.6242102,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771107972294.0,49.125393,-122.6242125,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107973296.0,49.1254887,-122.6242138,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107974345.0,49.1255818,-122.6242164,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771107975393.0,49.1256689,-122.6242158,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771107976460.0,49.1257463,-122.624222,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+sudden_stop,1771107977216.0,49.1258069,-122.624235,8.85,high,Sudden stop: 8.9 km/h drop in 993.0s,,,,,2
+vertical_impact,1771107977545.0,49.1258069,-122.624235,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771107978597.0,49.1258691,-122.6242545,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771107979664.0,49.1258691,-122.6242545,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771107980723.0,49.1258691,-122.6242545,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771107981791.0,49.1258691,-122.6242545,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771107982841.0,49.1258691,-122.6242545,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107983902.0,49.1258691,-122.6242545,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107984970.0,49.1258691,-122.6242545,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771107986011.0,49.1258691,-122.6242545,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107987078.0,49.1259142,-122.6242813,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107988163.0,49.1259142,-122.6242813,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107989233.0,49.1259142,-122.6242813,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107990298.0,49.1259142,-122.6242813,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107991374.0,49.1259142,-122.6242813,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107992441.0,49.1259142,-122.6242813,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107993509.0,49.1259142,-122.6242813,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771107994562.0,49.1259142,-122.6242813,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771107995638.0,49.1259142,-122.6242813,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771107996696.0,49.1259142,-122.6242813,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107997772.0,49.1259142,-122.6242813,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771107998827.0,49.1259142,-122.6242813,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771107999899.0,49.1259142,-122.6242813,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108000966.0,49.1259142,-122.6242813,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108002046.0,49.125959,-122.6243219,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108003119.0,49.125959,-122.6243219,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108004187.0,49.125959,-122.6243219,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108005264.0,49.125959,-122.6243219,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108006331.0,49.125959,-122.6243219,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108007382.0,49.125959,-122.6243219,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108008466.0,49.125959,-122.6243219,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108009529.0,49.125959,-122.6243219,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108010601.0,49.125959,-122.6243219,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108011668.0,49.1260079,-122.6243541,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108012745.0,49.1260079,-122.6243541,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108013823.0,49.1260564,-122.6243899,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108014889.0,49.1260564,-122.6243899,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108015965.0,49.1261023,-122.6244389,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108017035.0,49.1261023,-122.6244389,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108018095.0,49.1261667,-122.6245205,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108019153.0,49.1262058,-122.624571,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108020220.0,49.1262499,-122.6246256,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108021288.0,49.1262988,-122.6246737,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108022364.0,49.1263545,-122.6247043,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108023439.0,49.1264161,-122.6247106,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108024507.0,49.1264814,-122.6246819,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108025567.0,49.126549,-122.6246142,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108026635.0,49.1266896,-122.6244133,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108027711.0,49.1267712,-122.6242927,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108028787.0,49.1268607,-122.6241601,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108029838.0,49.1269543,-122.6240196,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108030913.0,49.1270481,-122.6238819,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108031990.0,49.1271393,-122.6237567,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108033066.0,49.1272266,-122.6236354,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108034134.0,49.1273107,-122.6235195,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108035210.0,49.1273916,-122.6234072,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108036300.0,49.1274713,-122.6232922,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108037330.0,49.1275539,-122.6231694,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108038405.0,49.1276447,-122.6230394,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108039480.0,49.1277398,-122.6229029,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108040532.0,49.1278395,-122.622763,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108041600.0,49.1280431,-122.6224797,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108042659.0,49.128148,-122.6223363,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108043727.0,49.1282563,-122.6221864,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108044794.0,49.1283665,-122.6220322,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108045862.0,49.1284821,-122.6218739,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108046921.0,49.1285978,-122.621716,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108047989.0,49.1287111,-122.6215611,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108049056.0,49.1288244,-122.6214017,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108050116.0,49.1289388,-122.6212401,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108051184.0,49.1290538,-122.6210698,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108052261.0,49.129172,-122.6208964,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108053343.0,49.1292914,-122.6207217,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108054403.0,49.1294123,-122.6205422,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108055480.0,49.1295344,-122.6203596,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108056564.0,49.129657,-122.6201784,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108057648.0,49.1298922,-122.6198247,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108058733.0,49.1299978,-122.6196718,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+sudden_stop,1771108059084.0,49.1299978,-122.6196718,7.74,high,Sudden stop: 7.7 km/h drop in 1007.0s,,,,,2
+vertical_impact,1771108059792.0,49.1300902,-122.6195374,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108060851.0,49.1301767,-122.619408,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108061918.0,49.130261,-122.619284,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108062978.0,49.1303457,-122.6191582,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108064046.0,49.1304303,-122.6190357,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108065125.0,49.1305149,-122.6189119,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108066183.0,49.1306031,-122.6187847,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108067249.0,49.1306888,-122.6186686,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108068309.0,49.1307706,-122.6185569,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108069368.0,49.1308498,-122.6184454,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108070378.0,49.1309284,-122.6183335,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108071412.0,49.1310111,-122.6182198,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108072487.0,49.1310961,-122.6180988,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108073558.0,49.131184,-122.6179765,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108074622.0,49.1313489,-122.6177348,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+sudden_stop,1771108075077.0,49.1313489,-122.6177348,8.37,high,Sudden stop: 8.4 km/h drop in 950.0s,,,,,2
+vertical_impact,1771108075674.0,49.1314098,-122.6176448,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108076758.0,49.1314465,-122.6175871,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108077818.0,49.1314465,-122.6175871,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108078886.0,49.1314465,-122.6175871,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108079962.0,49.1314465,-122.6175871,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108081046.0,49.1314465,-122.6175871,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108082100.0,49.1314914,-122.6175231,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108083149.0,49.1314914,-122.6175231,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108084217.0,49.1314914,-122.6175231,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108085295.0,49.1314914,-122.6175231,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108086388.0,49.1314914,-122.6175231,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108087419.0,49.1314914,-122.6175231,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108088481.0,49.1314914,-122.6175231,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108089556.0,49.1314914,-122.6175231,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108090615.0,49.1314914,-122.6175231,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108091674.0,49.1314914,-122.6175231,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108092734.0,49.1314914,-122.6175231,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108093809.0,49.1315373,-122.6174664,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108094870.0,49.1315373,-122.6174664,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108095953.0,49.1315373,-122.6174664,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108097021.0,49.1315373,-122.6174664,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108098081.0,49.1315373,-122.6174664,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108099149.0,49.1315373,-122.6174664,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108100208.0,49.1315373,-122.6174664,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108101268.0,49.1315972,-122.6173834,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108102345.0,49.1315972,-122.6173834,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108103413.0,49.1316472,-122.6173434,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108104427.0,49.1317029,-122.6173349,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108105455.0,49.1317626,-122.6173641,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108106515.0,49.1318174,-122.6174273,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108107583.0,49.1318645,-122.6175122,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108108642.0,49.1319833,-122.6177368,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108109710.0,49.1320565,-122.617867,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108110769.0,49.132137,-122.6180111,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108111829.0,49.1322237,-122.6181643,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108112913.0,49.1323176,-122.6183294,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108113973.0,49.1324135,-122.618505,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108115058.0,49.1325147,-122.6186867,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108116135.0,49.1326175,-122.6188757,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108117219.0,49.132723,-122.6190616,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108118280.0,49.1328256,-122.6192429,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108119338.0,49.13293,-122.6194317,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108120436.0,49.1330425,-122.619629,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108121484.0,49.1331581,-122.6198312,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108122542.0,49.1332747,-122.620039,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108123618.0,49.1335134,-122.6204506,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108124686.0,49.1336302,-122.6206524,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108125745.0,49.1337483,-122.6208511,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108126805.0,49.133863,-122.6210511,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108127857.0,49.1339781,-122.621257,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108128925.0,49.1340967,-122.6214659,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108129994.0,49.1342199,-122.6216797,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108131060.0,49.1343419,-122.6218911,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108132127.0,49.1344618,-122.6221026,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108133195.0,49.1345795,-122.6223142,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108134263.0,49.1346987,-122.6225272,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108135331.0,49.1348174,-122.6227456,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108136416.0,49.1349368,-122.6229601,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108137484.0,49.1350557,-122.6231679,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108138560.0,49.1351702,-122.6233704,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108139627.0,49.1353798,-122.6237453,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108140695.0,49.1354778,-122.6239074,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108141772.0,49.135582,-122.6240463,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108142831.0,49.1356993,-122.6241485,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108143909.0,49.1358364,-122.6241935,0.89,high,Vertical impact detected: 0.89g variance,,,,,2
+vertical_impact,1771108144974.0,49.1359821,-122.6242044,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108146043.0,49.1361333,-122.6241998,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108147099.0,49.13629,-122.6242005,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108148169.0,49.1364542,-122.6242048,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108149247.0,49.1366261,-122.6242033,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108150306.0,49.1368047,-122.6242004,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108151364.0,49.1369892,-122.6242006,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108152432.0,49.1371749,-122.6242006,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108153501.0,49.1373652,-122.6242027,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108154560.0,49.1375595,-122.6242007,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108155619.0,49.1379598,-122.6242008,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108156696.0,49.1381598,-122.6241994,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108157763.0,49.1383537,-122.6241966,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108158850.0,49.1385432,-122.6241954,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108159916.0,49.1387346,-122.6241967,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108160975.0,49.1389304,-122.6241977,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108162021.0,49.1391285,-122.6242021,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108163121.0,49.1393306,-122.6242057,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108164171.0,49.1395345,-122.6242093,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108165239.0,49.1397398,-122.6242124,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108166317.0,49.1399462,-122.6242129,1.12,high,Vertical impact detected: 1.12g variance,,,,,2
+vertical_impact,1771108167374.0,49.1401528,-122.6242129,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108168442.0,49.1403627,-122.624214,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108169511.0,49.1405728,-122.6242145,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108170569.0,49.1407814,-122.6242138,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108171636.0,49.1411943,-122.6242144,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108172714.0,49.1413973,-122.624214,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108173789.0,49.1415983,-122.6242138,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108174851.0,49.1417965,-122.6242117,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108175933.0,49.1419919,-122.6242099,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108177017.0,49.1421846,-122.6242113,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108178091.0,49.1423768,-122.6242106,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108179152.0,49.1425708,-122.624212,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108180220.0,49.142764,-122.6242137,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108181296.0,49.1429598,-122.6242159,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108182372.0,49.1431526,-122.6242145,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108183448.0,49.1433449,-122.6242126,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108184519.0,49.1435362,-122.6242116,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108185576.0,49.1437319,-122.6242113,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108186668.0,49.1441197,-122.6242134,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108187744.0,49.1443173,-122.6242139,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108188829.0,49.1445135,-122.6242109,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108189896.0,49.1447092,-122.624211,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108190972.0,49.1449066,-122.624209,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108192032.0,49.145105,-122.624209,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108193126.0,49.1452957,-122.6242091,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108194216.0,49.1454815,-122.6242092,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108195284.0,49.1456638,-122.6242074,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108196344.0,49.1458386,-122.6242023,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108197420.0,49.1460055,-122.624196,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108198488.0,49.1461646,-122.6241896,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108199571.0,49.1463218,-122.6241831,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108200649.0,49.1466107,-122.6241768,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+sudden_stop,1771108201068.0,49.1466107,-122.6241768,7.06,high,Sudden stop: 7.1 km/h drop in 1007.0s,,,,,2
+vertical_impact,1771108201707.0,49.1467305,-122.624177,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108202783.0,49.1468347,-122.6241741,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108203850.0,49.1469234,-122.6241716,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108204926.0,49.1470003,-122.6241679,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108205993.0,49.1470688,-122.6241632,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108207063.0,49.1471256,-122.6241599,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108208121.0,49.1471777,-122.624158,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108209180.0,49.1471777,-122.624158,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108210242.0,49.1471777,-122.624158,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108211315.0,49.1471777,-122.624158,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108212382.0,49.1472381,-122.6241589,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108213433.0,49.1472381,-122.6241589,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108214501.0,49.1472381,-122.6241589,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108215568.0,49.1472381,-122.6241589,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108216629.0,49.1473473,-122.6241586,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108217680.0,49.1474218,-122.6241537,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108218747.0,49.147509,-122.6241508,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108219822.0,49.1476085,-122.6241495,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108220882.0,49.1477242,-122.6241516,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108221949.0,49.1478508,-122.6241509,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108223018.0,49.1479878,-122.6241517,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108224099.0,49.1481332,-122.6241535,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108225169.0,49.1482853,-122.6241535,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108226228.0,49.1484443,-122.6241511,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108227312.0,49.1486134,-122.6241518,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108228390.0,49.1487866,-122.6241502,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108229464.0,49.1489637,-122.6241463,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108230533.0,49.1491485,-122.6241443,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108231601.0,49.1495277,-122.6241424,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108232700.0,49.1497164,-122.6241391,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108233743.0,49.1499079,-122.6241373,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108234819.0,49.1501039,-122.6241366,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108235886.0,49.1503023,-122.624132,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108236962.0,49.1505008,-122.6241246,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108238029.0,49.1507049,-122.6241168,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108239110.0,49.1509049,-122.624109,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108240145.0,49.1511013,-122.6240988,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108241190.0,49.1512914,-122.6240893,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108242266.0,49.1514743,-122.62408,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108243322.0,49.1516493,-122.6240746,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+sudden_stop,1771108244061.0,49.1518119,-122.6240717,9.01,high,Sudden stop: 9.0 km/h drop in 977.0s,,,,,2
+vertical_impact,1771108244393.0,49.1518119,-122.6240717,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108245468.0,49.1519501,-122.6240776,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108246520.0,49.1520611,-122.6240779,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+sudden_stop,1771108247089.0,49.1521471,-122.624082,9.28,high,Sudden stop: 9.3 km/h drop in 1008.0s,,,,,2
+vertical_impact,1771108247588.0,49.1522072,-122.6240842,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108248656.0,49.1522072,-122.6240842,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108249722.0,49.1522072,-122.6240842,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108250787.0,49.1522072,-122.6240842,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108251859.0,49.1522072,-122.6240842,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108252924.0,49.1522072,-122.6240842,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108253993.0,49.1522537,-122.6240875,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108255060.0,49.1522537,-122.6240875,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108256144.0,49.1522537,-122.6240875,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108257228.0,49.1522537,-122.6240875,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108258287.0,49.1522537,-122.6240875,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108259372.0,49.1522537,-122.6240875,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108260439.0,49.1522537,-122.6240875,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108261499.0,49.1523029,-122.6240851,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108262565.0,49.1523029,-122.6240851,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108263635.0,49.152415,-122.6240805,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108264709.0,49.152478,-122.6240772,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108265777.0,49.1525456,-122.6240764,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108266844.0,49.1526078,-122.6240733,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108267913.0,49.1526627,-122.6240694,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108268979.0,49.1527163,-122.6240675,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108270039.0,49.1527702,-122.6240675,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108271123.0,49.1528359,-122.6240669,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108272199.0,49.1528359,-122.6240669,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108273275.0,49.1528359,-122.6240669,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108274334.0,49.1528359,-122.6240669,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108275410.0,49.1528359,-122.6240669,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108276478.0,49.1528359,-122.6240669,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108277552.0,49.1528966,-122.6240702,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108278621.0,49.1528966,-122.6240702,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108279705.0,49.1528966,-122.6240702,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108280773.0,49.1528966,-122.6240702,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108281848.0,49.1528966,-122.6240702,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108282907.0,49.1529651,-122.6241056,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108283984.0,49.1530048,-122.6241631,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108285068.0,49.1530348,-122.6242633,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108286128.0,49.1530516,-122.6243963,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108287203.0,49.1530585,-122.6245624,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108288271.0,49.1530615,-122.6247492,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108289337.0,49.1530637,-122.6249606,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108290421.0,49.1530684,-122.6251913,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108291499.0,49.153078,-122.6254415,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108292559.0,49.1530964,-122.6257106,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108293607.0,49.1531723,-122.6262793,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108294684.0,49.1532273,-122.6265755,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108295759.0,49.153292,-122.6268789,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108296836.0,49.1533641,-122.6271897,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108297915.0,49.1534363,-122.6275027,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108298981.0,49.153511,-122.6278221,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108300047.0,49.15359,-122.628147,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108301067.0,49.1536697,-122.628479,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108302137.0,49.1537537,-122.628819,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+speeding,1771108303099.0,49.1538406,-122.6291622,97.4,high,97.0 km/h in a 80 km/h zone (17.0 km/h over),80.0,17.4,regular,,2
+vertical_impact,1771108303174.0,49.1538406,-122.6291622,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108304259.0,49.1539244,-122.6295154,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108305335.0,49.1540132,-122.6298722,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108306394.0,49.1541032,-122.6302313,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108307462.0,49.1541946,-122.6305953,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771108308084.0,49.1542855,-122.6309539,100.3,high,100.0 km/h in a 80 km/h zone (20.0 km/h over),80.0,20.3,regular,,2
+vertical_impact,1771108308538.0,49.1542855,-122.6309539,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108309605.0,49.154472,-122.6316666,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108310682.0,49.1545688,-122.6320293,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108311748.0,49.1546674,-122.6323943,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108312825.0,49.1547667,-122.6327615,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108313160.0,49.1547667,-122.6327615,104.8,high,105.0 km/h in a 80 km/h zone (25.0 km/h over),80.0,24.8,regular,,2
+vertical_impact,1771108313883.0,49.1548659,-122.6331318,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108314959.0,49.1549659,-122.6335063,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771108316010.0,49.1550701,-122.6338771,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108317070.0,49.1551677,-122.6342452,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+speeding,1771108318072.0,49.1552661,-122.6346089,103.3,high,103.0 km/h in a 80 km/h zone (23.0 km/h over),80.0,23.3,regular,,2
+vertical_impact,1771108318137.0,49.1552661,-122.6346089,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108319205.0,49.155366,-122.6349745,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108320281.0,49.1554651,-122.6353439,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108321357.0,49.1555659,-122.6357188,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108322416.0,49.1556701,-122.6360969,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108323093.0,49.1557722,-122.6364755,106.7,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,26.7,regular,,2
+vertical_impact,1771108323492.0,49.1557722,-122.6364755,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108324559.0,49.1558709,-122.6368531,1.1,high,Vertical impact detected: 1.1g variance,,,,,2
+vertical_impact,1771108325628.0,49.1560589,-122.637602,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108326703.0,49.156152,-122.6379732,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108327763.0,49.1562487,-122.6383412,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108328063.0,49.1562487,-122.6383412,102.8,high,103.0 km/h in a 80 km/h zone (23.0 km/h over),80.0,22.8,regular,,2
+vertical_impact,1771108328830.0,49.1563441,-122.6386997,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108329889.0,49.1564364,-122.6390588,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108330940.0,49.1565305,-122.6394164,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108331990.0,49.1566282,-122.6397825,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108333050.0,49.1567243,-122.6401502,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771108333082.0,49.1567243,-122.6401502,104.4,high,104.0 km/h in a 80 km/h zone (24.0 km/h over),80.0,24.4,regular,,2
+vertical_impact,1771108334121.0,49.1568228,-122.6405206,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108335206.0,49.1569215,-122.6408946,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108336269.0,49.1570202,-122.641272,0.83,high,Vertical impact detected: 0.83g variance,,,,,2
+vertical_impact,1771108337337.0,49.1571185,-122.6416547,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108338117.0,49.1572162,-122.6420341,106.7,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,26.7,regular,,2
+vertical_impact,1771108338382.0,49.1572162,-122.6420341,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108339447.0,49.1573173,-122.6424105,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108340531.0,49.1574195,-122.6427915,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108341607.0,49.1576265,-122.6435568,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108342682.0,49.1577311,-122.6439388,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771108343073.0,49.1577311,-122.6439388,108.0,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,28.0,regular,,2
+vertical_impact,1771108343776.0,49.157833,-122.6443197,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108344837.0,49.1579346,-122.644699,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108345911.0,49.1580368,-122.645086,1.11,high,Vertical impact detected: 1.11g variance,,,,,2
+vertical_impact,1771108346995.0,49.1581383,-122.645473,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108348062.0,49.1582388,-122.645856,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771108348120.0,49.1582388,-122.645856,108.4,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,28.4,regular,,2
+vertical_impact,1771108349132.0,49.1583387,-122.646237,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108350213.0,49.1584402,-122.6466208,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108351293.0,49.158542,-122.6470087,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108352366.0,49.1586449,-122.6473991,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+speeding,1771108353095.0,49.1587463,-122.6477843,109.2,high,109.0 km/h in a 80 km/h zone (29.0 km/h over),80.0,29.2,regular,,2
+vertical_impact,1771108353435.0,49.1587463,-122.6477843,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108354500.0,49.1588487,-122.6481712,1.13,high,Vertical impact detected: 1.13g variance,,,,,2
+vertical_impact,1771108355576.0,49.1589497,-122.6485575,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108356652.0,49.159155,-122.6493395,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108357728.0,49.159257,-122.6497271,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108358105.0,49.159257,-122.6497271,111.0,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,31.0,regular,,2
+vertical_impact,1771108358803.0,49.1593579,-122.6501176,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108359880.0,49.1594632,-122.6505144,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108360955.0,49.159569,-122.6509092,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108362030.0,49.1596717,-122.6513003,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771108363084.0,49.1597757,-122.6516879,110.2,high,110.0 km/h in a 80 km/h zone (30.0 km/h over),80.0,30.2,regular,,2
+vertical_impact,1771108363144.0,49.1597757,-122.6516879,1.14,high,Vertical impact detected: 1.14g variance,,,,,2
+vertical_impact,1771108364182.0,49.1598796,-122.6520774,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108365249.0,49.1599846,-122.6524709,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108366300.0,49.1600915,-122.652865,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108367415.0,49.1601951,-122.6532576,1.1,high,Vertical impact detected: 1.1g variance,,,,,2
+speeding,1771108368063.0,49.1602969,-122.653651,110.6,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,30.6,regular,,2
+vertical_impact,1771108368438.0,49.1602969,-122.653651,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108369575.0,49.1603991,-122.6540414,0.89,high,Vertical impact detected: 0.89g variance,,,,,2
+vertical_impact,1771108370596.0,49.1605006,-122.6544289,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108371663.0,49.1607048,-122.6552004,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108372741.0,49.1608036,-122.6555903,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+speeding,1771108373097.0,49.1608036,-122.6555903,109.4,high,109.0 km/h in a 80 km/h zone (29.0 km/h over),80.0,29.4,regular,,2
+vertical_impact,1771108373815.0,49.1609038,-122.6559815,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108374892.0,49.1610044,-122.6563737,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108375968.0,49.1611047,-122.6567692,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108377042.0,49.1612075,-122.6571665,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+speeding,1771108378070.0,49.1613121,-122.6575652,113.1,high,113.0 km/h in a 80 km/h zone (33.0 km/h over),80.0,33.1,regular,,2
+vertical_impact,1771108378119.0,49.1613121,-122.6575652,0.89,high,Vertical impact detected: 0.89g variance,,,,,2
+vertical_impact,1771108379160.0,49.1614204,-122.6579635,1.11,high,Vertical impact detected: 1.11g variance,,,,,2
+vertical_impact,1771108380228.0,49.1615276,-122.6583648,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108381296.0,49.1616308,-122.6587631,0.81,high,Vertical impact detected: 0.81g variance,,,,,2
+vertical_impact,1771108382371.0,49.1617328,-122.6591561,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+speeding,1771108383083.0,49.1618335,-122.6595535,111.8,high,112.0 km/h in a 80 km/h zone (32.0 km/h over),80.0,31.8,regular,,2
+vertical_impact,1771108383430.0,49.1618335,-122.6595535,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108384490.0,49.1619369,-122.6599495,1.11,high,Vertical impact detected: 1.11g variance,,,,,2
+vertical_impact,1771108385494.0,49.162043,-122.6603506,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108386542.0,49.1621528,-122.6607521,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108387627.0,49.1623697,-122.6615725,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+speeding,1771108388077.0,49.1623697,-122.6615725,116.2,high,116.0 km/h in a 80 km/h zone (36.0 km/h over),80.0,36.2,regular,,2
+vertical_impact,1771108388685.0,49.1624783,-122.6619822,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108389769.0,49.1625848,-122.6623922,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+vertical_impact,1771108390855.0,49.1626932,-122.6628033,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108391929.0,49.1628029,-122.6632122,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108392996.0,49.1629174,-122.6636216,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+speeding,1771108393104.0,49.1629174,-122.6636216,116.3,high,116.0 km/h in a 80 km/h zone (36.0 km/h over),80.0,36.3,regular,,2
+vertical_impact,1771108394073.0,49.1630313,-122.6640341,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108395159.0,49.1631448,-122.6644453,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108396234.0,49.1632586,-122.6648509,0.85,high,Vertical impact detected: 0.85g variance,,,,,2
+vertical_impact,1771108397299.0,49.1633692,-122.6652534,0.85,high,Vertical impact detected: 0.85g variance,,,,,2
+speeding,1771108398093.0,49.1634767,-122.6656568,114.3,high,114.0 km/h in a 80 km/h zone (34.0 km/h over),80.0,34.3,regular,,2
+vertical_impact,1771108398359.0,49.1634767,-122.6656568,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108399434.0,49.1635836,-122.6660612,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108400501.0,49.16369,-122.6664686,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108401561.0,49.1637949,-122.666868,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108402621.0,49.1640055,-122.6676617,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+speeding,1771108403079.0,49.1640055,-122.6676617,112.8,high,113.0 km/h in a 80 km/h zone (33.0 km/h over),80.0,32.8,regular,,2
+vertical_impact,1771108403688.0,49.1641097,-122.6680618,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108404756.0,49.1642139,-122.6684628,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108405840.0,49.1643187,-122.6688655,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108406910.0,49.1644242,-122.6692681,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108407984.0,49.1645295,-122.6696709,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+speeding,1771108408068.0,49.1645295,-122.6696709,114.5,high,115.0 km/h in a 80 km/h zone (35.0 km/h over),80.0,34.5,regular,,2
+vertical_impact,1771108409052.0,49.1646362,-122.6700737,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108410160.0,49.1647392,-122.6704729,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771108411194.0,49.1648409,-122.670866,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108412271.0,49.164937,-122.6712568,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+speeding,1771108413083.0,49.1650336,-122.6716488,110.4,high,110.0 km/h in a 80 km/h zone (30.0 km/h over),80.0,30.4,regular,,2
+vertical_impact,1771108413347.0,49.1650336,-122.6716488,0.77,medium,Vertical impact detected: 0.77g variance,,,,,2
+vertical_impact,1771108414422.0,49.1651315,-122.6720412,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108415490.0,49.165232,-122.6724368,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108416550.0,49.1653317,-122.6728314,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108417645.0,49.1655369,-122.6736213,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+speeding,1771108418089.0,49.1655369,-122.6736213,111.6,high,112.0 km/h in a 80 km/h zone (32.0 km/h over),80.0,31.6,regular,,2
+vertical_impact,1771108418686.0,49.1656415,-122.6740174,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108419771.0,49.1657466,-122.6744144,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108420837.0,49.1658529,-122.6748137,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108421914.0,49.1659597,-122.675214,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108422991.0,49.1660654,-122.6756119,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108423089.0,49.1660654,-122.6756119,113.6,high,114.0 km/h in a 80 km/h zone (34.0 km/h over),80.0,33.6,regular,,2
+vertical_impact,1771108424056.0,49.1661684,-122.6760136,0.82,high,Vertical impact detected: 0.82g variance,,,,,2
+vertical_impact,1771108425120.0,49.1662758,-122.6764168,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771108426183.0,49.1663857,-122.6768216,1.13,high,Vertical impact detected: 1.13g variance,,,,,2
+vertical_impact,1771108427260.0,49.1664931,-122.6772277,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+speeding,1771108428122.0,49.1666028,-122.6776362,115.6,high,116.0 km/h in a 80 km/h zone (36.0 km/h over),80.0,35.6,regular,,2
+vertical_impact,1771108428335.0,49.1666028,-122.6776362,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108429411.0,49.1667113,-122.6780432,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108430495.0,49.1668182,-122.6784496,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108431563.0,49.1669247,-122.6788527,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108432639.0,49.1671361,-122.6796437,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108433093.0,49.1671361,-122.6796437,111.1,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,31.1,regular,,2
+vertical_impact,1771108433715.0,49.1672388,-122.6800352,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108434782.0,49.1673392,-122.6804202,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108435850.0,49.1674372,-122.6807993,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108436919.0,49.1675365,-122.6811766,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108438001.0,49.1676377,-122.6815552,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771108438081.0,49.1676377,-122.6815552,106.9,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,26.9,regular,,2
+vertical_impact,1771108439071.0,49.1677395,-122.6819332,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108440217.0,49.1678414,-122.6823143,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108441220.0,49.167943,-122.6826981,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108442281.0,49.1680444,-122.683086,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+speeding,1771108443133.0,49.1681475,-122.6834781,111.0,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,31.0,regular,,2
+vertical_impact,1771108443339.0,49.1681475,-122.6834781,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108444400.0,49.1682519,-122.6838707,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108445466.0,49.1683571,-122.684267,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108446534.0,49.1684624,-122.6846633,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108447618.0,49.1686685,-122.6854611,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771108448105.0,49.1686685,-122.6854611,111.1,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,31.1,regular,,2
+vertical_impact,1771108448694.0,49.1687714,-122.6858512,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108449745.0,49.1688733,-122.6862331,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108450805.0,49.1689743,-122.6866134,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108451816.0,49.1690746,-122.686996,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108452840.0,49.1691739,-122.6873786,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771108453105.0,49.1691739,-122.6873786,108.2,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,28.2,regular,,2
+vertical_impact,1771108453915.0,49.1692723,-122.6877626,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108454991.0,49.1693739,-122.6881478,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108456067.0,49.1694778,-122.688532,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108457149.0,49.1695808,-122.6889176,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108458081.0,49.1696813,-122.6893073,110.2,high,110.0 km/h in a 80 km/h zone (30.0 km/h over),80.0,30.2,regular,,2
+vertical_impact,1771108458220.0,49.1696813,-122.6893073,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108459279.0,49.1697829,-122.6896944,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108460356.0,49.1698898,-122.690081,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108461423.0,49.169995,-122.6904686,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108462467.0,49.1701009,-122.6908571,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108463079.0,49.1702073,-122.6912483,110.6,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,30.6,regular,,2
+vertical_impact,1771108463525.0,49.1702073,-122.6912483,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108464584.0,49.1703114,-122.6916344,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108465636.0,49.1705142,-122.6924058,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108466713.0,49.1706152,-122.6927889,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108467782.0,49.1707162,-122.6931719,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+speeding,1771108468071.0,49.1707162,-122.6931719,109.0,high,109.0 km/h in a 80 km/h zone (29.0 km/h over),80.0,29.0,regular,,2
+vertical_impact,1771108468847.0,49.1708159,-122.693553,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108469906.0,49.1709138,-122.6939305,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108470976.0,49.1710109,-122.6943078,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108472051.0,49.171111,-122.6946861,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108473118.0,49.1712129,-122.6950634,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108473147.0,49.1712129,-122.6950634,107.6,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,27.6,regular,,2
+vertical_impact,1771108474182.0,49.1713126,-122.6954435,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108475245.0,49.171413,-122.6958249,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108476298.0,49.1715116,-122.6962112,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108477348.0,49.1716138,-122.6965986,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771108478078.0,49.1717157,-122.6969881,109.6,high,110.0 km/h in a 80 km/h zone (30.0 km/h over),80.0,29.6,regular,,2
+vertical_impact,1771108478424.0,49.1717157,-122.6969881,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108479508.0,49.171818,-122.6973772,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108480584.0,49.1719197,-122.6977699,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108481652.0,49.1721236,-122.6985545,0.81,high,Vertical impact detected: 0.81g variance,,,,,2
+vertical_impact,1771108482712.0,49.1722267,-122.698946,0.81,high,Vertical impact detected: 0.81g variance,,,,,2
+speeding,1771108483090.0,49.1722267,-122.698946,111.7,high,112.0 km/h in a 80 km/h zone (32.0 km/h over),80.0,31.7,regular,,2
+vertical_impact,1771108483796.0,49.1723294,-122.6993366,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108484858.0,49.1724326,-122.6997266,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108485932.0,49.1725329,-122.7001086,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108486991.0,49.1726321,-122.7004848,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108488059.0,49.1727307,-122.7008539,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108488110.0,49.1727307,-122.7008539,103.9,high,104.0 km/h in a 80 km/h zone (24.0 km/h over),80.0,23.9,regular,,2
+vertical_impact,1771108489129.0,49.1728266,-122.7012151,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108490195.0,49.1729221,-122.7015716,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108491254.0,49.1730171,-122.7019275,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108492331.0,49.1731107,-122.7022819,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771108493075.0,49.1732044,-122.7026394,100.6,high,101.0 km/h in a 80 km/h zone (21.0 km/h over),80.0,20.6,regular,,2
+vertical_impact,1771108493398.0,49.1732044,-122.7026394,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108494451.0,49.1732965,-122.7029949,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108495509.0,49.17339,-122.7033494,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108496577.0,49.1734807,-122.7037114,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108497652.0,49.1736724,-122.7044433,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+speeding,1771108498071.0,49.1736724,-122.7044433,103.8,high,104.0 km/h in a 80 km/h zone (24.0 km/h over),80.0,23.8,regular,,2
+vertical_impact,1771108498713.0,49.1737683,-122.7048093,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108499781.0,49.1738667,-122.7051777,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108500875.0,49.1739639,-122.705546,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108501900.0,49.1740608,-122.7059162,1.14,high,Vertical impact detected: 1.14g variance,,,,,2
+vertical_impact,1771108502966.0,49.174159,-122.7062897,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771108503107.0,49.174159,-122.7062897,105.5,high,106.0 km/h in a 80 km/h zone (26.0 km/h over),80.0,25.5,regular,,2
+vertical_impact,1771108504043.0,49.1742585,-122.7066645,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108505132.0,49.1743596,-122.7070402,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108506180.0,49.1744581,-122.7074168,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771108507249.0,49.1745574,-122.7077934,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108508092.0,49.1746565,-122.7081694,106.6,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,26.6,regular,,2
+vertical_impact,1771108508315.0,49.1746565,-122.7081694,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108509392.0,49.1747562,-122.7085479,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108510493.0,49.1748552,-122.7089218,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108511550.0,49.1749543,-122.7092953,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108512619.0,49.1750516,-122.7096681,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+speeding,1771108513170.0,49.1751501,-122.7100411,105.7,high,106.0 km/h in a 80 km/h zone (26.0 km/h over),80.0,25.7,regular,,2
+vertical_impact,1771108513685.0,49.1752487,-122.7104128,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108514745.0,49.1753479,-122.710785,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108515812.0,49.1754473,-122.7111615,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108516901.0,49.1755504,-122.7115402,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108517958.0,49.1756504,-122.7119213,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+speeding,1771108518125.0,49.1756504,-122.7119213,107.6,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,27.6,regular,,2
+vertical_impact,1771108519034.0,49.1757521,-122.7123025,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108520100.0,49.1758538,-122.7126858,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108521170.0,49.1759554,-122.7130682,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108522236.0,49.1760548,-122.7134509,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+speeding,1771108523156.0,49.1761571,-122.7138364,108.4,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,28.4,regular,,2
+vertical_impact,1771108523299.0,49.1761571,-122.7138364,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108524363.0,49.1762614,-122.7142192,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108525439.0,49.1763639,-122.7146013,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108526516.0,49.1764632,-122.714988,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108527591.0,49.1765645,-122.715375,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771108528117.0,49.1766653,-122.7157638,109.6,high,110.0 km/h in a 80 km/h zone (30.0 km/h over),80.0,29.6,regular,,2
+vertical_impact,1771108528667.0,49.1767667,-122.7161531,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771108529743.0,49.1768679,-122.7165435,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108530811.0,49.1769686,-122.7169325,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108531910.0,49.1770708,-122.7173254,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108532937.0,49.177176,-122.7177159,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+speeding,1771108533120.0,49.177176,-122.7177159,110.4,high,110.0 km/h in a 80 km/h zone (30.0 km/h over),80.0,30.4,regular,,2
+vertical_impact,1771108534013.0,49.1772803,-122.7181074,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108535089.0,49.1773847,-122.7185002,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108536164.0,49.1774881,-122.7188953,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108537216.0,49.1775915,-122.7192889,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+speeding,1771108538071.0,49.177695,-122.719684,111.3,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,31.3,regular,,2
+vertical_impact,1771108538283.0,49.177695,-122.719684,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108539343.0,49.1777995,-122.7200763,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108540419.0,49.1779035,-122.7204704,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108541479.0,49.1780073,-122.7208649,0.89,high,Vertical impact detected: 0.89g variance,,,,,2
+vertical_impact,1771108542530.0,49.1781099,-122.7212587,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108543131.0,49.178213,-122.7216561,112.2,high,112.0 km/h in a 80 km/h zone (32.0 km/h over),80.0,32.2,regular,,2
+vertical_impact,1771108543573.0,49.178213,-122.7216561,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108544632.0,49.178421,-122.7224484,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108545683.0,49.1785268,-122.7228445,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108546752.0,49.1786321,-122.7232389,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771108547827.0,49.1787374,-122.7236367,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771108548129.0,49.1787374,-122.7236367,112.3,high,112.0 km/h in a 80 km/h zone (32.0 km/h over),80.0,32.3,regular,,2
+vertical_impact,1771108548880.0,49.178842,-122.7240342,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108549940.0,49.1789474,-122.7244328,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108550989.0,49.1790527,-122.7248308,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108552057.0,49.1791574,-122.7252308,0.89,high,Vertical impact detected: 0.89g variance,,,,,2
+speeding,1771108553075.0,49.179262,-122.7256273,112.5,high,113.0 km/h in a 80 km/h zone (33.0 km/h over),80.0,32.5,regular,,2
+vertical_impact,1771108553140.0,49.179262,-122.7256273,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+vertical_impact,1771108554204.0,49.179366,-122.7260239,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108555259.0,49.179473,-122.7264232,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108556327.0,49.1795801,-122.7268192,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108557403.0,49.1796873,-122.7272191,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771108558140.0,49.1797919,-122.7276196,112.8,high,113.0 km/h in a 80 km/h zone (33.0 km/h over),80.0,32.8,regular,,2
+vertical_impact,1771108558487.0,49.1797919,-122.7276196,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108559563.0,49.179898,-122.7280192,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108560649.0,49.1801075,-122.7288188,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108561725.0,49.1802129,-122.7292184,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108562792.0,49.1803185,-122.7296141,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108563145.0,49.1803185,-122.7296141,113.2,high,113.0 km/h in a 80 km/h zone (33.0 km/h over),80.0,33.2,regular,,2
+vertical_impact,1771108563851.0,49.1804243,-122.7300134,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108564918.0,49.1805312,-122.7304112,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108565978.0,49.1806341,-122.7308128,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108567061.0,49.1807392,-122.7312125,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+speeding,1771108568065.0,49.1808458,-122.7316126,113.9,high,114.0 km/h in a 80 km/h zone (34.0 km/h over),80.0,33.9,regular,,2
+vertical_impact,1771108568146.0,49.1808458,-122.7316126,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771108569213.0,49.1809531,-122.7320118,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108570256.0,49.1810601,-122.7324142,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108571324.0,49.1811675,-122.7328176,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108572384.0,49.1812761,-122.7332233,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+speeding,1771108573118.0,49.1813828,-122.7336283,114.4,high,114.0 km/h in a 80 km/h zone (34.0 km/h over),80.0,34.4,regular,,2
+vertical_impact,1771108573451.0,49.1813828,-122.7336283,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108574526.0,49.1814913,-122.7340334,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108575620.0,49.1817082,-122.7348513,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108576712.0,49.1818122,-122.735259,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108577781.0,49.1819204,-122.7356676,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+speeding,1771108578122.0,49.1819204,-122.7356676,113.9,high,114.0 km/h in a 80 km/h zone (34.0 km/h over),80.0,33.9,regular,,2
+vertical_impact,1771108578848.0,49.1820304,-122.7360778,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108579932.0,49.182138,-122.7364809,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108581000.0,49.1822453,-122.7368875,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108582064.0,49.1823522,-122.7372969,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+speeding,1771108583097.0,49.1824602,-122.737709,116.8,high,117.0 km/h in a 80 km/h zone (37.0 km/h over),80.0,36.8,regular,,2
+vertical_impact,1771108583148.0,49.1824602,-122.737709,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108584184.0,49.1825672,-122.7381199,0.85,high,Vertical impact detected: 0.85g variance,,,,,2
+vertical_impact,1771108585254.0,49.1826777,-122.7385305,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108586322.0,49.1827848,-122.7389453,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108587381.0,49.1828879,-122.7393575,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108588100.0,49.1829913,-122.7397751,116.5,high,117.0 km/h in a 80 km/h zone (37.0 km/h over),80.0,36.5,regular,,2
+vertical_impact,1771108588440.0,49.1829913,-122.7397751,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108589508.0,49.1830939,-122.7401908,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108590567.0,49.1831962,-122.7406049,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771108591652.0,49.1834005,-122.741437,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108592711.0,49.1835037,-122.7418537,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108593075.0,49.1835037,-122.7418537,116.8,high,117.0 km/h in a 80 km/h zone (37.0 km/h over),80.0,36.8,regular,,2
+vertical_impact,1771108593779.0,49.1836064,-122.7422704,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108594855.0,49.1837131,-122.7426869,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108595922.0,49.1838174,-122.7431097,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108596982.0,49.1839212,-122.7435283,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108598034.0,49.1840242,-122.7439489,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+speeding,1771108598112.0,49.1840242,-122.7439489,118.0,high,118.0 km/h in a 80 km/h zone (38.0 km/h over),80.0,38.0,regular,,2
+vertical_impact,1771108599154.0,49.1841281,-122.7443695,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108600174.0,49.1842311,-122.7447874,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108601245.0,49.1843338,-122.7452094,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108602304.0,49.1844377,-122.7456342,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771108603095.0,49.1845447,-122.7460551,119.7,high,120.0 km/h in a 80 km/h zone (40.0 km/h over),80.0,39.7,regular,,2
+vertical_impact,1771108603389.0,49.1845447,-122.7460551,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108604473.0,49.1846508,-122.7464831,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108605557.0,49.1847556,-122.7469063,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108606633.0,49.1849608,-122.7477485,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108607693.0,49.1850618,-122.748167,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771108608080.0,49.1850618,-122.748167,117.2,high,117.0 km/h in a 80 km/h zone (37.0 km/h over),80.0,37.2,regular,,2
+vertical_impact,1771108608761.0,49.185163,-122.7485907,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108609845.0,49.1852651,-122.7490139,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108610905.0,49.1853679,-122.749439,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108611980.0,49.1854696,-122.7498682,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108613050.0,49.1855745,-122.7502934,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+speeding,1771108613097.0,49.1855745,-122.7502934,119.9,high,120.0 km/h in a 80 km/h zone (40.0 km/h over),80.0,39.9,regular,,2
+vertical_impact,1771108614054.0,49.1856826,-122.7507237,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108615075.0,49.1857878,-122.751155,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108616140.0,49.1858915,-122.7515899,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108617210.0,49.1859976,-122.7520271,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771108618179.0,49.186103,-122.7524627,122.7,high,123.0 km/h in a 80 km/h zone (43.0 km/h over),80.0,42.7,regular,,2
+vertical_impact,1771108618274.0,49.186103,-122.7524627,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108619371.0,49.1862083,-122.7529003,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108620447.0,49.1863105,-122.7533382,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108621514.0,49.1864125,-122.7537715,0.89,high,Vertical impact detected: 0.89g variance,,,,,2
+vertical_impact,1771108622591.0,49.1865117,-122.7542047,1.1,high,Vertical impact detected: 1.1g variance,,,,,2
+speeding,1771108623076.0,49.186611,-122.7546369,119.9,high,120.0 km/h in a 80 km/h zone (40.0 km/h over),80.0,39.9,regular,,2
+vertical_impact,1771108623658.0,49.1867072,-122.7550675,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108624742.0,49.1867997,-122.7554937,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108625810.0,49.1868937,-122.7559166,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108626878.0,49.1869853,-122.7563394,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108627933.0,49.1870757,-122.7567637,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+speeding,1771108628104.0,49.1870757,-122.7567637,117.5,high,117.0 km/h in a 80 km/h zone (37.0 km/h over),80.0,37.5,regular,,2
+vertical_impact,1771108628996.0,49.1871675,-122.7571874,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108630068.0,49.1872576,-122.7576087,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108631175.0,49.1873502,-122.7580225,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108632200.0,49.1874436,-122.7584376,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108633123.0,49.1875378,-122.7588574,117.0,high,117.0 km/h in a 80 km/h zone (37.0 km/h over),80.0,37.0,regular,,2
+vertical_impact,1771108633259.0,49.1875378,-122.7588574,0.84,high,Vertical impact detected: 0.84g variance,,,,,2
+vertical_impact,1771108634327.0,49.1876357,-122.7592686,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108635411.0,49.1877286,-122.7596725,1.1,high,Vertical impact detected: 1.1g variance,,,,,2
+vertical_impact,1771108636495.0,49.1878213,-122.7600745,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108637562.0,49.1879137,-122.7604728,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+speeding,1771108638075.0,49.1880068,-122.7608697,111.1,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,31.1,regular,,2
+vertical_impact,1771108638638.0,49.1881006,-122.7612694,1.18,high,Vertical impact detected: 1.18g variance,,,,,2
+vertical_impact,1771108639715.0,49.1881941,-122.7616687,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108640791.0,49.1882885,-122.7620663,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108641849.0,49.1883851,-122.7624682,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771108642917.0,49.1884799,-122.7628661,1.11,high,Vertical impact detected: 1.11g variance,,,,,2
+speeding,1771108643092.0,49.1884799,-122.7628661,111.7,high,112.0 km/h in a 80 km/h zone (32.0 km/h over),80.0,31.7,regular,,2
+vertical_impact,1771108643984.0,49.1885764,-122.7632669,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108645060.0,49.1886755,-122.7636655,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108646173.0,49.1887745,-122.764062,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771108647203.0,49.1888743,-122.7644554,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+speeding,1771108648125.0,49.1889711,-122.7648413,107.7,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,27.7,regular,,2
+vertical_impact,1771108648207.0,49.1889711,-122.7648413,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108649227.0,49.1890664,-122.7652242,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108650308.0,49.1891626,-122.7656043,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108651374.0,49.18926,-122.7659814,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108652442.0,49.1893563,-122.7663604,1.12,high,Vertical impact detected: 1.12g variance,,,,,2
+speeding,1771108653117.0,49.1894532,-122.7667381,106.2,high,106.0 km/h in a 80 km/h zone (26.0 km/h over),80.0,26.2,regular,,2
+vertical_impact,1771108653509.0,49.1894532,-122.7667381,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108654579.0,49.189548,-122.7671111,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108655652.0,49.1897376,-122.7678546,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108656721.0,49.1898309,-122.7682311,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108657781.0,49.1899263,-122.7686091,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108658138.0,49.1899263,-122.7686091,106.7,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,26.7,regular,,2
+vertical_impact,1771108658864.0,49.1900217,-122.7689889,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108659916.0,49.1901174,-122.7693691,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108660993.0,49.1902127,-122.7697514,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108662062.0,49.1903072,-122.7701341,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108663127.0,49.1904043,-122.7705167,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+speeding,1771108663271.0,49.1904043,-122.7705167,107.6,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,27.6,regular,,2
+vertical_impact,1771108664200.0,49.1905015,-122.7709005,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108665262.0,49.1905976,-122.7712845,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108666332.0,49.1906947,-122.7716619,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108667398.0,49.1907929,-122.7720355,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+speeding,1771108668168.0,49.1908867,-122.7724046,103.7,high,104.0 km/h in a 80 km/h zone (24.0 km/h over),80.0,23.7,regular,,2
+vertical_impact,1771108668456.0,49.1908867,-122.7724046,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108669523.0,49.1909812,-122.7727781,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108670608.0,49.1910763,-122.7731505,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108671659.0,49.1912654,-122.7738937,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108672726.0,49.1913577,-122.7742652,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108673101.0,49.1913577,-122.7742652,105.0,high,105.0 km/h in a 80 km/h zone (25.0 km/h over),80.0,25.0,regular,,2
+vertical_impact,1771108673787.0,49.191451,-122.7746388,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108674839.0,49.1915466,-122.7750084,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108675913.0,49.1916424,-122.7753796,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108676988.0,49.1917366,-122.7757423,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108678058.0,49.1918299,-122.7761021,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771108678088.0,49.1918299,-122.7761021,101.9,high,102.0 km/h in a 80 km/h zone (22.0 km/h over),80.0,21.9,regular,,2
+vertical_impact,1771108679150.0,49.191921,-122.7764608,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108680199.0,49.1920108,-122.7768165,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108681294.0,49.1921039,-122.7771717,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108682343.0,49.1921924,-122.7775274,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+speeding,1771108683069.0,49.1922817,-122.7778852,100.9,high,101.0 km/h in a 80 km/h zone (21.0 km/h over),80.0,20.9,regular,,2
+vertical_impact,1771108683418.0,49.1922817,-122.7778852,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108684485.0,49.1923697,-122.7782449,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108685578.0,49.1925572,-122.778971,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108686645.0,49.1926522,-122.7793355,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108687714.0,49.1927503,-122.7796966,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108688108.0,49.1927503,-122.7796966,101.2,high,101.0 km/h in a 80 km/h zone (21.0 km/h over),80.0,21.2,regular,,2
+vertical_impact,1771108688782.0,49.1928456,-122.7800489,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108689857.0,49.1929396,-122.7803941,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108690924.0,49.1930312,-122.7807366,1.1,high,Vertical impact detected: 1.1g variance,,,,,2
+vertical_impact,1771108691975.0,49.1931211,-122.7810821,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108693051.0,49.1932125,-122.7814278,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108693112.0,49.1932125,-122.7814278,98.9,high,99.0 km/h in a 80 km/h zone (19.0 km/h over),80.0,18.9,regular,,2
+vertical_impact,1771108694120.0,49.1933054,-122.7817784,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108695205.0,49.1933996,-122.7821327,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108696280.0,49.1934909,-122.7824849,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108697380.0,49.1935805,-122.7828361,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+speeding,1771108698093.0,49.1936672,-122.7831836,97.0,high,97.0 km/h in a 80 km/h zone (17.0 km/h over),80.0,17.0,regular,,2
+vertical_impact,1771108698448.0,49.1936672,-122.7831836,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108699516.0,49.1937573,-122.7835271,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108700591.0,49.1938481,-122.7838693,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108701643.0,49.1940394,-122.7845433,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108702710.0,49.1941373,-122.7848831,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+speeding,1771108703163.0,49.1941373,-122.7848831,97.3,high,97.0 km/h in a 80 km/h zone (17.0 km/h over),80.0,17.3,regular,,2
+vertical_impact,1771108703760.0,49.1942351,-122.7852264,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108704845.0,49.1943287,-122.7855731,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108705921.0,49.1944235,-122.7859233,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108706988.0,49.1945179,-122.7862745,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771108708063.0,49.1946116,-122.786631,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+speeding,1771108708091.0,49.1946116,-122.786631,100.2,high,100.0 km/h in a 80 km/h zone (20.0 km/h over),80.0,20.2,regular,,2
+vertical_impact,1771108709166.0,49.1946998,-122.7869896,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108710215.0,49.1947887,-122.7873485,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108711300.0,49.1948834,-122.7877083,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108712385.0,49.1949818,-122.7880621,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108713103.0,49.1950845,-122.7884123,100.7,high,101.0 km/h in a 80 km/h zone (21.0 km/h over),80.0,20.7,regular,,2
+vertical_impact,1771108713469.0,49.1950845,-122.7884123,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108714546.0,49.1951955,-122.7887573,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108715604.0,49.1953119,-122.7890983,1.1,high,Vertical impact detected: 1.1g variance,,,,,2
+vertical_impact,1771108716654.0,49.1954339,-122.7894362,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108717722.0,49.195692,-122.7901139,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108718108.0,49.195692,-122.7901139,103.0,high,103.0 km/h in a 80 km/h zone (23.0 km/h over),80.0,23.0,regular,,2
+vertical_impact,1771108718814.0,49.1958314,-122.7904471,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108719891.0,49.1959831,-122.7907793,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108720967.0,49.1961385,-122.7910993,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108722051.0,49.1963,-122.7914191,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+speeding,1771108723079.0,49.1964704,-122.7917396,107.5,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,27.5,regular,,2
+vertical_impact,1771108723135.0,49.1964704,-122.7917396,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108724193.0,49.196646,-122.7920532,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108725286.0,49.1968263,-122.7923578,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108726348.0,49.1970088,-122.7926565,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108727421.0,49.1971971,-122.7929482,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108728107.0,49.1973895,-122.7932324,107.3,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,27.3,regular,,2
+vertical_impact,1771108728490.0,49.1973895,-122.7932324,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108729549.0,49.1975844,-122.7935111,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108730607.0,49.197782,-122.793786,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108731676.0,49.1981859,-122.794332,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108732735.0,49.1983931,-122.7946023,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+speeding,1771108733128.0,49.1983931,-122.7946023,108.7,high,109.0 km/h in a 80 km/h zone (29.0 km/h over),80.0,28.7,regular,,2
+vertical_impact,1771108733793.0,49.1986042,-122.794866,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108734869.0,49.19882,-122.795125,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108735937.0,49.1990384,-122.7953805,1.12,high,Vertical impact detected: 1.12g variance,,,,,2
+vertical_impact,1771108736981.0,49.1992583,-122.7956303,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108738057.0,49.1994818,-122.7958769,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+speeding,1771108738092.0,49.1994818,-122.7958769,110.7,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,30.7,regular,,2
+vertical_impact,1771108739169.0,49.1997099,-122.7961234,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+vertical_impact,1771108740183.0,49.1999369,-122.7963708,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108741251.0,49.2001614,-122.7966193,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108742328.0,49.2003901,-122.7968691,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108743106.0,49.2006181,-122.7971156,112.5,high,113.0 km/h in a 80 km/h zone (33.0 km/h over),80.0,32.5,regular,,2
+vertical_impact,1771108743395.0,49.2006181,-122.7971156,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108744462.0,49.2008501,-122.7973607,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108745531.0,49.2010833,-122.7976026,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108746603.0,49.2015467,-122.798073,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108747664.0,49.2017747,-122.7982946,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771108748116.0,49.2017747,-122.7982946,108.9,high,109.0 km/h in a 80 km/h zone (29.0 km/h over),80.0,28.9,regular,,2
+vertical_impact,1771108748724.0,49.2020076,-122.798516,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108749784.0,49.2022412,-122.7987372,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108750834.0,49.2024786,-122.7989564,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108751901.0,49.202719,-122.7991825,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108752978.0,49.2029597,-122.799414,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+speeding,1771108753120.0,49.2029597,-122.799414,113.4,high,113.0 km/h in a 80 km/h zone (33.0 km/h over),80.0,33.4,regular,,2
+vertical_impact,1771108754037.0,49.2031986,-122.7996447,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771108755130.0,49.2034339,-122.7998755,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108756180.0,49.2036664,-122.8001073,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108757193.0,49.203899,-122.8003361,1.1,high,Vertical impact detected: 1.1g variance,,,,,2
+speeding,1771108758088.0,49.2041287,-122.8005649,109.6,high,110.0 km/h in a 80 km/h zone (30.0 km/h over),80.0,29.6,regular,,2
+vertical_impact,1771108758199.0,49.2041287,-122.8005649,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771108759283.0,49.2043594,-122.8007916,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108760336.0,49.2045899,-122.8010166,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108761403.0,49.2048169,-122.801239,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108762470.0,49.2050464,-122.8014654,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108763214.0,49.2052734,-122.8016918,109.2,high,109.0 km/h in a 80 km/h zone (29.0 km/h over),80.0,29.2,regular,,2
+vertical_impact,1771108763529.0,49.2052734,-122.8016918,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108764589.0,49.205499,-122.80192,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108765664.0,49.205951,-122.8023763,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771108766732.0,49.2061766,-122.8026142,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108767774.0,49.2064057,-122.8028551,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108768099.0,49.2064057,-122.8028551,109.7,high,110.0 km/h in a 80 km/h zone (30.0 km/h over),80.0,29.7,regular,,2
+vertical_impact,1771108768842.0,49.2066316,-122.8030962,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108769918.0,49.2068576,-122.8033399,0.81,high,Vertical impact detected: 0.81g variance,,,,,2
+vertical_impact,1771108770987.0,49.2070831,-122.8035837,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771108772070.0,49.2073071,-122.8038292,0.82,high,Vertical impact detected: 0.82g variance,,,,,2
+speeding,1771108773102.0,49.2075329,-122.8040809,110.9,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,30.9,regular,,2
+vertical_impact,1771108773160.0,49.2075329,-122.8040809,0.81,high,Vertical impact detected: 0.81g variance,,,,,2
+vertical_impact,1771108774206.0,49.2077558,-122.8043294,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108775291.0,49.2079795,-122.804581,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108776361.0,49.2081986,-122.8048306,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108777435.0,49.2084144,-122.8050847,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771108778113.0,49.2086267,-122.8053405,108.6,high,109.0 km/h in a 80 km/h zone (29.0 km/h over),80.0,28.6,regular,,2
+vertical_impact,1771108778510.0,49.2086267,-122.8053405,0.85,high,Vertical impact detected: 0.85g variance,,,,,2
+vertical_impact,1771108779578.0,49.2088406,-122.8055976,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108780674.0,49.2092674,-122.8061197,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108781739.0,49.209473,-122.8063785,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108782808.0,49.2096766,-122.8066366,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771108783153.0,49.2096766,-122.8066366,104.2,high,104.0 km/h in a 80 km/h zone (24.0 km/h over),80.0,24.2,regular,,2
+vertical_impact,1771108783865.0,49.2098738,-122.8068894,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108784959.0,49.2100686,-122.8071377,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108786042.0,49.2102614,-122.8073855,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108787112.0,49.2104522,-122.8076283,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108788089.0,49.2106387,-122.8078742,98.6,high,99.0 km/h in a 80 km/h zone (19.0 km/h over),80.0,18.6,regular,,2
+vertical_impact,1771108788190.0,49.2106387,-122.8078742,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108789262.0,49.2108272,-122.8081185,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108790329.0,49.2110175,-122.808363,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108791398.0,49.2112088,-122.8086022,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108792466.0,49.2114004,-122.8088422,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771108793095.0,49.2115932,-122.8090801,100.1,high,100.0 km/h in a 80 km/h zone (20.0 km/h over),80.0,20.1,regular,,2
+vertical_impact,1771108793543.0,49.2115932,-122.8090801,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108794609.0,49.2119931,-122.8095332,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108795716.0,49.2122022,-122.8097358,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108796753.0,49.2124183,-122.8099211,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108797812.0,49.2126361,-122.8100861,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108798122.0,49.2126361,-122.8100861,96.9,high,97.0 km/h in a 80 km/h zone (17.0 km/h over),80.0,16.9,regular,,2
+vertical_impact,1771108798875.0,49.2128542,-122.8102351,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108799941.0,49.2130803,-122.8103643,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108801007.0,49.213308,-122.8104786,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108802074.0,49.2135407,-122.8105764,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+speeding,1771108803090.0,49.2137718,-122.8106691,96.6,high,97.0 km/h in a 80 km/h zone (17.0 km/h over),80.0,16.6,regular,,2
+vertical_impact,1771108803163.0,49.2137718,-122.8106691,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+sharp_turn,1771108803744.0,49.2140073,-122.8107595,0.17,high,Sharp turn at 0.17g (Speed: 97.0 km/h),0.16,,,97.1,2
+vertical_impact,1771108804252.0,49.2140073,-122.8107595,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108805328.0,49.2142425,-122.8108479,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108806413.0,49.2144803,-122.8109374,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108807488.0,49.2147166,-122.811027,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771108808091.0,49.214957,-122.8111138,99.1,high,99.0 km/h in a 80 km/h zone (19.0 km/h over),80.0,19.1,regular,,2
+vertical_impact,1771108808566.0,49.214957,-122.8111138,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108809624.0,49.2154388,-122.8112957,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108810720.0,49.2156823,-122.81139,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108811863.0,49.2159259,-122.8114896,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108812955.0,49.2161681,-122.8115891,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108813113.0,49.2161681,-122.8115891,100.9,high,101.0 km/h in a 80 km/h zone (21.0 km/h over),80.0,20.9,regular,,2
+vertical_impact,1771108814012.0,49.2164119,-122.8116921,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108815079.0,49.216653,-122.8117904,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108816158.0,49.2168944,-122.8118868,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108817222.0,49.2171338,-122.81198,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108818119.0,49.2173753,-122.8120781,99.4,high,99.0 km/h in a 80 km/h zone (19.0 km/h over),80.0,19.4,regular,,2
+vertical_impact,1771108818300.0,49.2173753,-122.8120781,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108819376.0,49.2176153,-122.8121751,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108820468.0,49.2178551,-122.8122744,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108821536.0,49.2180928,-122.8123712,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108822587.0,49.2183274,-122.812466,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771108823116.0,49.2185599,-122.812562,95.3,high,95.0 km/h in a 80 km/h zone (15.0 km/h over),80.0,15.3,regular,,2
+vertical_impact,1771108823663.0,49.2187872,-122.8126575,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108824740.0,49.2190137,-122.8127503,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108825743.0,49.2192391,-122.8128435,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108826783.0,49.2194663,-122.8129343,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108827851.0,49.219693,-122.8130253,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771108828129.0,49.219693,-122.8130253,93.2,medium,93.0 km/h in a 80 km/h zone (13.0 km/h over),80.0,13.2,regular,,2
+vertical_impact,1771108828936.0,49.2199187,-122.813117,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108829994.0,49.2201485,-122.8132133,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108831071.0,49.2203776,-122.8133149,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108832150.0,49.2206066,-122.8134155,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+speeding,1771108833132.0,49.2208364,-122.8135227,94.9,medium,95.0 km/h in a 80 km/h zone (15.0 km/h over),80.0,14.9,regular,,2
+vertical_impact,1771108833201.0,49.2208364,-122.8135227,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108834219.0,49.2210655,-122.8136262,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108835229.0,49.2212925,-122.8137244,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108836327.0,49.2215173,-122.8138259,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108837394.0,49.221742,-122.8139276,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+speeding,1771108838126.0,49.2219654,-122.8140266,93.6,medium,94.0 km/h in a 80 km/h zone (14.0 km/h over),80.0,13.6,regular,,2
+vertical_impact,1771108838454.0,49.2219654,-122.8140266,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108839521.0,49.2221889,-122.8141317,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108840589.0,49.2224094,-122.8142368,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108841658.0,49.2228459,-122.8144615,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108842792.0,49.2230652,-122.8145904,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108843097.0,49.2230652,-122.8145904,95.1,high,95.0 km/h in a 80 km/h zone (15.0 km/h over),80.0,15.1,regular,,2
+vertical_impact,1771108843792.0,49.2232859,-122.8147306,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108844881.0,49.223508,-122.8148819,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108845929.0,49.2237256,-122.8150456,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108846982.0,49.2239436,-122.8152178,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108848055.0,49.2241588,-122.8154048,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108848108.0,49.2241588,-122.8154048,99.0,high,99.0 km/h in a 80 km/h zone (19.0 km/h over),80.0,19.0,regular,,2
+vertical_impact,1771108849154.0,49.2243706,-122.8156007,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108850185.0,49.2245772,-122.8158037,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108851233.0,49.224779,-122.8160247,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108852311.0,49.224976,-122.8162565,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+speeding,1771108853116.0,49.2251689,-122.8164995,100.3,high,100.0 km/h in a 80 km/h zone (20.0 km/h over),80.0,20.3,regular,,2
+vertical_impact,1771108853402.0,49.2251689,-122.8164995,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108854486.0,49.2253588,-122.8167537,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108855538.0,49.2255401,-122.8170207,0.89,high,Vertical impact detected: 0.89g variance,,,,,2
+vertical_impact,1771108856606.0,49.2258799,-122.8175702,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108857673.0,49.2260399,-122.8178544,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+speeding,1771108858074.0,49.2260399,-122.8178544,97.9,high,98.0 km/h in a 80 km/h zone (18.0 km/h over),80.0,17.9,regular,,2
+vertical_impact,1771108858732.0,49.2261923,-122.8181466,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108859800.0,49.2263368,-122.8184473,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108860852.0,49.2264771,-122.8187504,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108861918.0,49.2266097,-122.8190605,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108862987.0,49.2267375,-122.8193749,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108863088.0,49.2267375,-122.8193749,97.1,high,97.0 km/h in a 80 km/h zone (17.0 km/h over),80.0,17.1,regular,,2
+vertical_impact,1771108864054.0,49.2268624,-122.8196962,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108865116.0,49.22698,-122.8200255,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108866205.0,49.2270938,-122.820361,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108867275.0,49.2272023,-122.820709,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771108868117.0,49.2273027,-122.8210689,102.3,high,102.0 km/h in a 80 km/h zone (22.0 km/h over),80.0,22.3,regular,,2
+vertical_impact,1771108868334.0,49.2273027,-122.8210689,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+sharp_turn,1771108869190.0,49.2273981,-122.8214318,0.16,high,Sharp turn at 0.16g (Speed: 104.0 km/h),0.15,,,103.7,2
+vertical_impact,1771108869406.0,49.2273981,-122.8214318,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771108870461.0,49.2274897,-122.8218044,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108871515.0,49.2275794,-122.8221785,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108872589.0,49.22767,-122.8225549,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108873092.0,49.2277579,-122.8229362,106.0,high,106.0 km/h in a 80 km/h zone (26.0 km/h over),80.0,26.0,regular,,2
+vertical_impact,1771108873664.0,49.2278467,-122.8233165,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108874734.0,49.2279309,-122.8236961,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108875795.0,49.2280123,-122.8240774,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108876869.0,49.2280843,-122.8244669,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108877952.0,49.2281416,-122.8248595,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771108878129.0,49.2281416,-122.8248595,104.8,high,105.0 km/h in a 80 km/h zone (25.0 km/h over),80.0,24.8,regular,,2
+vertical_impact,1771108879012.0,49.2281962,-122.8252522,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108880134.0,49.2282457,-122.8256458,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108881192.0,49.228295,-122.8260416,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108882207.0,49.2283416,-122.8264412,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771108883126.0,49.2283917,-122.8268441,106.4,high,106.0 km/h in a 80 km/h zone (26.0 km/h over),80.0,26.4,regular,,2
+vertical_impact,1771108883257.0,49.2283917,-122.8268441,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108884325.0,49.2284433,-122.8272399,0.89,high,Vertical impact detected: 0.89g variance,,,,,2
+vertical_impact,1771108885393.0,49.2284942,-122.8276309,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108886478.0,49.2285445,-122.8280228,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108887545.0,49.2285953,-122.828416,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+speeding,1771108888117.0,49.2286495,-122.8288087,105.5,high,106.0 km/h in a 80 km/h zone (26.0 km/h over),80.0,25.5,regular,,2
+vertical_impact,1771108888631.0,49.2286495,-122.8288087,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108889699.0,49.2287635,-122.8295966,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108890817.0,49.2288204,-122.8299924,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108891850.0,49.2288794,-122.8303862,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108892927.0,49.2289399,-122.8307821,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771108893120.0,49.2289399,-122.8307821,106.2,high,106.0 km/h in a 80 km/h zone (26.0 km/h over),80.0,26.2,regular,,2
+vertical_impact,1771108893994.0,49.2289951,-122.8311763,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108895057.0,49.2290495,-122.8315729,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108896144.0,49.2291023,-122.8319679,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108897222.0,49.2291514,-122.8323614,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108898149.0,49.2291995,-122.8327532,104.8,high,105.0 km/h in a 80 km/h zone (25.0 km/h over),80.0,24.8,regular,,2
+vertical_impact,1771108898281.0,49.2291995,-122.8327532,1.13,high,Vertical impact detected: 1.13g variance,,,,,2
+vertical_impact,1771108899341.0,49.2292465,-122.8331438,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108900400.0,49.229291,-122.8335376,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108901468.0,49.2293354,-122.8339353,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108902544.0,49.22938,-122.8343335,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+speeding,1771108903115.0,49.2294243,-122.8347348,106.6,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,26.6,regular,,2
+vertical_impact,1771108903605.0,49.2294243,-122.8347348,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108904690.0,49.2295176,-122.8355456,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108905765.0,49.2295633,-122.8359538,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108906839.0,49.2296087,-122.8363712,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108907883.0,49.2296531,-122.8367918,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+speeding,1771108908119.0,49.2296531,-122.8367918,111.1,high,111.0 km/h in a 80 km/h zone (31.0 km/h over),80.0,31.1,regular,,2
+vertical_impact,1771108908944.0,49.2296977,-122.8372097,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+vertical_impact,1771108910026.0,49.2297443,-122.8376217,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108911095.0,49.2297911,-122.8380276,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108912186.0,49.2298358,-122.8384356,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771108913075.0,49.2298813,-122.8388454,109.3,high,109.0 km/h in a 80 km/h zone (29.0 km/h over),80.0,29.3,regular,,2
+vertical_impact,1771108913264.0,49.2298813,-122.8388454,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108914331.0,49.2299289,-122.8392549,0.86,high,Vertical impact detected: 0.86g variance,,,,,2
+vertical_impact,1771108915390.0,49.2299758,-122.8396635,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108916467.0,49.2300256,-122.8400712,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+vertical_impact,1771108917533.0,49.2300763,-122.8404743,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+speeding,1771108918104.0,49.230127,-122.8408741,106.6,high,107.0 km/h in a 80 km/h zone (27.0 km/h over),80.0,26.6,regular,,2
+vertical_impact,1771108918601.0,49.230127,-122.8408741,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108919677.0,49.2302377,-122.8416676,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108920744.0,49.2302944,-122.8420584,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+vertical_impact,1771108921812.0,49.2303516,-122.8424503,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771108922889.0,49.2304081,-122.8428419,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108923190.0,49.2304081,-122.8428419,105.0,high,105.0 km/h in a 80 km/h zone (25.0 km/h over),80.0,25.0,regular,,2
+vertical_impact,1771108923949.0,49.2304651,-122.8432318,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108925041.0,49.2305182,-122.8436112,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108926111.0,49.2305687,-122.8439811,1.1,high,Vertical impact detected: 1.1g variance,,,,,2
+vertical_impact,1771108927196.0,49.2306171,-122.8443398,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+speeding,1771108928137.0,49.2306642,-122.8446974,94.7,medium,95.0 km/h in a 80 km/h zone (15.0 km/h over),80.0,14.7,regular,,2
+vertical_impact,1771108928244.0,49.2306642,-122.8446974,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108929314.0,49.2307071,-122.8450503,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108930399.0,49.2307494,-122.8453989,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108931465.0,49.2307874,-122.8457401,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108932533.0,49.2308235,-122.8460797,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+speeding,1771108933110.0,49.2308586,-122.8464165,88.7,medium,89.0 km/h in a 80 km/h zone (9.0 km/h over),80.0,8.7,regular,,2
+vertical_impact,1771108933616.0,49.2308929,-122.8467507,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108934686.0,49.2309263,-122.8470846,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108935744.0,49.2309565,-122.8474247,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108936812.0,49.230987,-122.8477699,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108937880.0,49.231013,-122.8481224,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771108938197.0,49.231013,-122.8481224,93.2,medium,93.0 km/h in a 80 km/h zone (13.0 km/h over),80.0,13.2,regular,,2
+vertical_impact,1771108938958.0,49.2310396,-122.8484787,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108940024.0,49.2310629,-122.84883,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108941086.0,49.2310866,-122.8491823,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108942159.0,49.2311096,-122.8495347,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108943139.0,49.231133,-122.849893,95.2,high,95.0 km/h in a 80 km/h zone (15.0 km/h over),80.0,15.2,regular,,2
+vertical_impact,1771108943219.0,49.231133,-122.849893,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108944294.0,49.2311552,-122.8502529,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108945354.0,49.231181,-122.8506194,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108946430.0,49.2312078,-122.8509858,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108947499.0,49.2312383,-122.8513483,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+speeding,1771108948132.0,49.2312676,-122.8517143,97.1,high,97.0 km/h in a 80 km/h zone (17.0 km/h over),80.0,17.1,regular,,2
+vertical_impact,1771108948566.0,49.2312676,-122.8517143,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108949617.0,49.2313308,-122.8524578,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108950703.0,49.2313676,-122.8528283,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108951762.0,49.2314029,-122.8531909,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771108952837.0,49.2314401,-122.8535508,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+speeding,1771108953089.0,49.2314401,-122.8535508,95.1,high,95.0 km/h in a 80 km/h zone (15.0 km/h over),80.0,15.1,regular,,2
+vertical_impact,1771108953921.0,49.2314792,-122.8539093,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108954948.0,49.2315222,-122.8542699,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108956033.0,49.2315647,-122.8546276,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108957138.0,49.2316064,-122.8549685,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108958184.0,49.2316478,-122.8552932,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108959236.0,49.2316884,-122.8556082,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108960296.0,49.2317271,-122.8559207,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108961355.0,49.2317666,-122.8562331,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108962425.0,49.2318047,-122.8565493,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108963498.0,49.23184,-122.8568705,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108964567.0,49.2318772,-122.8571969,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108965634.0,49.2319519,-122.8578617,0.91,high,Vertical impact detected: 0.91g variance,,,,,2
+vertical_impact,1771108966702.0,49.2319886,-122.8582011,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771108967753.0,49.2320279,-122.8585416,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771108968123.0,49.2320279,-122.8585416,91.2,medium,91.0 km/h in a 80 km/h zone (11.0 km/h over),80.0,11.2,regular,,2
+vertical_impact,1771108968812.0,49.2320679,-122.8588841,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108969913.0,49.2321095,-122.8592314,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108970972.0,49.2321502,-122.8595819,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108972023.0,49.2321895,-122.859933,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+speeding,1771108973090.0,49.2322276,-122.8602918,95.4,high,95.0 km/h in a 80 km/h zone (15.0 km/h over),80.0,15.4,regular,,2
+vertical_impact,1771108973143.0,49.2322276,-122.8602918,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771108974205.0,49.2322674,-122.8606526,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771108975294.0,49.2323108,-122.861015,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108976369.0,49.2323529,-122.8613787,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108977437.0,49.2323955,-122.8617454,1.09,high,Vertical impact detected: 1.09g variance,,,,,2
+speeding,1771108978130.0,49.2324371,-122.8621163,99.7,high,100.0 km/h in a 80 km/h zone (20.0 km/h over),80.0,19.7,regular,,2
+vertical_impact,1771108978498.0,49.2324371,-122.8621163,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108979572.0,49.2324787,-122.8624928,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771108980651.0,49.2325624,-122.8632586,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771108981733.0,49.2326067,-122.8636495,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771108982826.0,49.2326519,-122.8640442,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771108983123.0,49.2326519,-122.8640442,103.9,high,104.0 km/h in a 80 km/h zone (24.0 km/h over),80.0,23.9,regular,,2
+vertical_impact,1771108983894.0,49.2326956,-122.8644327,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108984970.0,49.2327382,-122.8648175,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108986039.0,49.2327815,-122.8651989,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108987097.0,49.2328239,-122.8655758,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771108988095.0,49.2328649,-122.865951,100.0,high,100.0 km/h in a 80 km/h zone (20.0 km/h over),80.0,20.0,regular,,2
+vertical_impact,1771108988195.0,49.2328649,-122.865951,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771108989258.0,49.232908,-122.8663288,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108990271.0,49.2329523,-122.866708,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771108991300.0,49.232994,-122.8670897,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771108992385.0,49.2330364,-122.8674701,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771108993154.0,49.2330801,-122.8678496,101.1,high,101.0 km/h in a 80 km/h zone (21.0 km/h over),80.0,21.1,regular,,2
+vertical_impact,1771108993453.0,49.2330801,-122.8678496,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108994516.0,49.2331215,-122.8682294,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771108995581.0,49.2331676,-122.8686057,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771108996640.0,49.2332534,-122.8693666,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771108997718.0,49.2332974,-122.8697492,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+speeding,1771108998103.0,49.2332974,-122.8697492,102.1,high,102.0 km/h in a 80 km/h zone (22.0 km/h over),80.0,22.1,regular,,2
+vertical_impact,1771108998767.0,49.2333411,-122.8701321,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771108999852.0,49.2333837,-122.8705153,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771109000927.0,49.2334282,-122.870893,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109002003.0,49.2334696,-122.8712675,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109003082.0,49.2335121,-122.8716373,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+speeding,1771109003129.0,49.2335121,-122.8716373,97.8,high,98.0 km/h in a 80 km/h zone (18.0 km/h over),80.0,17.8,regular,,2
+vertical_impact,1771109004180.0,49.2335526,-122.8720055,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771109005224.0,49.2335931,-122.8723682,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771109006299.0,49.233635,-122.8727372,0.87,high,Vertical impact detected: 0.87g variance,,,,,2
+vertical_impact,1771109007368.0,49.2336777,-122.8731074,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+speeding,1771109008137.0,49.2337202,-122.8734814,98.1,high,98.0 km/h in a 80 km/h zone (18.0 km/h over),80.0,18.1,regular,,2
+vertical_impact,1771109008418.0,49.2337202,-122.8734814,1.12,high,Vertical impact detected: 1.12g variance,,,,,2
+vertical_impact,1771109009502.0,49.233763,-122.8738497,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109010562.0,49.2338061,-122.8742093,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109011631.0,49.2338918,-122.8749138,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109012707.0,49.2339371,-122.8752653,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771109013115.0,49.2339371,-122.8752653,93.9,medium,94.0 km/h in a 80 km/h zone (14.0 km/h over),80.0,13.9,regular,,2
+vertical_impact,1771109013756.0,49.2339871,-122.8756164,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109014799.0,49.2340413,-122.8759676,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109015876.0,49.234102,-122.8763195,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109016946.0,49.2341673,-122.8766709,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771109018002.0,49.2342353,-122.8770261,0.9,high,Vertical impact detected: 0.9g variance,,,,,2
+speeding,1771109018078.0,49.2342353,-122.8770261,97.6,high,98.0 km/h in a 80 km/h zone (18.0 km/h over),80.0,17.6,regular,,2
+vertical_impact,1771109019014.0,49.2343062,-122.8773849,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771109020021.0,49.234382,-122.8777448,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109021089.0,49.2344626,-122.8781011,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109022192.0,49.2345457,-122.8784555,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771109023085.0,49.2346329,-122.8788127,99.8,high,100.0 km/h in a 80 km/h zone (20.0 km/h over),80.0,19.8,regular,,2
+vertical_impact,1771109023273.0,49.2346329,-122.8788127,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771109024333.0,49.2347272,-122.8791661,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771109025400.0,49.2348275,-122.8795103,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771109026478.0,49.2349329,-122.8798463,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771109027536.0,49.2350458,-122.8801817,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771109028101.0,49.2351667,-122.8805091,97.9,high,98.0 km/h in a 80 km/h zone (18.0 km/h over),80.0,17.9,regular,,2
+vertical_impact,1771109028603.0,49.2351667,-122.8805091,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109029654.0,49.2354252,-122.8811413,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109030714.0,49.2355647,-122.8814477,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109031771.0,49.2357097,-122.88175,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109032824.0,49.2358611,-122.8820435,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+speeding,1771109033092.0,49.2358611,-122.8820435,98.5,high,99.0 km/h in a 80 km/h zone (19.0 km/h over),80.0,18.5,regular,,2
+vertical_impact,1771109033891.0,49.2360204,-122.8823303,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109034983.0,49.2361846,-122.882612,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771109036056.0,49.236352,-122.8828925,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771109037134.0,49.2365195,-122.8831637,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771109038105.0,49.2366834,-122.8834259,94.2,medium,94.0 km/h in a 80 km/h zone (14.0 km/h over),80.0,14.2,regular,,2
+vertical_impact,1771109038182.0,49.2366834,-122.8834259,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771109039237.0,49.236845,-122.883692,1.06,high,Vertical impact detected: 1.06g variance,,,,,2
+vertical_impact,1771109040290.0,49.2370044,-122.883952,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109041365.0,49.2371618,-122.8842071,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109042423.0,49.2373187,-122.8844605,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+speeding,1771109043117.0,49.2374766,-122.8847168,92.9,medium,93.0 km/h in a 80 km/h zone (13.0 km/h over),80.0,12.9,regular,,2
+vertical_impact,1771109043524.0,49.2374766,-122.8847168,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109044576.0,49.2376343,-122.8849774,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771109045644.0,49.2379446,-122.8854873,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109046719.0,49.2380968,-122.8857335,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771109047795.0,49.2382485,-122.885979,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+speeding,1771109048146.0,49.2382485,-122.885979,88.9,medium,89.0 km/h in a 80 km/h zone (9.0 km/h over),80.0,8.9,regular,,2
+vertical_impact,1771109048871.0,49.2383996,-122.8862267,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109049947.0,49.2385501,-122.8864731,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771109051015.0,49.2387016,-122.8867167,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109052158.0,49.2388517,-122.8869578,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+speeding,1771109053118.0,49.2390015,-122.8872003,87.3,medium,87.0 km/h in a 80 km/h zone (7.0 km/h over),80.0,7.3,regular,,2
+vertical_impact,1771109053167.0,49.2390015,-122.8872003,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109054214.0,49.2391507,-122.8874454,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109055269.0,49.2393005,-122.8876894,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771109056322.0,49.2394519,-122.8879348,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771109057396.0,49.239605,-122.8881828,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771109058130.0,49.2397606,-122.8884317,89.8,medium,90.0 km/h in a 80 km/h zone (10.0 km/h over),80.0,9.8,regular,,2
+vertical_impact,1771109058447.0,49.2397606,-122.8884317,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109059505.0,49.2399136,-122.8886845,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771109060559.0,49.2400678,-122.8889382,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109061645.0,49.2403782,-122.8894423,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109062709.0,49.2405334,-122.8896966,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771109063130.0,49.2405334,-122.8896966,91.9,medium,92.0 km/h in a 80 km/h zone (12.0 km/h over),80.0,11.9,regular,,2
+vertical_impact,1771109063776.0,49.2406911,-122.8899578,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771109064829.0,49.2408469,-122.8902195,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771109065904.0,49.2410036,-122.8904845,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771109066983.0,49.24116,-122.8907489,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109068066.0,49.2413152,-122.8910136,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+speeding,1771109068115.0,49.2413152,-122.8910136,94.1,medium,94.0 km/h in a 80 km/h zone (14.0 km/h over),80.0,14.1,regular,,2
+vertical_impact,1771109069196.0,49.2414711,-122.8912816,0.95,high,Vertical impact detected: 0.95g variance,,,,,2
+vertical_impact,1771109070222.0,49.2416292,-122.8915507,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109071227.0,49.241788,-122.8918193,1.08,high,Vertical impact detected: 1.08g variance,,,,,2
+vertical_impact,1771109072269.0,49.2419495,-122.892087,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+speeding,1771109073103.0,49.242114,-122.8923576,97.4,high,97.0 km/h in a 80 km/h zone (17.0 km/h over),80.0,17.4,regular,,2
+vertical_impact,1771109073329.0,49.242114,-122.8923576,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109074412.0,49.2422781,-122.8926322,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771109075480.0,49.2424432,-122.8929022,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771109076563.0,49.2426058,-122.8931674,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109077631.0,49.2429297,-122.8936877,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+speeding,1771109078152.0,49.2429297,-122.8936877,93.8,medium,94.0 km/h in a 80 km/h zone (14.0 km/h over),80.0,13.8,regular,,2
+vertical_impact,1771109078708.0,49.2430872,-122.8939513,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109079775.0,49.243248,-122.8942163,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771109080835.0,49.2434077,-122.8944893,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109081936.0,49.2435692,-122.8947701,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771109082995.0,49.243729,-122.8950575,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+speeding,1771109083129.0,49.243729,-122.8950575,100.2,high,100.0 km/h in a 80 km/h zone (20.0 km/h over),80.0,20.2,regular,,2
+vertical_impact,1771109084071.0,49.2438861,-122.8953583,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771109085209.0,49.244039,-122.8956675,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771109086245.0,49.2441869,-122.8959808,0.88,high,Vertical impact detected: 0.88g variance,,,,,2
+vertical_impact,1771109087315.0,49.2443274,-122.8962995,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+speeding,1771109088097.0,49.2444674,-122.8966323,104.6,high,105.0 km/h in a 80 km/h zone (25.0 km/h over),80.0,24.6,regular,,2
+vertical_impact,1771109088377.0,49.2444674,-122.8966323,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109089460.0,49.2446048,-122.8969762,0.93,high,Vertical impact detected: 0.93g variance,,,,,2
+vertical_impact,1771109090520.0,49.2447385,-122.8973327,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771109091604.0,49.2448675,-122.8976967,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109092671.0,49.2451161,-122.8984383,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+speeding,1771109093140.0,49.2451161,-122.8984383,108.5,high,108.0 km/h in a 80 km/h zone (28.0 km/h over),80.0,28.5,regular,,2
+vertical_impact,1771109093747.0,49.2452313,-122.8988023,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771109094824.0,49.2453346,-122.8991506,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771109095892.0,49.2454309,-122.8994908,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771109096966.0,49.2455139,-122.8998117,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+sudden_stop,1771109097199.0,49.2455139,-122.8998117,7.61,high,Sudden stop: 7.6 km/h drop in 1096.0s,,,,,2
+vertical_impact,1771109098051.0,49.2455879,-122.900115,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109099119.0,49.2456541,-122.9003956,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771109100185.0,49.2457106,-122.9006566,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771109101259.0,49.2457638,-122.9009163,0.94,high,Vertical impact detected: 0.94g variance,,,,,2
+vertical_impact,1771109102322.0,49.2458169,-122.9011729,1.05,high,Vertical impact detected: 1.05g variance,,,,,2
+vertical_impact,1771109103382.0,49.2458675,-122.9014254,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109104458.0,49.2459159,-122.9016761,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109105508.0,49.2459616,-122.9019271,1.04,high,Vertical impact detected: 1.04g variance,,,,,2
+vertical_impact,1771109106568.0,49.2460035,-122.9021721,1.07,high,Vertical impact detected: 1.07g variance,,,,,2
+vertical_impact,1771109107628.0,49.2460408,-122.9024046,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109108712.0,49.2460956,-122.9028314,0.92,high,Vertical impact detected: 0.92g variance,,,,,2
+vertical_impact,1771109109771.0,49.2461162,-122.9030198,0.96,high,Vertical impact detected: 0.96g variance,,,,,2
+vertical_impact,1771109110831.0,49.2461327,-122.9031948,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771109111890.0,49.2461466,-122.903363,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109112958.0,49.2461578,-122.9035159,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109114029.0,49.2461702,-122.9036504,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+sudden_stop,1771109114090.0,49.2461702,-122.9036504,6.36,high,Sudden stop: 6.4 km/h drop in 993.0s,,,,,2
+vertical_impact,1771109115145.0,49.2461772,-122.9037621,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109116195.0,49.246183,-122.9038599,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109117232.0,49.2461879,-122.9039506,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109118290.0,49.2461922,-122.9040325,0.97,high,Vertical impact detected: 0.97g variance,,,,,2
+vertical_impact,1771109119356.0,49.2461961,-122.9041049,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771109120422.0,49.2462029,-122.9042348,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109121474.0,49.2462029,-122.9042348,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771109122535.0,49.2462051,-122.9043137,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109123592.0,49.2462075,-122.904405,0.99,high,Vertical impact detected: 0.99g variance,,,,,2
+vertical_impact,1771109124660.0,49.2462115,-122.9046073,1.03,high,Vertical impact detected: 1.03g variance,,,,,2
+vertical_impact,1771109125763.0,49.2462127,-122.9047112,1.02,high,Vertical impact detected: 1.02g variance,,,,,2
+vertical_impact,1771109126821.0,49.2462111,-122.9048083,1.0,high,Vertical impact detected: 1.0g variance,,,,,2
+vertical_impact,1771109127913.0,49.2462086,-122.9049087,0.98,high,Vertical impact detected: 0.98g variance,,,,,2
+vertical_impact,1771109128981.0,49.2462051,-122.9050235,1.01,high,Vertical impact detected: 1.01g variance,,,,,2
+vertical_impact,1771109130065.0,49.2462025,-122.9051443,0.98,high,Vertical impact detected: 0.98g variance,,,,,2

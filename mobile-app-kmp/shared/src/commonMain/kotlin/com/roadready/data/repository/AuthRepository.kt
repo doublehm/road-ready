@@ -18,8 +18,11 @@ data class AuthState(
         get() {
             val u = user ?: return false
             return when (u.role) {
-                "student" -> u.studentProfile?.age == 0
-                "instructor" -> u.instructorProfile?.city == "Unknown"
+                "student" -> u.studentProfile == null || u.studentProfile.age == 0
+                "instructor" -> {
+                    val p = u.instructorProfile
+                    p == null || p.hourlyRate == 0.0 || p.bio == "New User" || p.carModel == "Not Specified"
+                }
                 else -> false
             }
         }
@@ -72,27 +75,53 @@ class AuthRepository(
         fullName: String,
         email: String,
         password: String,
+        phoneNumber: String,
         role: String,
-    ): Result<User> {
+        city: String? = null,
+        province: String? = null,
+        bio: String? = null,
+        hourlyRate: Double? = null,
+        carMake: String? = null,
+        carModel: String? = null,
+        carYear: Int? = null,
+        insurancePolicy: String? = null,
+        certificationId: String? = null,
+        licenseClasses: List<InstructorLicenseClass>? = null,
+        age: Int? = null,
+        licenseNumber: String? = null,
+    ): Result<AuthResponse> {
         _authState.value = _authState.value.copy(isLoading = true, error = null)
 
         val result = apiClient.register(
-            RegisterRequest(email = email, password = password, fullName = fullName, role = role),
+            RegisterRequest(
+                email = email,
+                password = password,
+                fullName = fullName,
+                phoneNumber = phoneNumber,
+                role = role,
+                city = city ?: "Unknown",
+                province = province ?: "British Columbia",
+                bio = bio ?: "New User",
+                hourlyRate = hourlyRate ?: 0.0,
+                carModel = carModel ?: "Not Specified",
+                insurancePolicy = insurancePolicy ?: "PENDING",
+                certificationId = certificationId ?: "PENDING",
+                licenseClasses = licenseClasses ?: emptyList(),
+                age = age ?: 0,
+                licenseNumber = licenseNumber ?: "0000000"
+            ),
         )
-        return result.fold(
-            onSuccess = { authResponse ->
-                tokenStorage.saveToken(authResponse.accessToken)
-                _authState.value = _authState.value.copy(token = authResponse.accessToken)
-                fetchCurrentUser()
-            },
-            onFailure = { error ->
-                _authState.value = _authState.value.copy(
-                    isLoading = false,
-                    error = error.message ?: "Registration failed",
-                )
-                Result.failure(error)
-            },
-        )
+        result.onSuccess { authResponse ->
+            tokenStorage.saveToken(authResponse.accessToken)
+            _authState.value = _authState.value.copy(token = authResponse.accessToken, isLoading = true)
+            fetchCurrentUser()
+        }.onFailure { error ->
+            _authState.value = _authState.value.copy(
+                isLoading = false,
+                error = error.message ?: "Registration failed",
+            )
+        }
+        return result
     }
 
     suspend fun logout() {
@@ -101,6 +130,7 @@ class AuthRepository(
     }
 
     private suspend fun fetchCurrentUser(): Result<User> {
+        _authState.value = _authState.value.copy(isLoading = true)
         val result = apiClient.getCurrentUser()
         result.fold(
             onSuccess = { user ->

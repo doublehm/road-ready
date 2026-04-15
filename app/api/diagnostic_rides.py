@@ -203,13 +203,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @router.get("/speed-limit")
-async def get_speed_limit_for_location(
+def get_speed_limit_for_location(
     lat: float,
     lon: float,
 ):
     """
     Get the speed limit for the given GPS coordinates.
     Uses Overpass API with BC provincial defaults as fallback.
+
+    This is intentionally a sync (non-async) endpoint so FastAPI runs the
+    blocking Overpass HTTP calls in a threadpool instead of stalling the
+    asyncio event loop (which would freeze WebSockets and other requests).
     """
     result = get_speed_limit(lat, lon)
     return result
@@ -400,10 +404,17 @@ async def live_evaluate(
     # Pre-filter acceleration to remove noise spikes (potholes, vibration)
     acceleration_data = evaluator._median_filter(acceleration_data)
 
+    # Process through physics pipeline (gravity compensation, reference frame alignment)
+    import numpy as np
+    orientation_matrix = evaluator._calibrate_orientation(acceleration_data, speed_data)
+    if orientation_matrix is None:
+        orientation_matrix = np.eye(3)
+    physics_data = evaluator._process_physics(acceleration_data, orientation_matrix)
+
     # Run sub-evaluations
-    _, braking_feedback = evaluator._evaluate_braking(acceleration_data, speed_data)
-    _, speed_feedback = evaluator._evaluate_speed(speed_data, 1) # dummy duration
-    _, cornering_feedback = evaluator._evaluate_cornering(acceleration_data, rotation_data)
+    _, braking_feedback = evaluator._evaluate_braking(physics_data, speed_data)
+    _, speed_feedback = evaluator._evaluate_speed(speed_data, [])
+    _, cornering_feedback = evaluator._evaluate_cornering(physics_data, rotation_data)
 
     # Collect all events detected in this window
     events = []
@@ -457,6 +468,13 @@ async def evaluate_chunk(
     # Pre-filter
     accel_data = evaluator._median_filter(accel_data)
 
+    # Process through physics pipeline
+    import numpy as np
+    orientation_matrix = evaluator._calibrate_orientation(accel_data, speed_data)
+    if orientation_matrix is None:
+        orientation_matrix = np.eye(3)
+    physics_data = evaluator._process_physics(accel_data, orientation_matrix)
+
     # Evaluate
     speed_limit_data = []
     if request.current_speed_limit:
@@ -466,10 +484,10 @@ async def evaluate_chunk(
             'zone_type': request.zone_type or "regular"
         }]
 
-    _, braking_feedback = evaluator._evaluate_braking(accel_data, speed_data)
-    _, speed_feedback = evaluator._evaluate_speed(speed_data, 1, speed_limit_data=speed_limit_data)
-    _, cornering_feedback = evaluator._evaluate_cornering(accel_data, [], speed_data=speed_data)
-    _, erratic_feedback = evaluator._evaluate_erratic_driving(accel_data, speed_data)
+    _, braking_feedback = evaluator._evaluate_braking(physics_data, speed_data)
+    _, speed_feedback = evaluator._evaluate_speed(speed_data, speed_limit_data)
+    _, cornering_feedback = evaluator._evaluate_cornering(physics_data, [], speed_data=speed_data)
+    _, erratic_feedback = evaluator._evaluate_erratic_driving(physics_data)
 
     events = []
     events.extend(braking_feedback.get('events', []))

@@ -69,7 +69,12 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
             implementation("com.google.android.gms:play-services-location:21.3.0")
-            implementation("androidx.activity:activity-compose:1.9.3")
+            implementation(libs.androidx.activity.compose)
+            
+            // Google Maps
+            implementation(libs.google.maps.compose)
+            implementation(libs.google.play.services.maps)
+            implementation(libs.google.places)
         }
 
         iosMain.dependencies {

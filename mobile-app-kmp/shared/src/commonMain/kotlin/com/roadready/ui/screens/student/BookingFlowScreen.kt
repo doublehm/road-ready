@@ -10,10 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.roadready.data.remote.ApiClient
-import com.roadready.ui.components.ErrorBanner
-import com.roadready.ui.components.PrimaryButton
-import com.roadready.ui.components.RoadReadyTextField
-import com.roadready.ui.components.SectionHeader
+import com.roadready.ui.components.*
 import com.roadready.ui.theme.*
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -76,25 +73,12 @@ fun BookingFlowScreen(
 
         SectionHeader("Location")
 
-        RoadReadyTextField(
+        AddressAutocompleteField(
             value = pickupAddress,
             onValueChange = { pickupAddress = it },
             label = "Pickup Address",
-            modifier = Modifier.padding(bottom = 8.dp),
+            modifier = Modifier.padding(bottom = 16.dp),
         )
-
-        // Map placeholder
-        Card(
-            modifier = Modifier.fillMaxWidth().height(150.dp).padding(bottom = 24.dp),
-            colors = CardDefaults.cardColors(containerColor = Surface),
-        ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("🗺️", style = MaterialTheme.typography.headlineLarge)
-                    Text("Map picker available on device", style = MaterialTheme.typography.bodySmall, color = TextMuted)
-                }
-            }
-        }
 
         PrimaryButton(
             text = "Confirm Booking",
