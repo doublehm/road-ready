@@ -1,29 +1,32 @@
 package com.roadready.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material3.*
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Canvas
 import com.roadready.data.repository.Vec3
 import com.roadready.ui.theme.*
 import com.roadready.ui.util.fmtDouble
-import com.roadready.ui.util.pad2
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sqrt
@@ -40,26 +43,28 @@ data class GaugeEvent(
 
 // ── Physics thresholds — must mirror diagnostic_evaluator.py ────────────────────
 
-private data class Threshold(val green: Double, val yellow: Double, val red: Double)
+data class Threshold(val green: Double, val yellow: Double, val red: Double)
 
-private val THRESHOLDS = mapOf(
+val THRESHOLDS = mapOf(
     "lateral"  to Threshold(0.10, 0.25, 0.35),
     "braking"  to Threshold(0.08, 0.30, 0.40),
     "throttle" to Threshold(0.05, 0.20, 0.30),
     "vertical" to Threshold(0.05, 0.20, 0.30),
     "grip"     to Threshold(0.15, 0.35, 0.50),
     "steering" to Threshold(0.20, 0.50, 0.80),
-    "jerk"     to Threshold(1.5,  3.0,  5.0),
+    // Raised thresholds: engine vibration at idle produces ~2–4 m/s³ jerk via TYPE_LINEAR_ACCELERATION.
+    // Only flag truly erratic inputs. Speed gate (>= 3 km/h) also applied at compute time.
+    "jerk"     to Threshold(2.5, 5.0, 8.0),
 )
 
-private fun thresholdColor(value: Double, thresh: Threshold): Color = when {
+fun thresholdColor(value: Double, thresh: Threshold): Color = when {
     value >= thresh.red    -> Color(0xFFEF4444)
     value >= thresh.yellow -> Color(0xFFF59E0B)
     value >= thresh.green  -> Color(0xFF22C55E)
-    else                   -> Color(0xFF64748B)
+    else                   -> Color(0xFF475569)
 }
 
-private fun barFraction(value: Double, thresh: Threshold): Float {
+fun barFraction(value: Double, thresh: Threshold): Float {
     val max = thresh.red * 1.5
     return (value / max).coerceIn(0.0, 1.0).toFloat()
 }
@@ -76,23 +81,18 @@ private fun speedColor(speed: Double, limit: Int?): Color {
 
 // ── Gauge model ─────────────────────────────────────────────────────────────────
 
-private data class GaugeData(
+data class GaugeData(
     val id: String,
     val label: String,
+    val icon: String,
     val value: Double,
     val unit: String,
     val thresh: Threshold,
-    val wide: Boolean = false,
     val faultType: String = "",
 )
 
 // ── Gauge display smoother (attack-decay EMA) ──────────────────────────────────
 
-/**
- * Exponential moving average with asymmetric alpha: fast attack for rising values
- * (responsive to braking/turning), slow decay for falling values (smooth fade-out).
- * Prevents gauges from snapping to zero during sustained events.
- */
 private class GaugeSmoother(
     private val attackAlpha: Double = 0.5,
     private val decayAlpha: Double = 0.18,
@@ -102,9 +102,8 @@ private class GaugeSmoother(
 
     fun smooth(gauges: List<GaugeData>): List<GaugeData> = gauges.map { g ->
         val prev = values[g.id] ?: 0.0
-        val target = g.value
-        val alpha = if (target > prev) attackAlpha else decayAlpha
-        var smoothed = prev + alpha * (target - prev)
+        val alpha = if (g.value > prev) attackAlpha else decayAlpha
+        var smoothed = prev + alpha * (g.value - prev)
         if (smoothed < snapToZeroThreshold) smoothed = 0.0
         values[g.id] = smoothed
         g.copy(value = smoothed)
@@ -114,14 +113,12 @@ private class GaugeSmoother(
 // ── Main composable ─────────────────────────────────────────────────────────────
 
 /**
- * Real-time telemetry dashboard shown during an active diagnostic ride.
+ * HUD overlay that positions circular arc gauges around the screen edges:
+ * - LEFT TURN → left-center
+ * - RIGHT TURN → right-center
+ * - BRAKE / ACCEL / GRIP / SMOOTH / VERT → bottom row
  *
- * Displays:
- * 1. Stats row — TIME, DIST, SPEED, LIMIT (with dividers)
- * 2. Info row — road name chip, zone type chip
- * 3. Speed analysis row — excess speed, over-limit %, school zone violations
- * 4. Force gauge grid — 8 gauges: LEFT TURN, RIGHT TURN, STOP FORCE (full width),
- *    ACCEL, GRIP, TURN RATE, SMOOTHNESS, VERTICAL
+ * Must be called inside a Box(fillMaxSize) so the alignment modifiers work.
  */
 @Composable
 fun TelemetryPanel(
@@ -142,312 +139,162 @@ fun TelemetryPanel(
 ) {
     val smoother = remember { GaugeSmoother() }
 
-    // Raw gauges for event detection (no display smoothing)
     val rawGauges = computeGauges(acceleration, rotation, prevAcceleration, sampleIntervalMs, speed, prevSpeed)
-
-    // Smoothed gauges for display (attack-decay EMA)
     val gauges = smoother.smooth(rawGauges)
 
-    // Fire threshold events from RAW values (no smoothing delay)
     LaunchedEffect(rawGauges) {
         if (onThresholdExceeded != null && isActive) {
             for (g in rawGauges) {
                 if (g.value >= g.thresh.red) {
-                    onThresholdExceeded(
-                        GaugeEvent(
-                            id = g.id,
-                            label = g.label,
-                            value = g.value,
-                            unit = g.unit,
-                            faultType = g.faultType,
-                        )
-                    )
+                    onThresholdExceeded(GaugeEvent(g.id, g.label, g.value, g.unit, g.faultType))
                 }
             }
         }
     }
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Main Speed & Limit Display
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            containerColor = Background.copy(alpha = 0.8f)
+    val leftTurn  = gauges.firstOrNull { it.id == "left-turn"  } ?: return
+    val rightTurn = gauges.firstOrNull { it.id == "right-turn" } ?: return
+    val braking   = gauges.firstOrNull { it.id == "stop-force" } ?: return
+    val accel     = gauges.firstOrNull { it.id == "accel"      } ?: return
+    val grip      = gauges.firstOrNull { it.id == "grip"       } ?: return
+    val smooth    = gauges.firstOrNull { it.id == "smoothness" } ?: return
+    val vertical  = gauges.firstOrNull { it.id == "vertical"   } ?: return
+
+    Box(modifier = modifier) {
+
+        // ── LEFT TURN — left edge, vertically centered ─────────────────────────
+        ArcGauge(
+            gauge = leftTurn,
+            sizeDp = 72.dp,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 6.dp),
+        )
+
+        // ── RIGHT TURN — right edge, vertically centered ────────────────────────
+        ArcGauge(
+            gauge = rightTurn,
+            sizeDp = 72.dp,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 6.dp),
+        )
+
+        // ── Bottom row: BRAKE (center-large), ACCEL, GRIP, SMOOTH, VERT ─────────
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 108.dp, start = 12.dp, end = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text("SPEED", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = speed.toInt().toString(),
-                            style = MaterialTheme.typography.displayLarge,
-                            color = speedColor(speed, speedLimit)
-                        )
-                        Text(
-                            " km/h",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = TextMuted,
-                            modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
-                        )
-                    }
-                }
-                
-                if (speedLimit != null) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text("LIMIT", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .border(2.dp, Color.Red, CircleShape)
-                                .background(Color.White, CircleShape),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                speedLimit.toString(),
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color.Black,
-                                fontWeight = FontWeight.ExtraBold
-                            )
-                        }
-                    }
-                }
-            }
-            
-            if (!roadName.isNullOrBlank()) {
-                Spacer(Modifier.height(12.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Rounded.LocationOn,
-                        contentDescription = null,
-                        tint = Primary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        roadName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-
-        // Gauges Grid
-        GlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            containerColor = Background.copy(alpha = 0.6f)
-        ) {
-            Text("FORCE SENSORS", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-            Spacer(Modifier.height(12.dp))
-            GaugeGrid(gauges)
+            ArcGauge(braking, sizeDp = 66.dp)
+            ArcGauge(accel,   sizeDp = 58.dp)
+            ArcGauge(grip,    sizeDp = 58.dp)
+            ArcGauge(smooth,  sizeDp = 58.dp)
+            ArcGauge(vertical, sizeDp = 54.dp)
         }
     }
 }
 
-// ── Stats row ───────────────────────────────────────────────────────────────────
+// ── Circular arc gauge widget ───────────────────────────────────────────────────
 
 @Composable
-private fun StatsRow(duration: Int, distance: Double, speed: Double, speedLimit: Int?) {
-    val spdColor = speedColor(speed, speedLimit)
-    val timeStr = "${pad2(duration / 60)}:${pad2(duration % 60)}"
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        StatCell("TIME", timeStr)
-        StatDivider()
-        StatCell("DIST", "${fmtDouble(distance, 2)} km")
-        StatDivider()
-        StatCell("SPEED", "${speed.toInt()}", spdColor, large = true)
-        StatDivider()
-        StatCell("LIMIT", speedLimit?.toString() ?: "--")
-    }
-}
-
-@Composable
-private fun StatCell(
-    label: String,
-    value: String,
-    valueColor: Color = Color(0xFFE2E8F0),
-    large: Boolean = false,
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, fontSize = 8.sp, fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF64748B), letterSpacing = 1.sp)
-        Text(value, fontSize = if (large) 22.sp else 14.sp,
-            fontWeight = FontWeight.Black, color = valueColor)
-    }
-}
-
-@Composable
-private fun StatDivider() {
-    Box(Modifier.width(1.dp).height(28.dp).background(SurfaceVariant.copy(alpha = 0.25f)))
-}
-
-// ── Info row ────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun InfoRow(roadName: String?, zoneType: String?, speedLimit: Int?, speed: Double) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Road name chip
-        val displayRoad = if (!roadName.isNullOrBlank()) roadName else "Unknown road"
-        InfoChip(text = "📍 $displayRoad", modifier = Modifier.weight(1f, fill = false))
-
-        // Zone type chip
-        if (!zoneType.isNullOrBlank() && zoneType != "regular") {
-            val zoneColor = when (zoneType) {
-                "school"      -> Color(0xFFF59E0B)
-                "residential" -> Color(0xFF3B82F6)
-                else          -> Color(0xFF64748B)
-            }
-            InfoChip(
-                text = "⚠ ${zoneType.replaceFirstChar { it.uppercase() }}",
-                bgColor = zoneColor.copy(alpha = 0.2f),
-                textColor = zoneColor,
-            )
-        }
-    }
-}
-
-@Composable
-private fun InfoChip(
-    text: String,
+private fun ArcGauge(
+    gauge: GaugeData,
+    sizeDp: Dp = 68.dp,
     modifier: Modifier = Modifier,
-    bgColor: Color = SurfaceVariant.copy(alpha = 0.5f),
-    textColor: Color = Color(0xFFE2E8F0),
 ) {
+    val animColor by animateColorAsState(
+        targetValue = thresholdColor(gauge.value, gauge.thresh),
+        animationSpec = tween(300),
+    )
+    val animFraction by animateFloatAsState(
+        targetValue = barFraction(gauge.value, gauge.thresh),
+        animationSpec = tween(250, easing = FastOutSlowInEasing),
+    )
+
+    val glowing = gauge.value >= gauge.thresh.yellow
+
     Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(bgColor)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+        modifier = modifier.size(sizeDp),
+        contentAlignment = Alignment.Center,
     ) {
-        Text(text, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = textColor,
-            maxLines = 1)
-    }
-}
-
-// ── Speed analysis row ──────────────────────────────────────────────────────────
-
-@Composable
-private fun SpeedAnalysisRow(speed: Double, speedLimit: Int, zoneType: String?) {
-    val excess = (speed - speedLimit).coerceAtLeast(0.0)
-    val overPct = if (speedLimit > 0) ((excess / speedLimit) * 100).toInt() else 0
-    val isSchoolZone = zoneType == "school"
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                if (excess > 0) Color(0xFFEF4444).copy(alpha = 0.12f)
-                else SurfaceVariant.copy(alpha = 0.3f)
+        // Glow halo when force is significant
+        if (glowing) {
+            Box(
+                modifier = Modifier
+                    .size(sizeDp)
+                    .clip(CircleShape)
+                    .background(animColor.copy(alpha = 0.15f)),
             )
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        MiniStat("EXCESS", if (excess > 0) "+${excess.toInt()} km/h" else "—",
-            if (excess > 0) Color(0xFFEF4444) else Color(0xFF64748B))
-        MiniStat("OVER", if (overPct > 0) "$overPct%" else "—",
-            if (overPct > 10) Color(0xFFEF4444) else Color(0xFF64748B))
-        if (isSchoolZone) {
-            MiniStat("🏫 ZONE", if (excess > 0) "⚠" else "✓",
-                if (excess > 0) Color(0xFFEF4444) else Color(0xFF22C55E))
         }
-    }
-}
 
-@Composable
-private fun MiniStat(label: String, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, fontSize = 7.sp, fontWeight = FontWeight.ExtraBold,
-            color = Color(0xFF64748B), letterSpacing = 0.8.sp)
-        Text(value, fontSize = 11.sp, fontWeight = FontWeight.Black, color = color)
-    }
-}
+        // Dark background circle
+        Box(
+            modifier = Modifier
+                .size(sizeDp)
+                .clip(CircleShape)
+                .background(Color(0xCC0F172A)), // near-black, 80% opaque
+        )
 
-// ── Gauge grid ──────────────────────────────────────────────────────────────────
+        // Arc drawn over the background
+        Canvas(modifier = Modifier.size(sizeDp)) {
+            val stroke = size.width * 0.13f
+            val inset = stroke / 2f
+            val arcSize = Size(size.width - stroke, size.height - stroke)
 
-@Composable
-private fun GaugeGrid(gauges: List<GaugeData>) {
-    val rows = mutableListOf<List<GaugeData>>()
-    var currentRow = mutableListOf<GaugeData>()
+            // Background track (dark grey)
+            drawArc(
+                color = Color(0xFF1E293B),
+                startAngle = 135f,
+                sweepAngle = 270f,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = Stroke(stroke, cap = StrokeCap.Round),
+            )
 
-    for (gauge in gauges) {
-        if (gauge.wide) {
-            if (currentRow.isNotEmpty()) { rows.add(currentRow.toList()); currentRow = mutableListOf() }
-            rows.add(listOf(gauge))
-        } else {
-            currentRow.add(gauge)
-            if (currentRow.size == 2) { rows.add(currentRow.toList()); currentRow = mutableListOf() }
-        }
-    }
-    if (currentRow.isNotEmpty()) rows.add(currentRow.toList())
-
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        for (row in rows) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (gauge in row) {
-                    GaugeItem(gauge, if (gauge.wide) Modifier.fillMaxWidth() else Modifier.weight(1f))
-                }
-                if (row.size == 1 && !row[0].wide) Spacer(Modifier.weight(1f))
+            // Value arc
+            val sweep = 270f * animFraction
+            if (sweep > 0.5f) {
+                drawArc(
+                    color = animColor,
+                    startAngle = 135f,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = Offset(inset, inset),
+                    size = arcSize,
+                    style = Stroke(stroke, cap = StrokeCap.Round),
+                )
             }
         }
-    }
-}
 
-@Composable
-private fun GaugeItem(gauge: GaugeData, modifier: Modifier = Modifier) {
-    val targetColor = thresholdColor(gauge.value, gauge.thresh)
-    val color by animateColorAsState(
-        targetValue = targetColor,
-        animationSpec = tween(durationMillis = 300),
-    )
-    val targetFraction = barFraction(gauge.value, gauge.thresh)
-    val fraction by animateFloatAsState(
-        targetValue = targetFraction,
-        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
-    )
-    val valueText = if (gauge.value < 10.0) fmtDouble(gauge.value, 2) else fmtDouble(gauge.value, 1)
-
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(SurfaceVariant.copy(alpha = 0.6f))
-            .padding(7.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(gauge.label, fontSize = 10.sp, fontWeight = FontWeight.Black,
-                color = TextSecondary, letterSpacing = 0.5.sp, modifier = Modifier.weight(1f))
-            Text(valueText, fontSize = 14.sp, fontWeight = FontWeight.Black, color = color)
-            Text(" ${gauge.unit}", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF64748B))
-        }
-        Spacer(Modifier.height(4.dp))
-        Box(
-            Modifier.fillMaxWidth().height(5.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(SurfaceVariant.copy(alpha = 0.6f)),
+        // Label + value text
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
-            Box(
-                Modifier.fillMaxHeight().fillMaxWidth(fraction)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(color),
+            Text(
+                text = gauge.icon,
+                fontSize = (sizeDp.value * 0.26f).sp,
             )
+            Text(
+                text = gauge.label,
+                fontSize = (sizeDp.value * 0.115f).sp,
+                color = TextMuted,
+                fontWeight = FontWeight.Bold,
+                lineHeight = (sizeDp.value * 0.115f).sp,
+            )
+            if (gauge.value >= 0.005) {
+                Text(
+                    text = if (gauge.value < 10.0) fmtDouble(gauge.value, 2)
+                           else fmtDouble(gauge.value, 1),
+                    fontSize = (sizeDp.value * 0.16f).sp,
+                    color = animColor,
+                    fontWeight = FontWeight.Black,
+                )
+            }
         }
     }
 }
@@ -456,7 +303,11 @@ private fun GaugeItem(gauge: GaugeData, modifier: Modifier = Modifier) {
 
 private const val G = 9.81
 
-private fun computeGauges(
+// Dead-zone: reject sensor noise below this threshold (m/s²).
+// TYPE_LINEAR_ACCELERATION already removes gravity; 0.08 handles residual noise.
+private const val DEAD_ZONE = 0.08
+
+fun computeGauges(
     acc: Vec3,
     rot: Vec3,
     prevAcc: Vec3?,
@@ -468,26 +319,24 @@ private fun computeGauges(
     val ay = acc.y
     val az = acc.z
 
-    // Dead-zone: ignore sensor noise below 0.08 m/s² (~0.008 G)
-    // Lowered from 0.15 since TYPE_LINEAR_ACCELERATION has better noise floor
-    val dax = if (abs(ax) < 0.08) 0.0 else ax
-    val day = if (abs(ay) < 0.08) 0.0 else ay
-    val daz = if (abs(az) < 0.08) 0.0 else az
+    val dax = if (abs(ax) < DEAD_ZONE) 0.0 else ax
+    val day = if (abs(ay) < DEAD_ZONE) 0.0 else ay
+    val daz = if (abs(az) < DEAD_ZONE) 0.0 else az
 
     val lateralG = abs(dax) / G
-    val lonG = max(abs(day), abs(daz)) / G
 
-    // Braking vs acceleration from dominant longitudinal axis sign
-    val primaryAxisSign = if (abs(day) >= abs(daz)) {
-        if (day >= 0) 1.0 else -1.0
-    } else {
-        if (daz >= 0) 1.0 else -1.0
-    }
+    // Portrait phone (screen facing driver):
+    //   X axis → lateral  (left/right)   ✓
+    //   Z axis → longitudinal (forward/back) — out of screen = car forward
+    //   Y axis → vertical (up/down) — top of phone points up
+    val lonG = abs(daz) / G
 
+    // Sign of Z: positive = braking (decelerating), negative = accelerating.
+    val primaryAxisSign = if (daz >= 0) 1.0 else -1.0
+
+    val speedDrop = prevSpeed - speed
     val brakingG: Double
     val accelG: Double
-    // Also detect braking from GPS speed decrease
-    val speedDrop = prevSpeed - speed
     if (lonG > 0.15 || speedDrop > 5.0) {
         if (primaryAxisSign > 0 || speedDrop > 5.0) {
             brakingG = lonG; accelG = 0.0
@@ -498,29 +347,37 @@ private fun computeGauges(
         brakingG = 0.0; accelG = 0.0
     }
 
-    val verticalG = abs(daz) / G
+    // Y axis exclusively for vertical (road roughness / bumps).
+    val verticalG = abs(day) / G
+
+    // Grip uses lateral + longitudinal only — vertical excluded so bumps don't
+    // inflate the grip reading.
     val gripG = sqrt(lateralG * lateralG + lonG * lonG)
     val turnRate = sqrt(rot.x * rot.x + rot.y * rot.y + rot.z * rot.z)
 
-    // Jerk: rate of acceleration change (m/s³)
-    val jerk = if (prevAcc != null && sampleIntervalMs > 0) {
+    // Jerk: rate-of-change of acceleration (m/s³).
+    // Uses dead-zoned values, speed gate (>= 3 km/h), and noise floor (0.4 m/s³).
+    val jerk = if (prevAcc != null && sampleIntervalMs > 0 && speed >= 3.0) {
         val dt = sampleIntervalMs / 1000.0
-        val dx = ax - prevAcc.x
-        val dy = ay - prevAcc.y
-        val dz = az - prevAcc.z
-        sqrt(dx * dx + dy * dy + dz * dz) / dt
+        val prevDax = if (abs(prevAcc.x) < DEAD_ZONE) 0.0 else prevAcc.x
+        val prevDay = if (abs(prevAcc.y) < DEAD_ZONE) 0.0 else prevAcc.y
+        val prevDaz = if (abs(prevAcc.z) < DEAD_ZONE) 0.0 else prevAcc.z
+        val dx = dax - prevDax
+        val dy = day - prevDay
+        val dz = daz - prevDaz
+        val raw = sqrt(dx * dx + dy * dy + dz * dz) / dt
+        if (raw < 0.4) 0.0 else raw
     } else {
         0.0
     }
 
     return listOf(
-        GaugeData("left-turn",  "LEFT TURN",  if (dax > 0) lateralG else 0.0,  "G",     THRESHOLDS["lateral"]!!,  faultType = "C1"),
-        GaugeData("right-turn", "RIGHT TURN", if (dax < 0) lateralG else 0.0,  "G",    THRESHOLDS["lateral"]!!,  faultType = "C2"),
-        GaugeData("stop-force", "STOP FORCE", brakingG,                          "G",    THRESHOLDS["braking"]!!,  wide = true, faultType = "A1"),
-        GaugeData("accel",      "ACCEL",      accelG,                            "G",    THRESHOLDS["throttle"]!!, faultType = "A2"),
-        GaugeData("grip",       "GRIP",       gripG,                             "G",    THRESHOLDS["grip"]!!,     faultType = "C3"),
-        GaugeData("turn-rate",  "TURN RATE",  turnRate,                          "rad/s", THRESHOLDS["steering"]!!, faultType = "C4"),
-        GaugeData("smoothness", "SMOOTHNESS", jerk,                              "m/s³", THRESHOLDS["jerk"]!!,     faultType = "D1"),
-        GaugeData("vertical",   "VERTICAL",   verticalG,                         "G",    THRESHOLDS["vertical"]!!, faultType = "E1"),
+        GaugeData("left-turn",  "LEFT",  "↰", if (dax > 0) lateralG else 0.0,  "G",     THRESHOLDS["lateral"]!!,  faultType = "C1"),
+        GaugeData("right-turn", "RIGHT", "↱", if (dax < 0) lateralG else 0.0,  "G",     THRESHOLDS["lateral"]!!,  faultType = "C2"),
+        GaugeData("stop-force", "BRAKE", "🛑", brakingG,                          "G",    THRESHOLDS["braking"]!!,  faultType = "A1"),
+        GaugeData("accel",      "ACCEL", "⚡", accelG,                            "G",    THRESHOLDS["throttle"]!!, faultType = "A2"),
+        GaugeData("grip",       "GRIP",  "⊗", gripG,                             "G",    THRESHOLDS["grip"]!!,     faultType = "C3"),
+        GaugeData("smoothness", "SMOOTH","〰", jerk,                              "m/s³", THRESHOLDS["jerk"]!!,     faultType = "D1"),
+        GaugeData("vertical",   "VERT",  "↕", verticalG,                         "G",    THRESHOLDS["vertical"]!!, faultType = "E1"),
     )
 }

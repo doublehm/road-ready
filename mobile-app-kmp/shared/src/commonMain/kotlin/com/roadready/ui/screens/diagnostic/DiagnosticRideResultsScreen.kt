@@ -29,6 +29,20 @@ private val jsonParser = Json { ignoreUnknownKeys = true }
 
 // ── JSON parsing helpers ────────────────────────────────────────────
 
+private fun parseAccelData(raw: String?): List<AccelDataPoint> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return try {
+        jsonParser.decodeFromString<List<AccelDataPoint>>(raw)
+    } catch (_: Exception) { emptyList() }
+}
+
+private fun parseRotationData(raw: String?): List<RotationDataPoint> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return try {
+        jsonParser.decodeFromString<List<RotationDataPoint>>(raw)
+    } catch (_: Exception) { emptyList() }
+}
+
 private fun parseRouteCoords(raw: String?): List<RouteCoordinate> {
     if (raw.isNullOrBlank()) return emptyList()
     return try {
@@ -290,6 +304,8 @@ fun DiagnosticRideResultsScreen(
     val routeCoords = remember(r.routeCoords) { parseRouteCoords(r.routeCoords) }
     val speedData = remember(r.speedData) { parseSpeedData(r.speedData) }
     val speedLimitData = remember(r.speedLimitData) { parseSpeedLimitData(r.speedLimitData) }
+    val accelData = remember(r.accelerationData) { parseAccelData(r.accelerationData) }
+    val rotationData = remember(r.rotationData) { parseRotationData(r.rotationData) }
     val humanFeedbackItems = remember(r.humanFeedback) { parseHumanFeedback(r.humanFeedback) }
     val evalResult = remember(r.evaluationResult) { parseEvaluationResult(r.evaluationResult) }
     val allEvents = remember(evalResult) { extractEvents(evalResult) }
@@ -386,7 +402,26 @@ fun DiagnosticRideResultsScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // ── 8. Detailed Breakdown Cards ─────────────────────────
+        // ── 8. Force Analysis Charts ────────────────────────────
+        if (accelData.isNotEmpty() || rotationData.isNotEmpty()) {
+            SectionLabel("Force Analysis")
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = Surface),
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    SeparateForceCharts(
+                        accelData = accelData,
+                        rotationData = rotationData,
+                        chartHeight = 140.dp,
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
+        // ── 9. Detailed Breakdown Cards ─────────────────────────
         SectionLabel("Detailed Breakdown")
 
         CategoryBreakdownCard(
@@ -507,7 +542,22 @@ fun DiagnosticRideResultsScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // ── 12. Action Buttons ──────────────────────────────────
+        // ── 12. Raw Sensor Data Table ───────────────────────────
+        SectionLabel("Raw Sensor Data")
+        val sensorRows = remember(accelData, rotationData, speedData, speedLimitData) {
+            buildSensorRows(accelData, rotationData, speedData, speedLimitData)
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(500.dp)
+                .padding(horizontal = 16.dp),
+        ) {
+            RawSensorTable(rows = sensorRows, modifier = Modifier.fillMaxSize())
+        }
+        Spacer(Modifier.height(16.dp))
+
+        // ── 13. Action Buttons ──────────────────────────────────
         ActionButtons(passed, rideId, onViewDetail, onDone)
 
         Spacer(Modifier.height(40.dp))
@@ -857,7 +907,7 @@ private fun CategoryBreakdownCard(
     }
 }
 
-// ── 12. Action Buttons ──────────────────────────────────────────────
+// ── 13. Action Buttons ──────────────────────────────────────────────
 
 @Composable
 private fun ActionButtons(

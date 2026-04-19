@@ -7,6 +7,11 @@ try:
     from app.services.ml_evaluator import MLEvaluator
 except ImportError:
     MLEvaluator = None
+try:
+    from app.services.force_ml_model import analyse_ride, ForceDecorrelator
+    _FORCE_ML_AVAILABLE = True
+except ImportError:
+    _FORCE_ML_AVAILABLE = False
 
 class DiagnosticEvaluator:
     """
@@ -120,8 +125,8 @@ class DiagnosticEvaluator:
             y_basis = np.mean(forward_samples, axis=0)
             y_basis /= np.linalg.norm(y_basis)
         else:
-            # Fallback: Assume Y is roughly forward-facing if no acceleration found
-            temp_y = np.array([0, 1, 0]) if abs(z_basis[1]) < 0.8 else np.array([1, 0, 0])
+            # Fallback: portrait phone (screen facing driver) → Z axis is forward
+            temp_y = np.array([0, 0, 1]) if abs(z_basis[2]) < 0.8 else np.array([1, 0, 0])
             y_basis = temp_y - np.dot(temp_y, z_basis) * z_basis
             y_basis /= np.linalg.norm(y_basis)
 
@@ -181,9 +186,9 @@ class DiagnosticEvaluator:
                 'timestamp': ts_ms,
                 'latitude': p.get('latitude'),
                 'longitude': p.get('longitude'),
-                'lat_accel': v_accel[0],   # m/s²
-                'long_accel': v_accel[1],  # m/s² (Forward)
-                'vert_accel': v_accel[2],  # m/s²
+                'lat_accel': v_accel[0],   # m/s² — X lateral (left/right)
+                'long_accel': v_accel[1],  # m/s² — Z forward/back (after orientation rotation)
+                'vert_accel': v_accel[2],  # m/s² — Y up/down
                 'jerk': jerk,              # m/s³
                 'raw': raw
             })
@@ -216,6 +221,18 @@ class DiagnosticEvaluator:
         # Apply Gravity Compensation and Rotation (Requirement 1, 2, 4, 5)
         physics_data = self._process_physics(acc_filtered, orientation_matrix)
 
+        # 2b. Decorrelate force axes (Gram-Schmidt partial regression)
+        # Removes spurious covariance between lat/lon/vert introduced by imperfect
+        # orientation alignment and sensor cross-talk, then recomputes jerk.
+        decorr_report: Dict = {}
+        if _FORCE_ML_AVAILABLE and len(physics_data) >= 50:
+            try:
+                decorr = ForceDecorrelator()
+                physics_data = decorr.fit_transform(physics_data)
+                decorr_report = decorr.report()
+            except Exception:
+                pass
+
         # 3. High-Fidelity Modules (Requirement 3: Strict G-Force Evaluation)
         braking_score, braking_fb = self._evaluate_braking(physics_data, speed_data)
         speed_score, speed_fb = self._evaluate_speed(speed_data, speed_limit_data)
@@ -246,6 +263,42 @@ class DiagnosticEvaluator:
         all_events = self._collect_events(braking_fb, speed_fb, cornering_fb, erratic_fb, combined_fb, impact_fb)
         route_segments = self._build_route_segments(speed_data, speed_limit_data)
 
+        # 6. ML Enhancement — Ridge correlation analysis + ESN temporal detection
+        ml_analysis: Dict = {}
+        if _FORCE_ML_AVAILABLE and len(physics_data) >= 30:
+            try:
+                base_thresholds = {
+                    'braking':   self.HARD_BRAKING_THRESHOLD,
+                    'cornering': self.HARSH_CORNERING_THRESHOLD,
+                    'jerk':      self.JERK_THRESHOLD,
+                    'grip':      self.FRICTION_CIRCLE_THRESHOLD_G * self.GRAVITY,
+                    'vertical':  self.VERTICAL_IMPACT_THRESHOLD_G * self.GRAVITY,
+                }
+                ml_result = analyse_ride(physics_data, all_events, base_thresholds,
+                                        decorr_report=decorr_report)
+
+                # Merge ESN-detected events that don't duplicate existing events
+                existing_ts = {e.get('timestamp', 0) for e in all_events}
+                for ev in ml_result.get('esn_events', []):
+                    ts = ev.get('timestamp', 0)
+                    if all(abs(ts - et) > self.EVENT_COOLDOWN_MS for et in existing_ts):
+                        all_events.append(ev)
+                        existing_ts.add(ts)
+
+                ml_analysis = {
+                    'top_correlations': ml_result.get('top_correlations', []),
+                    'ridge_weights':    ml_result.get('ridge_weights', {}),
+                    'esn_trained':      ml_result.get('esn_trained', False),
+                    'esn_event_count':  len(ml_result.get('esn_events', [])),
+                    'calibrated_thresholds': {
+                        k: round(float(v), 4)
+                        for k, v in ml_result.get('calibrated_thresholds', {}).items()
+                    },
+                    'decorrelation': ml_result.get('decorrelation', {}),
+                }
+            except Exception:
+                pass
+
         evaluation_result = {
             'braking': braking_fb,
             'speed': speed_fb,
@@ -256,6 +309,7 @@ class DiagnosticEvaluator:
             'overall': pass_fb,
             'events': all_events,
             'route_segments': route_segments,
+            'ml_analysis': ml_analysis,
             'summary': self._generate_summary(passed, overall_score, braking_score, speed_score, cornering_score, smoothness_score)
         }
 
@@ -357,8 +411,10 @@ class DiagnosticEvaluator:
         max_g = 0.0
 
         for p in physics_data:
-            # sqrt(lat^2 + long^2)
-            total_accel = math.sqrt(p['lat_accel']**2 + p['long_accel']**2)
+            # Use pre-decorrelation long_accel for friction circle so that genuinely
+            # combined braking+cornering manoeuvres are still captured at full force.
+            lon_for_friction = p.get('raw_long_accel', p['long_accel'])
+            total_accel = math.sqrt(p['lat_accel']**2 + lon_for_friction**2)
             total_g = total_accel / self.GRAVITY
             if total_g > max_g:
                 max_g = total_g
