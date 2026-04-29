@@ -20,6 +20,7 @@ actual fun PlatformOsmMap(
     events: List<RouteEvent>,
     height: Dp,
     modifier: Modifier,
+    followCurrentLocation: Boolean,
 ) {
     // iOS stub — no map rendering yet
     Box(

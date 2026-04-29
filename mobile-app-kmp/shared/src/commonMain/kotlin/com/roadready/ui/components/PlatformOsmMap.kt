@@ -16,4 +16,5 @@ expect fun PlatformOsmMap(
     events: List<RouteEvent> = emptyList(),
     height: Dp = 300.dp,
     modifier: Modifier = Modifier,
+    followCurrentLocation: Boolean = false,
 )

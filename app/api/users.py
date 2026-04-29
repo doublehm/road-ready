@@ -5,7 +5,7 @@ from app.api import deps
 import shutil
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -27,12 +27,12 @@ async def upload_license(
         
     return {"filename": filename}
 
-@router.post("/", response_model=schemas.UserWithProfile)
+@router.post("/", response_model=schemas.Token)
 def create_user(user: schemas.UserCreate, db: Session = Depends(deps.get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
+
     hashed_password = security.get_password_hash(user.password)
     db_user = models.User(
         email=user.email,
@@ -44,7 +44,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(deps.get_db)):
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    
+
     # Initialize profile based on role
     if user.role == "student":
         profile = models.StudentProfile(
@@ -67,9 +67,8 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(deps.get_db)):
             certification_id=user.certification_id or "PENDING"
         )
         db.add(profile)
-        db.flush() # Get profile.id
-        
-        # Add license classes
+        db.flush()
+
         if user.license_classes:
             for lc in user.license_classes:
                 db_lc = models.InstructorLicenseClass(
@@ -78,9 +77,14 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(deps.get_db)):
                     price=lc.price
                 )
                 db.add(db_lc)
-    
+
     db.commit()
-    return db_user
+
+    access_token = security.create_access_token(
+        data={"sub": db_user.email},
+        expires_delta=timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+    return {"access_token": access_token, "token_type": "bearer", "role": db_user.role, "user_id": db_user.id}
 
 @router.get("/me", response_model=schemas.UserWithProfile)
 async def read_users_me(current_user: models.User = Depends(deps.get_current_user)):

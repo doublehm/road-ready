@@ -2,6 +2,21 @@ from pydantic import BaseModel, EmailStr, validator
 from typing import Optional, List, Dict, Any
 import re
 
+# --- Instructor Schemas ---
+class InstructorLicenseClassBase(BaseModel):
+    license_class: str
+    price: float
+
+class InstructorLicenseClassCreate(InstructorLicenseClassBase):
+    pass
+
+class InstructorLicenseClass(InstructorLicenseClassBase):
+    id: int
+    instructor_id: int
+
+    class Config:
+        from_attributes = True
+
 # --- Shared Schemas ---
 class UserBase(BaseModel):
     email: EmailStr
@@ -64,20 +79,6 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
-# --- Instructor Schemas ---
-class InstructorLicenseClassBase(BaseModel):
-    license_class: str
-    price: float
-
-class InstructorLicenseClassCreate(InstructorLicenseClassBase):
-    pass
-
-class InstructorLicenseClass(InstructorLicenseClassBase):
-    id: int
-    instructor_id: int
-    
-    class Config:
-        from_attributes = True
 
 class InstructorAvailabilityBase(BaseModel):
     day_of_week: int

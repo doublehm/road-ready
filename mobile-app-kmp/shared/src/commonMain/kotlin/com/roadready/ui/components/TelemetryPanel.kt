@@ -52,9 +52,9 @@ val THRESHOLDS = mapOf(
     "vertical" to Threshold(0.05, 0.20, 0.30),
     "grip"     to Threshold(0.15, 0.35, 0.50),
     "steering" to Threshold(0.20, 0.50, 0.80),
-    // Raised thresholds: engine vibration at idle produces ~2–4 m/s³ jerk via TYPE_LINEAR_ACCELERATION.
-    // Only flag truly erratic inputs. Speed gate (>= 3 km/h) also applied at compute time.
-    "jerk"     to Threshold(2.5, 5.0, 8.0),
+    // Green/yellow bands kept low so the gauge shows activity during normal driving.
+    // Red threshold raised so only genuinely rough inputs raise a D1 flag.
+    "jerk"     to Threshold(2.5, 7.0, 12.0),
 )
 
 fun thresholdColor(value: Double, thresh: Threshold): Color = when {

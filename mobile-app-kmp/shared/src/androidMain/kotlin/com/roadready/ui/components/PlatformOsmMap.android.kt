@@ -22,6 +22,7 @@ actual fun PlatformOsmMap(
     events: List<RouteEvent>,
     height: Dp,
     modifier: Modifier,
+    followCurrentLocation: Boolean,
 ) {
     val center = remember(coordinates) {
         if (coordinates.isNotEmpty()) {
@@ -73,7 +74,7 @@ actual fun PlatformOsmMap(
             
             // Start Marker
             Marker(
-                state = MarkerState(position = LatLng(coordinates.first().first, coordinates.last().second)),
+                state = MarkerState(position = LatLng(coordinates.first().first, coordinates.first().second)),
                 title = "Start",
                 icon = com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_GREEN)
             )

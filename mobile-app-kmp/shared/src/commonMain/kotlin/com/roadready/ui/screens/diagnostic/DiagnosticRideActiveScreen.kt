@@ -145,10 +145,10 @@ fun DiagnosticRideActiveScreen(
                     val speedJson = buildJsonArray {
                         finalGps.speedData.forEach {
                             add(buildJsonObject {
-                                put("timestamp", it.timestamp.toDouble())
+                                put("timestamp", it.timestamp)
                                 put("speed", it.speed)
-                                put("latitude", it.latitude)
-                                put("longitude", it.longitude)
+                                put("lat", it.latitude)
+                                put("lon", it.longitude)
                             })
                         }
                     }.toString()
@@ -171,8 +171,8 @@ fun DiagnosticRideActiveScreen(
                     val speedLimitJson = buildJsonArray {
                         speedLimitData.forEach {
                             add(buildJsonObject {
-                                put("latitude", it.latitude)
-                                put("longitude", it.longitude)
+                                put("lat", it.latitude)
+                                put("lon", it.longitude)
                                 put("speed_limit", it.speedLimit)
                             })
                         }
@@ -286,6 +286,7 @@ fun DiagnosticRideActiveScreen(
                 speed = currentSpeed,
                 speedLimit = currentLimit,
                 roadName = speedLimitState.roadName,
+                distance = gpsState.distance,
             )
 
             Spacer(Modifier.height(8.dp))
@@ -367,6 +368,7 @@ private fun ImmersiveHeader(
     speed: Double,
     speedLimit: Int?,
     roadName: String?,
+    distance: Double,
 ) {
     val speedColor = when {
         speedLimit == null -> TextPrimary
@@ -427,18 +429,34 @@ private fun ImmersiveHeader(
                 }
             }
 
-            // Timer + speed limit sign (right)
+            // Timer + distance + speed limit sign (right)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.End,
                 modifier = Modifier.weight(1f),
             ) {
-                Text(
-                    "${pad2(elapsedSeconds / 60)}:${pad2(elapsedSeconds % 60)}",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "${pad2(elapsedSeconds / 60)}:${pad2(elapsedSeconds % 60)}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                    )
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            "%.1f".format(distance),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                        )
+                        Text(
+                            " km",
+                            fontSize = 9.sp,
+                            color = TextMuted,
+                            modifier = Modifier.padding(bottom = 1.dp),
+                        )
+                    }
+                }
                 if (speedLimit != null) {
                     Spacer(Modifier.width(10.dp))
                     Box(
@@ -488,7 +506,7 @@ private fun LiveMapSection(
     }
 
     if (coords.isNotEmpty()) {
-        PlatformOsmMap(coordinates = coords, events = routeEvents, modifier = modifier)
+        PlatformOsmMap(coordinates = coords, events = routeEvents, modifier = modifier, followCurrentLocation = true)
     } else {
         Box(modifier = modifier.background(SurfaceVariant), contentAlignment = Alignment.Center) {
             Text("Waiting for GPS signal…", color = TextMuted)
@@ -500,24 +518,33 @@ private fun LiveMapSection(
 
 @Composable
 private fun EventBadges(events: List<RideEvent>, modifier: Modifier = Modifier) {
+    // Group by type, preserving first-occurrence order
+    val grouped = events
+        .groupBy { it.type }
+        .entries
+        .sortedBy { (_, list) -> list.first().timestamp }
+
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
         horizontalAlignment = Alignment.End,
     ) {
-        events.takeLast(5).forEach { event ->
+        grouped.takeLast(5).forEach { (_, eventList) ->
+            val representative = eventList.last()
+            val count = eventList.size
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(20.dp))
                     .background(
-                        if (event.severity == "high" || event.severity == "error")
+                        if (representative.severity == "high" || representative.severity == "error")
                             Error.copy(alpha = 0.88f)
                         else Warning.copy(alpha = 0.88f),
                     )
                     .padding(horizontal = 10.dp, vertical = 5.dp),
             ) {
                 Text(
-                    badgeLabel(event),
+                    if (count > 1) "${badgeLabel(representative)} ×$count"
+                    else badgeLabel(representative),
                     color = Color.White,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,

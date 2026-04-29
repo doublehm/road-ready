@@ -41,20 +41,24 @@ class DiagnosticEvaluator:
     GRAVITY = 9.81  # m/s²
 
     # ── Requirement 3: Strict G-Force Evaluation (SI units: m/s²) ──
-    # Hard Acceleration: Flag if forward acceleration > 0.3G (2.94 m/s²)
-    HARD_ACCEL_THRESHOLD = 0.3 * 9.81
     # Hard Braking: Flag if forward deceleration > 0.6G (5.88 m/s²)
     HARD_BRAKING_THRESHOLD = 0.6 * 9.81
     # Harsh Cornering: Flag if lateral acceleration magnitude > 0.45G
     HARSH_CORNERING_THRESHOLD = 0.45 * 9.81
 
     # ── Requirement 4: Jerk Threshold ──
-    # Flag erratic control if jerk > 2.0 m/s³ (Smooth) or 6.0 m/s³ (Harsh)
-    JERK_THRESHOLD = 2.0
-    JERK_HARSH_THRESHOLD = 6.0
+    # Flag erratic control if jerk > 5.0 m/s³ (raised from 2.0 — minor road
+    # vibrations and small steering corrections were triggering false positives)
+    JERK_THRESHOLD = 5.0
+    JERK_HARSH_THRESHOLD = 12.0
+    JERK_EVENT_COOLDOWN_MS = 5000  # prevent rapid re-triggering on bumpy roads
+
+    # ── Hard Acceleration ──
+    # Raised from 0.3G to 0.4G — 0.3G was triggering on normal highway merges
+    HARD_ACCEL_THRESHOLD = 0.4 * 9.81
 
     # ── Legacy Thresholds (maintained for comprehensive scoring) ──
-    SUDDEN_STOP_SPEED_DROP = 10  # km/h
+    SUDDEN_STOP_SPEED_DROP = 10  # km/h — only used with 10 s cooldown now
     VERTICAL_IMPACT_THRESHOLD_G = 0.40  # g variance
     FRICTION_CIRCLE_THRESHOLD_G = 0.60  # g total
     EVENT_COOLDOWN_MS = 3000  # 3 seconds
@@ -322,7 +326,11 @@ class DiagnosticEvaluator:
             'passed': passed,
             'evaluation_result': json.dumps(evaluation_result),
             'speed_data': speed_data,
-            'route_coords': [{'latitude': p['latitude'], 'longitude': p['longitude']} for p in speed_data if p.get('latitude')]
+            'route_coords': [
+                {'latitude': self._get_lat(p), 'longitude': self._get_lon(p)}
+                for p in speed_data
+                if self._get_lat(p) is not None
+            ],
         }
 
     def _evaluate_braking(self, physics_data: List[Dict], speed_data: List[Dict]) -> Tuple[float, Dict]:
@@ -350,13 +358,20 @@ class DiagnosticEvaluator:
                         'description': f'Hard braking: {round(g_force, 2)}G ({round(decel, 1)} m/s²)'
                     })
 
-        # Sudden stop check from speed data
+        # Sudden stop check — only fires when speed drops to near-zero AND
+        # hasn't fired within the last 10 seconds, preventing normal deceleration
+        # across several GPS samples from being counted multiple times.
         sudden_stops = 0
+        last_sudden_stop_ts = None
         for i in range(1, len(speed_data)):
             dv = speed_data[i-1].get('speed', 0) - speed_data[i].get('speed', 0)
-            if dv > self.SUDDEN_STOP_SPEED_DROP:
-                sudden_stops += 1
-                score -= 5
+            end_speed = speed_data[i].get('speed', 0)
+            ts = speed_data[i].get('timestamp', 0)
+            if dv > self.SUDDEN_STOP_SPEED_DROP and end_speed < 5:
+                if last_sudden_stop_ts is None or (ts - last_sudden_stop_ts) >= 10000:
+                    sudden_stops += 1
+                    score -= 5
+                    last_sudden_stop_ts = ts
 
         return max(0, score), {
             'harsh_braking_events': len(events),
@@ -477,7 +492,7 @@ class DiagnosticEvaluator:
             
             # Erratic Control (Jerk)
             if p['jerk'] > self.JERK_THRESHOLD:
-                if last_jerk_ts is None or (ts - last_jerk_ts) >= 2000:
+                if last_jerk_ts is None or (ts - last_jerk_ts) >= self.JERK_EVENT_COOLDOWN_MS:
                     penalty += 4
                     last_jerk_ts = ts
                     events.append({
@@ -495,8 +510,9 @@ class DiagnosticEvaluator:
         """Calculates smoothness based on average Jerk."""
         if not physics_data: return 100.0
         avg_jerk = np.mean([p['jerk'] for p in physics_data])
-        # Smoothness score: starts at 100, drops as avg jerk increases
-        score = 100.0 - (avg_jerk * 15)
+        # Multiplier reduced from 15 → 5: background road noise was overwhelming
+        # the score. At 5 m/s³ average jerk the score is still 75 (passing grade).
+        score = 100.0 - (avg_jerk * 5)
         return max(0, min(100, score))
 
     def _evaluate_impacts(self, physics_data: List[Dict]) -> Tuple[float, Dict]:
@@ -520,6 +536,31 @@ class DiagnosticEvaluator:
                     })
         return penalty, {'penalty': penalty, 'events': events}
 
+    @staticmethod
+    def _get_lat(p: Dict) -> Optional[float]:
+        """Read latitude from a data point that may use 'lat' or 'latitude' key."""
+        v = p.get('lat') or p.get('latitude')
+        return float(v) if v is not None else None
+
+    @staticmethod
+    def _get_lon(p: Dict) -> Optional[float]:
+        """Read longitude from a data point that may use 'lon' or 'longitude' key."""
+        v = p.get('lon') or p.get('longitude')
+        return float(v) if v is not None else None
+
+    def _closest_speed_limit(self, lat: Optional[float], lon: Optional[float],
+                              speed_limit_data: List[Dict]) -> float:
+        """Return nearest speed limit (km/h) by location. Falls back to 50 km/h."""
+        if not speed_limit_data:
+            return 50
+        if lat is None or lon is None:
+            return speed_limit_data[0].get('speed_limit', 50)
+        best = min(
+            speed_limit_data,
+            key=lambda x: abs((self._get_lat(x) or 0) - lat) + abs((self._get_lon(x) or 0) - lon)
+        )
+        return best.get('speed_limit', 50)
+
     def _evaluate_speed(self, speed_data: List[Dict], speed_limit_data: List[Dict]) -> Tuple[float, Dict]:
         """Standard speed compliance check."""
         score = 100.0
@@ -527,11 +568,9 @@ class DiagnosticEvaluator:
         events = []
         for p in speed_data:
             speed = p.get('speed', 0)
-            limit = 50
-            if speed_limit_data:
-                ts = p.get('timestamp', 0)
-                closest = min(speed_limit_data, key=lambda x: abs(x.get('timestamp', 0) - ts))
-                limit = closest.get('speed_limit', 50)
+            lat = self._get_lat(p)
+            lon = self._get_lon(p)
+            limit = self._closest_speed_limit(lat, lon, speed_limit_data)
             if speed > (limit + self.SPEED_TOLERANCE_KMH):
                 speeding_points += 1
                 if speeding_points % 10 == 0:
@@ -586,10 +625,12 @@ class DiagnosticEvaluator:
         segments = []
         for i in range(1, len(speed_data)):
             p1, p2 = speed_data[i-1], speed_data[i]
-            if p1.get('latitude') and p2.get('latitude'):
+            lat1, lon1 = self._get_lat(p1), self._get_lon(p1)
+            lat2, lon2 = self._get_lat(p2), self._get_lon(p2)
+            if lat1 and lat2:
                 segments.append({
-                    'start': {'lat': p1['latitude'], 'lng': p1['longitude']},
-                    'end': {'lat': p2['latitude'], 'lng': p2['longitude']},
+                    'start': {'lat': lat1, 'lng': lon1},
+                    'end': {'lat': lat2, 'lng': lon2},
                     'speed': p2.get('speed'), 'timestamp': p2.get('timestamp')
                 })
         return segments
