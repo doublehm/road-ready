@@ -70,11 +70,14 @@ kotlin {
             implementation(libs.kotlinx.coroutines.android)
             implementation("com.google.android.gms:play-services-location:21.3.0")
             implementation(libs.androidx.activity.compose)
-            
+
             // Google Maps
             implementation(libs.google.maps.compose)
             implementation(libs.google.play.services.maps)
             implementation(libs.google.places)
+
+            // ONNX Runtime — on-device inference for real-time coaching model
+            implementation(libs.onnxruntime.android)
         }
 
         iosMain.dependencies {

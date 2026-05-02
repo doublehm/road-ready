@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.*
+import com.roadready.ml.CoachingEvent
+import com.roadready.ml.RealTimeCoachingService
 import com.roadready.ui.components.*
 import com.roadready.ui.theme.*
 import com.roadready.ui.util.pad2
@@ -71,6 +73,7 @@ fun DiagnosticRideActiveScreen(
     val gpsService = remember { GPSTrackingService(scope, PlatformLocationProvider()) }
     val motionService = remember { DeviceMotionService(PlatformMotionProvider()) }
     val speedLimitService = remember { SpeedLimitService(apiClient) }
+    val coachingService = remember { RealTimeCoachingService(motionService) }
 
     val gpsState by gpsService.state.collectAsState()
     val motionState by motionService.state.collectAsState()
@@ -87,6 +90,7 @@ fun DiagnosticRideActiveScreen(
     var prevSpeed by remember { mutableStateOf(0.0) }
     var showIcbcSheet by remember { mutableStateOf(false) }
     var icbcObsCount by remember { mutableIntStateOf(0) }
+    val coachingEvent by coachingService.event.collectAsState()
 
     RequestLocationPermission { granted ->
         locationPermissionGranted = granted
@@ -96,9 +100,19 @@ fun DiagnosticRideActiveScreen(
     DisposableEffect(locationPermissionGranted) {
         if (locationPermissionGranted) gpsService.startTracking()
         motionService.startTracking()
+        coachingService.start(scope)
         onDispose {
             gpsService.stopTracking()
             motionService.stopTracking()
+            coachingService.stop()
+        }
+    }
+
+    // Auto-dismiss coaching banner after 3 seconds
+    LaunchedEffect(coachingEvent) {
+        if (coachingEvent != null) {
+            delay(3_000)
+            coachingService.clearEvent()
         }
     }
 
@@ -317,6 +331,8 @@ fun DiagnosticRideActiveScreen(
                 }
                 Spacer(Modifier.height(8.dp))
             }
+
+            coachingEvent?.let { CoachingBanner(it) }
 
             Spacer(Modifier.weight(1f))
 
@@ -591,4 +607,40 @@ private fun EndRideConfirmation(onConfirm: () -> Unit, onCancel: () -> Unit) {
             }
         }
     }
+}
+
+// ── Real-time coaching banner ────────────────────────────────────────────────
+// Shown for 3 seconds when the on-device model (or threshold fallback) detects
+// a driving fault.  Distinct from the physics-system EventBadges — this fires
+// immediately during the ride, not after backend evaluation.
+
+@Composable
+private fun CoachingBanner(event: CoachingEvent) {
+    val bgColor = when (event.type) {
+        com.roadready.ml.CoachingEventType.HARSH_BRAKING      -> Color(0xFFEF4444)
+        com.roadready.ml.CoachingEventType.HARSH_ACCELERATION -> Color(0xFFF59E0B)
+        com.roadready.ml.CoachingEventType.SHARP_TURN         -> Color(0xFF8B5CF6)
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor.copy(alpha = 0.92f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        Column {
+            Text(
+                text = event.type.label,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+            )
+            Text(
+                text = event.type.message,
+                color = Color.White.copy(alpha = 0.9f),
+                fontSize = 12.sp,
+            )
+        }
+    }
+    Spacer(Modifier.height(8.dp))
 }

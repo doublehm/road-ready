@@ -67,6 +67,19 @@ class DiagnosticEvaluator:
     CORNERING_HEADING_WINDOW_MS = 3000
     CORNERING_SPEED_SENSITIVITY = 0.002 # G reduction per km/h
 
+    # ── Traffic context ──
+    # Speed below this threshold is treated as stop-and-go / urban traffic.
+    # Braking threshold is relaxed and smoothness jerk is excluded from average
+    # to avoid penalising drivers who are simply stuck in congestion.
+    TRAFFIC_SPEED_KMH = 30
+    # Fraction of ride samples that must be ≤ TRAFFIC_SPEED_KMH before the
+    # evaluator switches into "traffic-aware" mode for the whole ride.
+    TRAFFIC_FRACTION_THRESHOLD = 0.25
+    # Elevated braking G threshold used when the car is already moving slowly.
+    # At <30 km/h a firm-but-normal stop easily exceeds 0.6G; 0.85G is the
+    # threshold where it becomes genuinely harsh.
+    TRAFFIC_BRAKING_THRESHOLD_G = 0.85
+
     def __init__(self):
         self.nosql_repo = NoSQLRepository()
         self.ml_evaluator = MLEvaluator() if MLEvaluator else None
@@ -238,14 +251,15 @@ class DiagnosticEvaluator:
                 pass
 
         # 3. High-Fidelity Modules (Requirement 3: Strict G-Force Evaluation)
-        braking_score, braking_fb = self._evaluate_braking(physics_data, speed_data)
+        traffic_mode = self._detect_traffic_mode(speed_data)
+        braking_score, braking_fb = self._evaluate_braking(physics_data, speed_data, traffic_mode=traffic_mode)
         speed_score, speed_fb = self._evaluate_speed(speed_data, speed_limit_data)
         cornering_score, cornering_fb = self._evaluate_cornering(physics_data, heading_data, speed_data=speed_data)
         erratic_penalty, erratic_fb = self._evaluate_erratic_driving(physics_data)
         combined_penalty, combined_fb = self._evaluate_combined_dynamics(physics_data)
         
         # 4. Smoothness & Vertical Impacts
-        smoothness_score = self._calculate_smoothness_score(physics_data)
+        smoothness_score = self._calculate_smoothness_score(physics_data, speed_data=speed_data, traffic_mode=traffic_mode)
         impact_penalty, impact_fb = self._evaluate_impacts(physics_data)
 
         # Deduct penalties
@@ -314,7 +328,8 @@ class DiagnosticEvaluator:
             'events': all_events,
             'route_segments': route_segments,
             'ml_analysis': ml_analysis,
-            'summary': self._generate_summary(passed, overall_score, braking_score, speed_score, cornering_score, smoothness_score)
+            'traffic_mode': traffic_mode,
+            'summary': self._generate_summary(passed, overall_score, braking_score, speed_score, cornering_score, smoothness_score, traffic_mode=traffic_mode)
         }
 
         return {
@@ -333,34 +348,65 @@ class DiagnosticEvaluator:
             ],
         }
 
-    def _evaluate_braking(self, physics_data: List[Dict], speed_data: List[Dict]) -> Tuple[float, Dict]:
-        """Requirement 3: Hard Braking > 0.4G (3.92 m/s²)."""
+    def _detect_traffic_mode(self, speed_data: List[Dict]) -> bool:
+        """
+        Returns True when a significant portion of the ride was spent in
+        slow-moving / stop-and-go traffic.  The threshold is intentionally
+        loose (25% of samples ≤ 30 km/h) so that a brief detour through a
+        school zone does not count as a traffic ride.
+        """
+        if not speed_data:
+            return False
+        low_speed_count = sum(1 for p in speed_data if p.get('speed', 0) <= self.TRAFFIC_SPEED_KMH)
+        return (low_speed_count / len(speed_data)) >= self.TRAFFIC_FRACTION_THRESHOLD
+
+    def _evaluate_braking(self, physics_data: List[Dict], speed_data: List[Dict], *, traffic_mode: bool = False) -> Tuple[float, Dict]:
+        """
+        Hard braking evaluation with speed-context awareness.
+
+        At low speeds (stop-and-go traffic) a firm stop routinely exceeds 0.6G
+        without representing dangerous driving.  We apply a higher threshold
+        (0.85G) and a reduced point deduction when the driver was already
+        travelling below TRAFFIC_SPEED_KMH at the moment of braking.
+        """
         score = 100.0
         events = []
         last_event_ts = None
-        
+
         for p in physics_data:
-            # Long accel (Y): negative is braking
             decel = -p['long_accel']
-            if decel > self.HARD_BRAKING_THRESHOLD:
-                ts = p['timestamp']
+            ts = p['timestamp']
+
+            # Choose threshold based on current vehicle speed at this sample
+            current_speed = self._get_closest_speed(ts, speed_data)
+            if current_speed < self.TRAFFIC_SPEED_KMH:
+                # Low-speed / traffic stop: apply relaxed threshold
+                threshold = self.TRAFFIC_BRAKING_THRESHOLD_G * self.GRAVITY
+                deduction = 4  # minor deduction — driver is in traffic
+            else:
+                threshold = self.HARD_BRAKING_THRESHOLD
+                deduction = 10
+
+            if decel > threshold:
                 if last_event_ts is None or (ts - last_event_ts) >= self.EVENT_COOLDOWN_MS:
-                    score -= 10
+                    score -= deduction
                     last_event_ts = ts
                     g_force = decel / self.GRAVITY
+                    severity = 'high' if g_force > 0.85 else ('medium' if g_force > 0.6 else 'low')
                     events.append({
                         'type': 'harsh_braking',
                         'timestamp': ts,
                         'lat': p.get('latitude'),
                         'lng': p.get('longitude'),
                         'value': round(g_force, 2),
-                        'severity': 'high' if g_force > 0.7 else 'medium',
+                        'severity': severity,
+                        'traffic_context': current_speed < self.TRAFFIC_SPEED_KMH,
                         'description': f'Hard braking: {round(g_force, 2)}G ({round(decel, 1)} m/s²)'
                     })
 
         # Sudden stop check — only fires when speed drops to near-zero AND
-        # hasn't fired within the last 10 seconds, preventing normal deceleration
-        # across several GPS samples from being counted multiple times.
+        # hasn't fired within the last 10 seconds.  Suppress in traffic mode
+        # because complete stops at intersections are expected behaviour.
         sudden_stops = 0
         last_sudden_stop_ts = None
         for i in range(1, len(speed_data)):
@@ -370,12 +416,14 @@ class DiagnosticEvaluator:
             if dv > self.SUDDEN_STOP_SPEED_DROP and end_speed < 5:
                 if last_sudden_stop_ts is None or (ts - last_sudden_stop_ts) >= 10000:
                     sudden_stops += 1
-                    score -= 5
+                    # In heavy traffic, stopping at lights is expected — halve the deduction
+                    score -= 2 if traffic_mode else 5
                     last_sudden_stop_ts = ts
 
         return max(0, score), {
             'harsh_braking_events': len(events),
             'sudden_stops': sudden_stops,
+            'traffic_mode': traffic_mode,
             'events': events,
             'notes': [f'Detected {len(events)} harsh braking incidents.']
         }
@@ -506,13 +554,38 @@ class DiagnosticEvaluator:
 
         return penalty, {'penalty': penalty, 'events': events}
 
-    def _calculate_smoothness_score(self, physics_data: List[Dict]) -> float:
-        """Calculates smoothness based on average Jerk."""
-        if not physics_data: return 100.0
-        avg_jerk = np.mean([p['jerk'] for p in physics_data])
-        # Multiplier reduced from 15 → 5: background road noise was overwhelming
-        # the score. At 5 m/s³ average jerk the score is still 75 (passing grade).
-        score = 100.0 - (avg_jerk * 5)
+    def _calculate_smoothness_score(self, physics_data: List[Dict], *, speed_data: Optional[List[Dict]] = None, traffic_mode: bool = False) -> float:
+        """
+        Smoothness score based on jerk.
+
+        Stop-and-go traffic inherently generates high jerk at low speeds
+        (clutch releases, gear changes, creeping forward).  We exclude samples
+        where the vehicle is travelling below TRAFFIC_SPEED_KMH so that the
+        average reflects the driver's actual smoothness on open road.  If no
+        higher-speed samples exist (purely urban trip), we fall back to the full
+        dataset but apply a milder multiplier (3 instead of 5).
+        """
+        if not physics_data:
+            return 100.0
+
+        if speed_data:
+            highway_jerks = [
+                p['jerk'] for p in physics_data
+                if self._get_closest_speed(p['timestamp'], speed_data) >= self.TRAFFIC_SPEED_KMH
+            ]
+        else:
+            highway_jerks = []
+
+        if len(highway_jerks) >= 20:
+            # Evaluate smoothness on above-traffic-speed driving only
+            avg_jerk = float(np.median(highway_jerks))  # median is more robust than mean
+            multiplier = 5
+        else:
+            # Mostly urban/traffic ride — use all data with a gentler multiplier
+            avg_jerk = float(np.median([p['jerk'] for p in physics_data]))
+            multiplier = 3 if traffic_mode else 5
+
+        score = 100.0 - (avg_jerk * multiplier)
         return max(0, min(100, score))
 
     def _evaluate_impacts(self, physics_data: List[Dict]) -> Tuple[float, Dict]:
@@ -646,9 +719,10 @@ class DiagnosticEvaluator:
         if distance < self.MIN_DISTANCE_KM: fb['criteria_failed'].append(f"Distance: {distance:.1f} km"); passed = False
         return passed, fb
 
-    def _generate_summary(self, passed, o, b, s, c, sm) -> str:
+    def _generate_summary(self, passed, o, b, s, c, sm, *, traffic_mode: bool = False) -> str:
         res = "PASSED" if passed else "FAILED"
-        return f"{res}: Score {o:.1f} (B:{b:.0f} S:{s:.0f} C:{c:.0f} Sm:{sm:.0f})"
+        traffic_tag = " [traffic-aware]" if traffic_mode else ""
+        return f"{res}: Score {o:.1f} (B:{b:.0f} S:{s:.0f} C:{c:.0f} Sm:{sm:.0f}){traffic_tag}"
 
     def _empty_result(self, msg: str) -> Dict:
         return {
