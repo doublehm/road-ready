@@ -11,12 +11,14 @@ import kotlin.math.sqrt
 /**
  * Android inference backend using ONNX Runtime.
  *
- * Loads driving_coach.onnx from assets and runs the 1D-CNN on each
- * 50-sample IMU window.  Falls back to physics-mirrored thresholds when
- * the model file is absent so coaching is functional from day one.
+ * Loads driving_coach.onnx from assets and runs the Physics-Informed 1D-CNN
+ * on each 50-sample IMU window.  Falls back to physics-mirrored thresholds
+ * when the model file is absent so coaching is functional from day one.
  *
- * Model input : float32 [1, 50, 4]  (batch, window, features)
- * Model output: float32 [1, 4]      (raw logits — softmax applied here)
+ * Model input : float32 [1, 50, 8]  (batch, window, features)
+ *   channels 0-3 : lat_accel, lon_accel, vert_accel, jerk  (normalised)
+ *   channels 4-7 : lat_g, lon_g, grip_g, friction_excess   (physics, [0,1])
+ * Model output: float32 [1, 4]  (raw logits — softmax applied here)
  * Classes     : 0=normal  1=harsh_braking  2=harsh_accel  3=sharp_turn
  */
 actual class PlatformCoachingInference actual constructor() {
@@ -24,21 +26,24 @@ actual class PlatformCoachingInference actual constructor() {
     companion object {
         const val MODEL_ASSET = "driving_coach.onnx"
         const val WINDOW_SIZE = 50
-        const val NUM_FEATURES = 4
+        const val NUM_FEATURES = 8
         const val NUM_CLASSES = 4
 
-        // Normalisation divisors (must match train_coaching_model.py)
+        // Normalisation divisors — must match train_coaching_model.py
         const val ACCEL_NORM = 20.0f
         const val JERK_NORM  = 30.0f
+        const val PHYS_G_NORM = 1.5f
+        const val FRICTION_EXCESS_NORM = 0.9f   // = PHYS_G_NORM - FRICTION_CIRCLE_G
 
         // Minimum softmax probability to fire a model-based event
         const val CONFIDENCE_THRESHOLD = 0.70f
 
-        // Threshold fallback — mirrors DiagnosticEvaluator constants
-        const val GRAVITY        = 9.81f
-        const val HARD_BRAKING_G = 0.6f
-        const val HARD_ACCEL_G   = 0.4f
-        const val SHARP_TURN_G   = 0.45f
+        // Physics thresholds — mirrors DiagnosticEvaluator constants
+        const val GRAVITY           = 9.81f
+        const val HARD_BRAKING_G    = 0.6f
+        const val HARD_ACCEL_G      = 0.4f
+        const val SHARP_TURN_G      = 0.45f
+        const val FRICTION_CIRCLE_G = 0.60f
     }
 
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
@@ -81,11 +86,25 @@ actual class PlatformCoachingInference actual constructor() {
                 (ay - prevAy) * (ay - prevAy) +
                 (az - prevAz) * (az - prevAz)
             )
+
+            // Physics-derived channels
+            val latG    = abs(ax) / GRAVITY
+            val lonG    = abs(ay) / GRAVITY
+            val gripG   = sqrt(ax * ax + ay * ay) / GRAVITY
+            val frExcess = (gripG - FRICTION_CIRCLE_G).coerceAtLeast(0f)
+
             val base = i * NUM_FEATURES
-            flat[base + 0] = (ax / ACCEL_NORM).coerceIn(-1f, 1f)
-            flat[base + 1] = (ay / ACCEL_NORM).coerceIn(-1f, 1f)
-            flat[base + 2] = (az / ACCEL_NORM).coerceIn(-1f, 1f)
-            flat[base + 3] = (jerk / JERK_NORM).coerceIn(-1f, 1f)
+            // Raw channels (normalised to [-1, 1])
+            flat[base + 0] = (ax   / ACCEL_NORM).coerceIn(-1f, 1f)
+            flat[base + 1] = (ay   / ACCEL_NORM).coerceIn(-1f, 1f)
+            flat[base + 2] = (az   / ACCEL_NORM).coerceIn(-1f, 1f)
+            flat[base + 3] = (jerk / JERK_NORM ).coerceIn(-1f, 1f)
+            // Physics channels (normalised to [0, 1])
+            flat[base + 4] = (latG   / PHYS_G_NORM       ).coerceIn(0f, 1f)
+            flat[base + 5] = (lonG   / PHYS_G_NORM       ).coerceIn(0f, 1f)
+            flat[base + 6] = (gripG  / PHYS_G_NORM       ).coerceIn(0f, 1f)
+            flat[base + 7] = (frExcess / FRICTION_EXCESS_NORM).coerceIn(0f, 1f)
+
             prevAx = ax; prevAy = ay; prevAz = az
         }
 

@@ -1,8 +1,11 @@
+import logging
 import requests
 import time
 import math
 from typing import Dict, Optional, Tuple
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 # British Columbia default speed limits by road type (km/h)
 BC_DEFAULTS = {
@@ -65,7 +68,7 @@ def _best_road(elements: list) -> Optional[Dict]:
     return max(candidates, key=priority)
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
-OVERPASS_TIMEOUT = 5  # seconds
+OVERPASS_TIMEOUT = 10  # seconds
 
 # Cache: key = rounded (lat, lon) -> value = (result_dict, timestamp)
 _speed_limit_cache: Dict[Tuple[float, float], Tuple[Dict, float]] = {}
@@ -149,7 +152,8 @@ def _query_overpass(lat: float, lon: float, radius: int = 50) -> Optional[Dict]:
             "maxspeed_conditional": tags.get("maxspeed:conditional"),
         }
 
-    except (requests.RequestException, ValueError, KeyError):
+    except (requests.RequestException, ValueError, KeyError) as e:
+        logger.warning("Overpass query failed for (%.4f, %.4f): %s", lat, lon, e)
         return None
 
 
@@ -234,9 +238,16 @@ def get_speed_limit(lat: float, lon: float) -> Dict:
             source = "bc_default"
 
     else:
-        # Overpass failed entirely - use urban default
-        speed_limit = 50
-        source = "default"
+        # Overpass failed entirely — use urban default but do NOT cache,
+        # so the next query retries the real API instead of locking in 50.
+        logger.warning("Overpass returned no data for (%.4f, %.4f); using 50 km/h default", lat, lon)
+        return {
+            "speed_limit_kmh": 50,
+            "source": "default",
+            "road_name": None,
+            "road_type": "unknown",
+            "zone_type": "regular",
+        }
 
     # Check for nearby school (if not already in school zone and during school hours)
     if zone_type != "school" and _is_school_hours():
@@ -253,8 +264,9 @@ def get_speed_limit(lat: float, lon: float) -> Dict:
         "zone_type": zone_type,
     }
 
-    # Cache the result
-    _speed_limit_cache[cache_key] = (result, time.time())
+    # Only cache successful OSM lookups — never cache fallback defaults.
+    if source != "default":
+        _speed_limit_cache[cache_key] = (result, time.time())
 
     return result
 

@@ -22,6 +22,7 @@ import com.roadready.ml.RealTimeCoachingService
 import com.roadready.ui.components.*
 import com.roadready.ui.theme.*
 import com.roadready.ui.util.pad2
+import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.buildJsonArray
@@ -91,6 +92,21 @@ fun DiagnosticRideActiveScreen(
     var showIcbcSheet by remember { mutableStateOf(false) }
     var icbcObsCount by remember { mutableIntStateOf(0) }
     val coachingEvent by coachingService.event.collectAsState()
+    var speedAlertVisible by remember { mutableStateOf(false) }
+
+    val insightHistory = remember(events) {
+        events.groupBy { it.type }.map { (type, list) ->
+            val rep = list.last()
+            InsightItem.Fault(
+                id = "fault-$type",
+                timestamp = list.first().timestamp,
+                label = badgeLabel(rep),
+                type = type,
+                count = list.size,
+                severity = rep.severity
+            )
+        }.sortedBy { it.timestamp }
+    }
 
     RequestLocationPermission { granted ->
         locationPermissionGranted = granted
@@ -108,10 +124,10 @@ fun DiagnosticRideActiveScreen(
         }
     }
 
-    // Auto-dismiss coaching banner after 3 seconds
+    // Auto-dismiss coaching advice after 3.5 seconds
     LaunchedEffect(coachingEvent) {
         if (coachingEvent != null) {
-            delay(3_000)
+            delay(3_500)
             coachingService.clearEvent()
         }
     }
@@ -131,6 +147,31 @@ fun DiagnosticRideActiveScreen(
     }
     LaunchedEffect(gpsState.location) {
         if (gpsState.location != null) gpsAvailable = true
+    }
+
+    // Real-time speeding alert: fires after 3 s of sustained speeding, with a 30 s cooldown.
+    LaunchedEffect(Unit) {
+        var speedingStartMs = 0L
+        var lastAlertMs = 0L
+        snapshotFlow { gpsState.speed to speedLimitState.currentSpeedLimit?.toInt() }
+            .collect { (speed, limit) ->
+                val now = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+                if (limit != null && speed > limit + 5) {
+                    if (speedingStartMs == 0L) speedingStartMs = now
+                    if (now - speedingStartMs >= 3_000 && now - lastAlertMs >= 30_000) {
+                        lastAlertMs = now
+                        speedAlertVisible = true
+                    }
+                } else {
+                    speedingStartMs = 0L
+                }
+            }
+    }
+    LaunchedEffect(speedAlertVisible) {
+        if (speedAlertVisible) {
+            delay(4_000)
+            speedAlertVisible = false
+        }
     }
 
     if (showEndConfirm) {
@@ -237,9 +278,9 @@ fun DiagnosticRideActiveScreen(
     val currentRotation = motionState.rotation
     val currentLimit = speedLimitState.currentSpeedLimit?.toInt()
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().background(Background)) {
 
-        // 1. Full-screen live map
+        // 1. Full-screen live map — THE BACKGROUND
         val mapCoords = if (gpsState.routeCoordinates.isEmpty() && gpsState.location != null) {
             listOf(Coordinate(gpsState.location!!.latitude, gpsState.location!!.longitude))
         } else {
@@ -255,7 +296,68 @@ fun DiagnosticRideActiveScreen(
         // 2. Keep screen on while ride is active
         KeepScreenOn()
 
-        // 3. Telemetry HUD — arc gauges positioned at screen edges
+        // 3. Top Floating HUD (Timer + Distance + Status)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                .align(Alignment.TopCenter),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            val avgSpeed = remember(gpsState.speedData) {
+                if (gpsState.speedData.isEmpty()) 0.0
+                else gpsState.speedData.map { it.speed }.average()
+            }
+
+            FloatingSessionCard(
+                isActive = isActive,
+                elapsedSeconds = elapsedSeconds,
+                distance = gpsState.distance,
+                avgSpeed = avgSpeed
+            )            
+            if (!gpsAvailable) {
+                Spacer(Modifier.height(12.dp))
+                GpsWarningBanner()
+            }
+        }
+
+        // 4. Bottom Floating HUD (Speedometer + Controls)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp, start = 16.dp, end = 16.dp)
+                .align(Alignment.BottomCenter),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Large floating Speedometer
+            FloatingSpeedometer(
+                speed = currentSpeed,
+                speedLimit = currentLimit,
+                roadName = speedLimitState.roadName
+            )
+            
+            Spacer(Modifier.height(20.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Secondary action: ICBC Observe
+                IcbcObserveButton(
+                    observationCount = icbcObsCount,
+                    onClick = { showIcbcSheet = true }
+                )
+                
+                // Primary action: End Ride
+                EndRideButton(
+                    enabled = elapsedSeconds > 10,
+                    onClick = { showEndConfirm = true }
+                )
+            }
+        }
+
+        // 5. Side Telemetry (Tucked to edges, vertically centered)
         TelemetryPanel(
             acceleration = currentAccel,
             rotation = currentRotation,
@@ -285,74 +387,25 @@ fun DiagnosticRideActiveScreen(
             },
         )
 
-        // 4. Column overlay: header, GPS warning, events, supervisor actions, end button
+        // 6. Physics Insight Rail — floating below top HUD on the left
+        InsightRail(
+            activeAdvice = null, // Logic moved to separate side popup
+            history = insightHistory,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(top = 100.dp, start = 16.dp),
+        )
+
+        // 7. Coaching & Speeding Alerts — floating below top HUD on the right
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp),
+                .align(Alignment.TopEnd)
+                .padding(top = 100.dp, end = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.End,
         ) {
-            Spacer(Modifier.height(24.dp))
-
-            // Recording status + timer + speed all in one header card
-            ImmersiveHeader(
-                isActive = isActive,
-                elapsedSeconds = elapsedSeconds,
-                speed = currentSpeed,
-                speedLimit = currentLimit,
-                roadName = speedLimitState.roadName,
-                distance = gpsState.distance,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            // ICBC observe chip — right-aligned, below header, above map
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                IcbcObserveChip(
-                    observationCount = icbcObsCount,
-                    onClick = { showIcbcSheet = true },
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            if (!gpsAvailable) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Warning.copy(alpha = 0.2f))
-                        .padding(12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("📡 Searching for GPS signal…", fontSize = 13.sp, color = Warning, fontWeight = FontWeight.SemiBold)
-                }
-                Spacer(Modifier.height(8.dp))
-            }
-
+            if (speedAlertVisible) SpeedAlertBanner(speedKmh = gpsState.speed.toInt(), limit = currentLimit ?: 0)
             coachingEvent?.let { CoachingBanner(it) }
-
-            Spacer(Modifier.weight(1f))
-
-            PrimaryButton(
-                text = "End Ride",
-                onClick = { showEndConfirm = true },
-                color = Error,
-                enabled = elapsedSeconds > 10,
-                modifier = Modifier.padding(bottom = 32.dp),
-            )
-        }
-
-        // ── Event badge stack — right edge, below Observe chip ──────────────
-        if (events.isNotEmpty()) {
-            EventBadges(
-                events = events,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 152.dp, end = 16.dp),
-            )
         }
 
         // ── ICBC bottom sheet ────────────────────────────────────────────────
@@ -375,125 +428,272 @@ fun DiagnosticRideActiveScreen(
     }
 }
 
-// ── Immersive header (timer + speed + limit + road name) ────────────────────────
+// ── New HUD Components — Modern Glassmorphism ────────────────────────────────
 
 @Composable
-private fun ImmersiveHeader(
+private fun FloatingSessionCard(
     isActive: Boolean,
     elapsedSeconds: Int,
-    speed: Double,
-    speedLimit: Int?,
-    roadName: String?,
     distance: Double,
+    avgSpeed: Double
 ) {
-    val speedColor = when {
-        speedLimit == null -> TextPrimary
-        speed > speedLimit + 10 -> Color(0xFFEF4444)
-        speed > speedLimit -> Color(0xFFF59E0B)
-        else -> Color(0xFF22C55E)
-    }
-
-    GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        containerColor = Background.copy(alpha = 0.82f),
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(24.dp))
+            .background(Background.copy(alpha = 0.85f))
+            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+            .padding(horizontal = 20.dp, vertical = 12.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Recording dot + label
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                Box(
-                    modifier = Modifier
-                        .size(9.dp)
-                        .clip(CircleShape)
-                        .background(if (isActive) Secondary else Warning),
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    if (isActive) "REC" else "PAUSED",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextMuted,
-                    letterSpacing = 1.sp,
-                )
-            }
-
-            // Speed (center)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // REC Dot
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(if (isActive) Secondary else Warning)
+            )
+            Spacer(Modifier.width(12.dp))
+            
+            // Timer
+            Text(
+                "${pad2(elapsedSeconds / 60)}:${pad2(elapsedSeconds % 60)}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
+            
+            Spacer(Modifier.width(14.dp))
+            Box(Modifier.width(1.dp).height(16.dp).background(Color.White.copy(alpha = 0.2f)))
+            Spacer(Modifier.width(14.dp))
+            
+            // Distance
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        speed.toInt().toString(),
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = speedColor,
-                    )
-                    Text(
-                        " km/h",
-                        fontSize = 12.sp,
-                        color = TextMuted,
-                        modifier = Modifier.padding(bottom = 4.dp, start = 2.dp),
-                    )
-                }
-                if (!roadName.isNullOrBlank()) {
-                    Text(
-                        roadName,
-                        fontSize = 10.sp,
-                        color = TextMuted,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    )
-                }
-            }
-
-            // Timer + distance + speed limit sign (right)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.End,
-                modifier = Modifier.weight(1f),
-            ) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        "${pad2(elapsedSeconds / 60)}:${pad2(elapsedSeconds % 60)}",
+                        "%.1f".format(distance),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
+                        color = TextPrimary
                     )
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            "%.1f".format(distance),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                        )
-                        Text(
-                            " km",
-                            fontSize = 9.sp,
-                            color = TextMuted,
-                            modifier = Modifier.padding(bottom = 1.dp),
-                        )
-                    }
+                    Text(
+                        " km",
+                        fontSize = 10.sp,
+                        color = TextMuted,
+                        modifier = Modifier.padding(start = 2.dp, bottom = 1.dp)
+                    )
                 }
-                if (speedLimit != null) {
-                    Spacer(Modifier.width(10.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .border(2.5.dp, Color.Red, CircleShape)
-                            .background(Color.White, CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            speedLimit.toString(),
-                            fontSize = 13.sp,
-                            color = Color.Black,
-                            fontWeight = FontWeight.ExtraBold,
-                        )
-                    }
+                Text("DISTANCE", fontSize = 8.sp, color = TextMuted, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.width(14.dp))
+            Box(Modifier.width(1.dp).height(16.dp).background(Color.White.copy(alpha = 0.2f)))
+            Spacer(Modifier.width(14.dp))
+
+            // Avg Speed
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        avgSpeed.toInt().toString(),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+                    Text(
+                        " avg",
+                        fontSize = 10.sp,
+                        color = TextMuted,
+                        modifier = Modifier.padding(start = 2.dp, bottom = 1.dp)
+                    )
                 }
+                Text("KM/H", fontSize = 8.sp, color = TextMuted, fontWeight = FontWeight.Bold)
             }
         }
     }
 }
+
+
+@Composable
+private fun FloatingSpeedometer(
+    speed: Double,
+    speedLimit: Int?,
+    roadName: String?
+) {
+    val speedColor = when {
+        speedLimit == null -> TextPrimary
+        speed > speedLimit + 5 -> Error
+        speed > speedLimit -> Warning
+        else -> Secondary
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            // ── The Speedometer (Absolute Center) ──
+            Box(
+                modifier = Modifier
+                    .size(140.dp)
+                    .clip(CircleShape)
+                    .background(Background.copy(alpha = 0.85f))
+                    .border(2.dp, speedColor.copy(alpha = 0.3f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        speed.toInt().toString(),
+                        fontSize = 52.sp,
+                        fontWeight = FontWeight.Black,
+                        color = speedColor
+                    )
+                    Text(
+                        "KM/H",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextMuted,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+
+            // ── The Speed Limit (Regulatory Pillar) ──
+            if (speedLimit != null) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .offset(x = (-94).dp) // Offset to the left of the 140dp circle
+                        .width(42.dp)
+                        .height(58.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(Color.White)
+                        .border(1.5.dp, Color(0xFF1F2937), RoundedCornerShape(6.dp)),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        "MAXIMUM",
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        modifier = Modifier.padding(top = 3.dp)
+                    )
+                    Text(
+                        speedLimit.toString(),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.Black,
+                        lineHeight = 24.sp
+                    )
+                    Spacer(Modifier.height(4.dp))
+                }
+            }
+        }
+        
+        if (!roadName.isNullOrBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Background.copy(alpha = 0.7f))
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    roadName.uppercase(),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMuted,
+                    letterSpacing = 0.5.sp
+                )
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun GpsWarningBanner() {
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Warning.copy(alpha = 0.15f))
+            .border(1.dp, Warning.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+    ) {
+        Text(
+            "📡 Searching for GPS signal…",
+            fontSize = 13.sp,
+            color = Warning,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun IcbcObserveButton(
+    observationCount: Int,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.height(56.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariant.copy(alpha = 0.9f)),
+        shape = RoundedCornerShape(20.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp)
+    ) {
+        Text("👁️", fontSize = 18.sp)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            "Observe",
+            color = TextPrimary,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.sp
+        )
+        if (observationCount > 0) {
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(Primary),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    observationCount.toString(),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EndRideButton(
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.height(56.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Error.copy(alpha = 0.9f),
+            disabledContainerColor = Error.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(20.dp),
+        contentPadding = PaddingValues(horizontal = 24.dp)
+    ) {
+        Text(
+            "End Ride",
+            color = Color.White,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 16.sp,
+            letterSpacing = 0.5.sp
+        )
+    }
+}
+
 
 // ── LiveMapSection ──────────────────────────────────────────────────────────────
 
@@ -526,46 +726,6 @@ private fun LiveMapSection(
     } else {
         Box(modifier = modifier.background(SurfaceVariant), contentAlignment = Alignment.Center) {
             Text("Waiting for GPS signal…", color = TextMuted)
-        }
-    }
-}
-
-// ── Event badges — vertical stack on right side ──────────────────────────────────
-
-@Composable
-private fun EventBadges(events: List<RideEvent>, modifier: Modifier = Modifier) {
-    // Group by type, preserving first-occurrence order
-    val grouped = events
-        .groupBy { it.type }
-        .entries
-        .sortedBy { (_, list) -> list.first().timestamp }
-
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        horizontalAlignment = Alignment.End,
-    ) {
-        grouped.takeLast(5).forEach { (_, eventList) ->
-            val representative = eventList.last()
-            val count = eventList.size
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(
-                        if (representative.severity == "high" || representative.severity == "error")
-                            Error.copy(alpha = 0.88f)
-                        else Warning.copy(alpha = 0.88f),
-                    )
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-            ) {
-                Text(
-                    if (count > 1) "${badgeLabel(representative)} ×$count"
-                    else badgeLabel(representative),
-                    color = Color.White,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                )
-            }
         }
     }
 }
@@ -609,38 +769,105 @@ private fun EndRideConfirmation(onConfirm: () -> Unit, onCancel: () -> Unit) {
     }
 }
 
-// ── Real-time coaching banner ────────────────────────────────────────────────
-// Shown for 3 seconds when the on-device model (or threshold fallback) detects
-// a driving fault.  Distinct from the physics-system EventBadges — this fires
-// immediately during the ride, not after backend evaluation.
+// ── Real-time speeding alert ──────────────────────────────────────────────────
+// Shown for 4 seconds after 3 s of sustained speeding; 30 s cooldown.
+
+@Composable
+private fun SpeedAlertBanner(speedKmh: Int, limit: Int) {
+    Box(
+        modifier = Modifier
+            .width(220.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(Color(0xFFDC2626), Color(0xFFB91C1C))
+                )
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+            .padding(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("⚠", fontSize = 14.sp)
+            }
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    text = "SPEEDING",
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 10.sp,
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    text = "$speedKmh km/h in a $limit km/h zone",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
+                )
+            }
+        }
+    }
+}
+
+// ── Real-time coaching advice popup ──────────────────────────────────────────
+// Shown for 3.5 seconds when the on-device model detects a driving fault.
+// Uses Indigo theme to distinguish from Physics Faults.
+// Positioned on the right side to avoid overlap.
 
 @Composable
 private fun CoachingBanner(event: CoachingEvent) {
-    val bgColor = when (event.type) {
-        com.roadready.ml.CoachingEventType.HARSH_BRAKING      -> Color(0xFFEF4444)
-        com.roadready.ml.CoachingEventType.HARSH_ACCELERATION -> Color(0xFFF59E0B)
-        com.roadready.ml.CoachingEventType.SHARP_TURN         -> Color(0xFF8B5CF6)
-    }
+    val Indigo500 = Color(0xFF6366F1)
+    val Indigo600 = Color(0xFF4F46E5)
+
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(bgColor.copy(alpha = 0.92f))
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .width(220.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(Indigo500, Indigo600)
+                )
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+            .padding(14.dp),
     ) {
-        Column {
-            Text(
-                text = event.type.label,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-            )
-            Text(
-                text = event.type.message,
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 12.sp,
-            )
+        Row(verticalAlignment = Alignment.Top) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("✨", fontSize = 14.sp)
+            }
+            
+            Spacer(Modifier.width(10.dp))
+            
+            Column {
+                Text(
+                    text = event.type.label.uppercase(),
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 10.sp,
+                    letterSpacing = 1.sp
+                )
+                Text(
+                    text = event.type.message,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+            }
         }
     }
-    Spacer(Modifier.height(8.dp))
 }

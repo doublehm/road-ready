@@ -181,6 +181,7 @@ class StudentProgress(BaseModel):
     student_id: int
     overall_score: float
     total_lessons: int
+    total_hours: float
     quizzes_completed: int
     diagnostic_ride_passed: bool
     status: str

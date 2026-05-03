@@ -160,38 +160,34 @@ fun TelemetryPanel(
     val smooth    = gauges.firstOrNull { it.id == "smoothness" } ?: return
     val vertical  = gauges.firstOrNull { it.id == "vertical"   } ?: return
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.padding(horizontal = 16.dp)) {
 
-        // ── LEFT TURN — left edge, vertically centered ─────────────────────────
-        ArcGauge(
-            gauge = leftTurn,
-            sizeDp = 72.dp,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 6.dp),
-        )
-
-        // ── RIGHT TURN — right edge, vertically centered ────────────────────────
-        ArcGauge(
-            gauge = rightTurn,
-            sizeDp = 72.dp,
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 6.dp),
-        )
-
-        // ── Bottom row: BRAKE (center-large), ACCEL, GRIP, SMOOTH, VERT ─────────
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 108.dp, start = 12.dp, end = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
+        // ── LEFT RAIL — stacked on left edge ──────────────────────────────────
+        Column(
+            modifier = Modifier.align(Alignment.CenterStart),
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Existing Left Turn indicator
+            ArcGauge(leftTurn, sizeDp = 72.dp)
+            
+            // Forces: BRAKE, SMOOTH
             ArcGauge(braking, sizeDp = 66.dp)
+            ArcGauge(smooth,  sizeDp = 58.dp)
+        }
+
+        // ── RIGHT RAIL — stacked on right edge ─────────────────────────────────
+        Column(
+            modifier = Modifier.align(Alignment.CenterEnd),
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Existing Right Turn indicator
+            ArcGauge(rightTurn, sizeDp = 72.dp)
+            
+            // Forces: ACCEL, GRIP, VERT
             ArcGauge(accel,   sizeDp = 58.dp)
             ArcGauge(grip,    sizeDp = 58.dp)
-            ArcGauge(smooth,  sizeDp = 58.dp)
             ArcGauge(vertical, sizeDp = 54.dp)
         }
     }

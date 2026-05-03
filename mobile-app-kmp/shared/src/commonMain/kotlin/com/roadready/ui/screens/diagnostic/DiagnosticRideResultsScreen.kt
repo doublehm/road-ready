@@ -4,8 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -266,7 +269,7 @@ private fun buildTimelineEvents(
 @Composable
 fun DiagnosticRideResultsScreen(
     rideId: Int,
-    onViewDetail: (Int) -> Unit,
+    onBack: (() -> Unit)? = null,
     onDone: () -> Unit,
 ) {
     val apiClient: ApiClient = koinInject()
@@ -337,8 +340,33 @@ fun DiagnosticRideResultsScreen(
             .verticalScroll(rememberScrollState()),
     ) {
         // ── 1. Header ───────────────────────────────────────────
-        Spacer(Modifier.height(24.dp))
-        ResultHeader(passed)
+        if (onBack != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Surface)
+                ) {
+                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = TextPrimary)
+                }
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    "RIDE REPORT",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = TextPrimary,
+                )
+            }
+        } else {
+            Spacer(Modifier.height(24.dp))
+            ResultHeader(passed)
+        }
 
         Spacer(Modifier.height(20.dp))
 
@@ -558,7 +586,7 @@ fun DiagnosticRideResultsScreen(
         Spacer(Modifier.height(16.dp))
 
         // ── 13. Action Buttons ──────────────────────────────────
-        ActionButtons(passed, rideId, onViewDetail, onDone)
+        ActionButtons(passed, rideId, onBack != null, onDone)
 
         Spacer(Modifier.height(40.dp))
     }
@@ -913,7 +941,7 @@ private fun CategoryBreakdownCard(
 private fun ActionButtons(
     passed: Boolean,
     rideId: Int,
-    onViewDetail: (Int) -> Unit,
+    isFromHistory: Boolean,
     onDone: () -> Unit,
 ) {
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -936,21 +964,14 @@ private fun ActionButtons(
             )
         }
 
-        Spacer(Modifier.height(12.dp))
-
-        PrimaryButton(
-            text = "View Full Details",
-            onClick = { onViewDetail(rideId) },
-            color = Primary.copy(alpha = 0.15f),
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        TextButton(
-            onClick = onDone,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Return to Home", color = Primary, fontSize = 15.sp)
+        if (!isFromHistory) {
+            Spacer(Modifier.height(16.dp))
+            TextButton(
+                onClick = onDone,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Return to Home", color = Primary, fontSize = 15.sp)
+            }
         }
     }
 }

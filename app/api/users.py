@@ -148,34 +148,36 @@ async def get_my_consolidated_progress(
         db.refresh(progress)
 
     # 2. Aggregate Data
-    # Quizzes
-    # (Assuming we have a QuizResult model or similar, but for now we might just have count)
-    # Since I don't see a QuizResult model in models.py, I'll keep it as is or use count of notifications/messages if they imply completion.
-    # Actually, I'll just check for any diagnostic rides and sessions for now.
-    
     # Lessons/Sessions
     sessions = db.query(models.DrivingSession).join(models.BookingRequest).filter(
         models.BookingRequest.student_id == current_user.id
     ).all()
     progress.total_lessons = len(sessions)
     
+    # Calculate hours from lessons (booking duration is in hours)
+    lesson_hours = sum([s.booking.duration for s in sessions if s.booking])
+    
     # Diagnostic Rides
-    diagnostic_ride = db.query(models.DiagnosticRide).filter(
+    diagnostic_rides = db.query(models.DiagnosticRide).filter(
+        models.DiagnosticRide.student_id == current_user.id,
+        models.DiagnosticRide.status == "completed"
+    ).all()
+    
+    # Calculate hours from diagnostic rides (duration_minutes / 60)
+    diagnostic_hours = sum([(r.duration_minutes or 0) / 60.0 for r in diagnostic_rides])
+    
+    progress.total_hours = round(lesson_hours + diagnostic_hours, 1)
+    
+    # Get latest diagnostic ride for overall score baseline
+    latest_ride = db.query(models.DiagnosticRide).filter(
         models.DiagnosticRide.student_id == current_user.id,
         models.DiagnosticRide.status == "completed"
     ).order_by(models.DiagnosticRide.evaluated_at.desc()).first()
     
-    if diagnostic_ride:
-        progress.diagnostic_ride_passed = diagnostic_ride.passed
-        # Use latest diagnostic ride score as a baseline for overall score if it's the only thing we have
-        progress.overall_score = diagnostic_ride.overall_score or 0.0
+    if latest_ride:
+        progress.diagnostic_ride_passed = latest_ride.passed
+        progress.overall_score = latest_ride.overall_score or 0.0
     
-    # Simple overall score aggregation: (Avg Session Feedback + Diagnostic Score) / 2
-    # In a real app, this would be more complex.
-    if progress.total_lessons > 0:
-        # If we have lessons, we could calculate something here
-        pass
-
     progress.last_updated = datetime.now().isoformat()
     db.commit()
     db.refresh(progress)

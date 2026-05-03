@@ -34,8 +34,8 @@ class DiagnosticEvaluator:
     # Pass thresholds
     OVERALL_PASS_THRESHOLD = 75
     CATEGORY_PASS_THRESHOLD = 70
-    MIN_DURATION_MINUTES = 20
-    MIN_DISTANCE_KM = 5
+    MIN_DURATION_MINUTES = 5
+    MIN_DISTANCE_KM = 1
 
     # Physical constants
     GRAVITY = 9.81  # m/s²

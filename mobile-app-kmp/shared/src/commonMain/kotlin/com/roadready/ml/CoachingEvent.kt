@@ -1,9 +1,9 @@
 package com.roadready.ml
 
 enum class CoachingEventType(val label: String, val message: String) {
-    HARSH_BRAKING("Hard Brake", "Ease onto the brakes"),
-    HARSH_ACCELERATION("Hard Accel", "Accelerate more gradually"),
-    SHARP_TURN("Sharp Turn", "Slow down before turning"),
+    HARSH_BRAKING("Braking", "Try to brake smoother and earlier"),
+    HARSH_ACCELERATION("Acceleration", "Ease into the throttle more gently"),
+    SHARP_TURN("Cornering", "Slow down more before entering the turn"),
 }
 
 data class CoachingEvent(

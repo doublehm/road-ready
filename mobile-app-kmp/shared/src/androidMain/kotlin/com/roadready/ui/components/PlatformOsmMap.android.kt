@@ -24,44 +24,42 @@ actual fun PlatformOsmMap(
     modifier: Modifier,
     followCurrentLocation: Boolean,
 ) {
-    val center = remember(coordinates) {
-        if (coordinates.isNotEmpty()) {
-            LatLng(coordinates.last().first, coordinates.last().second)
+    val lastCoord = coordinates.lastOrNull()
+    val center = remember(lastCoord) {
+        if (lastCoord != null) {
+            LatLng(lastCoord.first, lastCoord.second)
         } else {
-            LatLng(45.4215, -75.6972) // Default to Ottawa or similar
+            LatLng(49.2827, -123.1207) // Default to Vancouver
         }
     }
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(center, 15f)
+        position = CameraPosition.fromLatLngZoom(center, 17f)
     }
 
-    // Auto-zoom to fit route
-    LaunchedEffect(coordinates) {
-        if (coordinates.size > 5) {
-            val builder = LatLngBounds.Builder()
-            coordinates.forEach { builder.include(LatLng(it.first, it.second)) }
-            // Note: CameraUpdateFactory requires the view to be laid out, 
-            // maps-compose handles some of this but we might need a small delay or check
-        } else if (coordinates.isNotEmpty()) {
-            cameraPositionState.position = CameraPosition.fromLatLngZoom(
-                LatLng(coordinates.last().first, coordinates.last().second), 
-                cameraPositionState.position.zoom.coerceAtLeast(15f)
+    // Smoothly follow the current location — ZERO COST Native API
+    LaunchedEffect(center) {
+        if (followCurrentLocation) {
+            cameraPositionState.animate(
+                com.google.android.gms.maps.CameraUpdateFactory.newLatLng(center),
+                1000
             )
         }
     }
 
     GoogleMap(
-        modifier = modifier.fillMaxWidth().height(height),
+        modifier = modifier.fillMaxSize(),
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             mapType = MapType.NORMAL,
             isMyLocationEnabled = true,
-            // Custom styling for dark mode could be added here via MapStyleOptions
+            // MapStyleOptions can be added here for dark mode without cost
         ),
         uiSettings = MapUiSettings(
             zoomControlsEnabled = false,
-            myLocationButtonEnabled = false
+            myLocationButtonEnabled = false,
+            compassEnabled = false,
+            mapToolbarEnabled = false
         )
     ) {
         // Draw Route

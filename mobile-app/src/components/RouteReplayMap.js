@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
-import OSMMap from './OSMMap';
+import NativeMap from './NativeMap';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 const SEGMENT_COLORS = {

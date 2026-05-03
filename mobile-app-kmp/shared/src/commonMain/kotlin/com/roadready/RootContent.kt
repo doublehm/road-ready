@@ -51,7 +51,7 @@ sealed class Screen {
     data object DiagnosticRideSetup : Screen()
     data class SupervisorHandoff(val supervisorName: String) : Screen()
     data class DiagnosticRideActive(val rideType: String, val supervisorName: String?, val bookingId: Int?) : Screen()
-    data class DiagnosticRideResults(val rideId: Int) : Screen()
+    data class DiagnosticRideResults(val rideId: Int, val isFromHistory: Boolean = false) : Screen()
     data object DiagnosticRideHistory : Screen()
     data class DiagnosticRideDetail(val rideId: Int) : Screen()
 
@@ -271,18 +271,19 @@ fun RootContent() {
 
             is Screen.DiagnosticRideResults -> DiagnosticRideResultsScreen(
                 rideId = screen.rideId,
-                onViewDetail = { id -> navigator.push(Screen.DiagnosticRideDetail(id)) },
+                onBack = if (screen.isFromHistory) { { navigator.pop() } } else null,
                 onDone = { navigator.popToRoot() },
             )
 
             Screen.DiagnosticRideHistory -> DiagnosticRideHistoryScreen(
-                onSelectRide = { id -> navigator.push(Screen.DiagnosticRideDetail(id)) },
+                onSelectRide = { id -> navigator.push(Screen.DiagnosticRideResults(id, isFromHistory = true)) },
                 onBack = { navigator.pop() },
             )
 
-            is Screen.DiagnosticRideDetail -> DiagnosticRideDetailScreen(
+            is Screen.DiagnosticRideDetail -> DiagnosticRideResultsScreen(
                 rideId = screen.rideId,
                 onBack = { navigator.pop() },
+                onDone = { navigator.popToRoot() },
             )
 
             // Education -----------------------------------------------------

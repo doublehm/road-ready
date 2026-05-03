@@ -323,6 +323,7 @@ class StudentProgress(Base):
     
     overall_score = Column(Float, default=0.0)
     total_lessons = Column(Integer, default=0)
+    total_hours = Column(Float, default=0.0)
     quizzes_completed = Column(Integer, default=0)
     diagnostic_ride_passed = Column(Boolean, default=False)
     

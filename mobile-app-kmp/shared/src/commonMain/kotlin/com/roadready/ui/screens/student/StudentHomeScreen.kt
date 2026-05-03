@@ -44,20 +44,31 @@ class StudentHomeViewModel(
     var upcomingBookings by mutableStateOf<List<Booking>>(emptyList())
     var pendingBookings by mutableStateOf<List<Booking>>(emptyList())
     var userName by mutableStateOf("")
+    
+    var hoursLogged by mutableStateOf(0.0)
+    var skillsMastery by mutableStateOf(0.0)
 
     init {
         val user = authRepository.authState.value.user
         userName = user?.fullName?.split(" ")?.firstOrNull() ?: "Student"
-        loadBookings()
+        loadData()
     }
 
-    fun loadBookings() {
+    fun loadData() {
         isLoading = true
         kotlinx.coroutines.MainScope().launch {
+            // Load Bookings
             apiClient.getBookings().onSuccess { bookings ->
                 upcomingBookings = bookings.filter { it.status == "accepted" }
                 pendingBookings = bookings.filter { it.status == "pending" }
             }
+            
+            // Load Progress Stats
+            apiClient.getStudentProgress().onSuccess { progress ->
+                hoursLogged = progress.totalHours
+                skillsMastery = progress.overallScore
+            }
+            
             isLoading = false
         }
     }
@@ -136,11 +147,19 @@ fun StudentHomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 GlassCard(modifier = Modifier.weight(1f)) {
-                    Text("12.5", style = MaterialTheme.typography.headlineLarge, color = Primary)
+                    Text(
+                        text = if (viewModel.hoursLogged > 0) "%.1f".format(viewModel.hoursLogged) else "0.0",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Primary
+                    )
                     Text("Hours Logged", style = MaterialTheme.typography.bodySmall)
                 }
                 GlassCard(modifier = Modifier.weight(1f)) {
-                    Text("75%", style = MaterialTheme.typography.headlineLarge, color = Secondary)
+                    Text(
+                        text = "${viewModel.skillsMastery.toInt()}%",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Secondary
+                    )
                     Text("Skills Mastery", style = MaterialTheme.typography.bodySmall)
                 }
             }

@@ -205,6 +205,10 @@ class ApiClient(
         }.body()
     }
 
+    suspend fun getStudentProgress(): Result<StudentProgress> = safeCall {
+        httpClient.get("users/me/progress").body()
+    }
+
     // --- Helpers ---
 
     private suspend inline fun <reified T> safeCall(block: () -> T): Result<T> {

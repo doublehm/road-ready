@@ -205,7 +205,13 @@ private fun buildChartData(
     speedData: List<SpeedDataPoint>,
     speedLimitData: List<SpeedLimitPoint>,
 ): ChartData {
-    val dataSource = speedData.map { p ->
+    // Downsample first so the nearest-neighbor lookup runs on ~80 points
+    // instead of the full N-point dataset (O(80*M) vs O(N*M)).
+    val maxPoints = 80
+    val step = max(1, speedData.size / maxPoints)
+    val sampled = speedData.filterIndexed { i, _ -> i % step == 0 }
+
+    val dataSource = sampled.map { p ->
         val limit = if (speedLimitData.isNotEmpty()) {
             speedLimitData.minByOrNull { sl ->
                 val dLat = sl.lat - p.lat
@@ -218,14 +224,9 @@ private fun buildChartData(
         p.speed to limit
     }
 
-    // Downsample to ~80 points
-    val maxPoints = 80
-    val step = max(1, dataSource.size / maxPoints)
-    val sampled = dataSource.filterIndexed { i, _ -> i % step == 0 }
-
     return ChartData(
-        speeds = sampled.map { it.first.roundToInt().toFloat() },
-        limits = sampled.map { it.second },
-        hasLimits = sampled.any { it.second > 0f },
+        speeds = dataSource.map { it.first.roundToInt().toFloat() },
+        limits = dataSource.map { it.second },
+        hasLimits = dataSource.any { it.second > 0f },
     )
 }

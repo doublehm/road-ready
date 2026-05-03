@@ -198,6 +198,21 @@ data class DiagnosticRide(
     val instructor: InstructorProfile? = null,
 )
 
+// --- Student Progress ---
+
+@Serializable
+data class StudentProgress(
+    val id: Int,
+    @SerialName("student_id") val studentId: Int,
+    @SerialName("overall_score") val overallScore: Double = 0.0,
+    @SerialName("total_lessons") val totalLessons: Int = 0,
+    @SerialName("total_hours") val totalHours: Double = 0.0,
+    @SerialName("quizzes_completed") val quizzesCompleted: Int = 0,
+    @SerialName("diagnostic_ride_passed") val diagnosticRidePassed: Boolean = false,
+    val status: String = "new",
+    @SerialName("last_updated") val lastUpdated: String? = null,
+)
+
 // --- Message ---
 
 @Serializable

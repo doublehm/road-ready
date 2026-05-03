@@ -87,13 +87,13 @@ class SpeedLimitService(
         /** Only query when at least this much time elapsed (ms). */
         const val QUERY_TIME_THRESHOLD = 15_000L
         /** Changes larger than this require confirmation from recent readings. */
-        const val DRAMATIC_CHANGE_THRESHOLD = 30.0
+        const val DRAMATIC_CHANGE_THRESHOLD = 40.0
         /** Number of recent raw readings to keep for smoothing. */
         const val SMOOTHING_HISTORY_SIZE = 3
         /** How many recent readings must agree to confirm a dramatic change. */
         const val DRAMATIC_CHANGE_MIN_AGREE = 2
         /** Tolerance for "agreeing" readings (km/h). */
-        const val AGREE_TOLERANCE = 20.0
+        const val AGREE_TOLERANCE = 25.0
     }
 
     // ── Reactive state ──────────────────────────────────────────────────────────
