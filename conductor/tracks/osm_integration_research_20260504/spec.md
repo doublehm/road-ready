@@ -1,23 +1,19 @@
-# Specification: OpenStreetMap Data Integration Research
+# Specification: OpenStreetMap Data Integration Research (KMP)
 
 ## Overview
-This track focuses on conducting deep research into leveraging OpenStreetMap (OSM) data to enhance the Road Ready platform's features and performance. The goal is to move beyond basic map display and tap into OSM's rich metadata to improve routing, live ride accuracy, and safety features.
+This track focuses on conducting deep research into leveraging OpenStreetMap (OSM) data to enhance the Road Ready Kotlin Multiplatform (KMP) application's features and performance. The goal is to move beyond basic map display and tap into OSM's rich metadata to improve routing, live ride accuracy, and safety features while maintaining native performance using Google Maps (Android) and MapKit (iOS).
 
 ## Functional Requirements
-*   **Routing & Scheduling Research:** Investigate OSM's road network data to improve instructor route planning and lesson scheduling efficiency.
-*   **Live Ride Accuracy:** Research OSM-based map-matching algorithms and telemetry enhancements to improve the precision of live ride visualization.
-*   **Speed Limits & Safety:** Focus specifically on OSM tags for speed limits, with a high-priority deep dive into detecting and alerting for playground and school zones.
-*   **Map Performance:** Analyze OSM tile loading strategies and rendering optimizations to ensure a smooth user experience on both web and mobile.
-
-## Non-Functional Requirements
-*   **Actionability:** The research must result in a concrete "Actionable Plan" consisting of specific features and tasks for implementation.
-*   **Accuracy:** Speed limit data research must prioritize safety-critical zones (schools, playgrounds).
+*   **KMP Native Mapping Optimization:** Research and implement native mapping components for Android (Google Maps SDK) and iOS (MapKit) that leverage OSM for supplemental data (speed limits, safety zones).
+*   **Advanced Safety Zone Research:** Focus specifically on OSM tags for speed limits, with a high-priority deep dive into detecting and alerting for playground and school zones in a mobile-first context.
+*   **Map-Matching for KMP:** Research server-side and client-side map-matching techniques to snap GPS telemetry to the OSM road network for precise evaluation and display.
+*   **Mobile-First Routing:** Investigate OSM-based routing engines (like Valhalla) for intelligent lesson scheduling and navigation integrated into the KMP shared repository.
 
 ## Acceptance Criteria
-*   [ ] Successful deep research conducted using NotebookLM.
-*   [ ] Comprehensive analysis of OSM metadata relevant to Road Ready's tech stack (Leaflet, Nominatim).
-*   [ ] Delivery of an "Actionable Plan" document identifying at least 3 high-impact features for the next development cycle.
-*   [ ] Specific technical strategy for school/playground zone detection using OSM tags.
+*   [ ] Successful deep research conducted using NotebookLM for KMP-specific mapping.
+*   [ ] Delivery of an "Actionable Plan" focused on KMP implementation.
+*   [ ] Strategy for cross-platform Polyline simplification and HMM-based map matching.
+*   [ ] Technical roadmap for native iOS MapKit integration.
 
 ## Out of Scope
 *   Direct implementation of features (this track is research and planning only).

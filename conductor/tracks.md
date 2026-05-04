@@ -15,5 +15,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: OpenStreetMap Data Integration Research**
+- [x] **Track: OpenStreetMap Data Integration Research**
 *Link: [./tracks/osm_integration_research_20260504/](./tracks/osm_integration_research_20260504/)*
