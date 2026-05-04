@@ -65,6 +65,7 @@ onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android"
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity-compose" }
 androidx-core = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+kastro = { module = "dev.yoxjames:kastro", version.ref = "kastro" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

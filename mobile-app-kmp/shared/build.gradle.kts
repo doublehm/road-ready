@@ -63,6 +63,9 @@ kotlin {
             // Settings
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)
+
+            // Kastro (Sunrise/Sunset)
+            implementation(libs.kastro)
         }
 
         androidMain.dependencies {

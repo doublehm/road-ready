@@ -187,7 +187,12 @@ class SpeedLimitService(
     }
 
     private fun applyResult(result: SpeedLimitResponse, lat: Double, lon: Double) {
-        val newLimit = result.speedLimitKmh ?: return
+        val rawLimit = result.speedLimitKmh ?: return
+        
+        // Apply local Safety Zone logic (School/Playground hours)
+        val safetyCalculator = SafetyZoneCalculator(lat, lon)
+        val newLimit = safetyCalculator.getEffectiveLimit(rawLimit.toInt(), result.zoneType ?: "regular").toDouble()
+        
         val confirmed = confirmedLimit
 
         // Add to recent readings history
