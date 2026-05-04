@@ -296,6 +296,13 @@ fun DiagnosticRideActiveScreen(
         // 2. Keep screen on while ride is active
         KeepScreenOn()
 
+        // 2.1 Safety Zone Alert Overlay (High Priority)
+        SafetyAlertOverlay(
+            zoneType = speedLimitState.zoneType,
+            isActive = speedLimitState.zoneType != "regular",
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 80.dp)
+        )
+
         // 3. Top Floating HUD (Timer + Distance + Status)
         Column(
             modifier = Modifier

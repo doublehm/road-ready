@@ -47,22 +47,37 @@ actual fun PlatformOsmMap(
         }
     }
 
-    GoogleMap(
-        modifier = modifier.fillMaxSize(),
-        cameraPositionState = cameraPositionState,
-        properties = MapProperties(
-            mapType = MapType.NORMAL,
-            isMyLocationEnabled = true,
-            // MapStyleOptions can be added here for dark mode without cost
-        ),
-        uiSettings = MapUiSettings(
-            zoomControlsEnabled = false,
-            myLocationButtonEnabled = false,
-            compassEnabled = false,
-            mapToolbarEnabled = false
-        )
-    ) {
-        // Draw Route
+    val osmTileProvider = remember {
+        object : UrlTileProvider(256, 256) {
+            override fun getTileUrl(x: Int, y: Int, zoom: Int): URL? {
+                return try {
+                    URL("https://tile.openstreetmap.org/$zoom/$x/$y.png")
+                } catch (e: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            properties = MapProperties(
+                mapType = MapType.NORMAL,
+                isMyLocationEnabled = true,
+            ),
+            uiSettings = MapUiSettings(
+                zoomControlsEnabled = false,
+                myLocationButtonEnabled = false,
+                compassEnabled = false,
+                mapToolbarEnabled = false
+            )
+        ) {
+            // Optional OSM Overlay
+            TileOverlay(tileProvider = osmTileProvider, transparency = 0.3f)
+
+            // Draw Route
         if (coordinates.size > 1) {
             Polyline(
                 points = coordinates.map { LatLng(it.first, it.second) },
@@ -95,5 +110,15 @@ actual fun PlatformOsmMap(
                 )
             }
         }
+
+        // OSM Attribution
+        Text(
+            text = "© OpenStreetMap contributors",
+            fontSize = 10.sp,
+            color = Color.Gray.copy(alpha = 0.8f),
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(8.dp)
+        )
     }
 }

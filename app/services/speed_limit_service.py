@@ -69,6 +69,7 @@ def _best_road(elements: list) -> Optional[Dict]:
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 OVERPASS_TIMEOUT = 10  # seconds
+OVERPASS_HEADERS = {"User-Agent": "RoadReady/1.0 (driving instructor app; contact: admin@roadready.ca)"}
 
 # Cache: key = rounded (lat, lon) -> value = (result_dict, timestamp)
 _speed_limit_cache: Dict[Tuple[float, float], Tuple[Dict, float]] = {}
@@ -127,6 +128,7 @@ def _query_overpass(lat: float, lon: float, radius: int = 50) -> Optional[Dict]:
         response = requests.post(
             OVERPASS_URL,
             data={"data": query},
+            headers=OVERPASS_HEADERS,
             timeout=OVERPASS_TIMEOUT + 2,
         )
         if response.status_code != 200:
@@ -171,6 +173,7 @@ def _check_nearby_school(lat: float, lon: float) -> bool:
         response = requests.post(
             OVERPASS_URL,
             data={"data": query},
+            headers=OVERPASS_HEADERS,
             timeout=OVERPASS_TIMEOUT + 2,
         )
         if response.status_code != 200:
@@ -217,15 +220,22 @@ def get_speed_limit(lat: float, lon: float) -> Dict:
         road_name = osm_result.get("road_name")
         road_type = osm_result.get("road_type", "unknown")
 
-        # Check for conditional speed limit (school zone)
+        # Check for conditional speed limit (school/playground zone)
         conditional = osm_result.get("maxspeed_conditional")
-        if conditional and "school" in conditional.lower() and _is_school_hours():
-            # Parse conditional speed limit
-            parsed = _parse_maxspeed(conditional.split("@")[0].strip())
-            if parsed:
-                speed_limit = parsed
-                zone_type = "school"
-                source = "osm_conditional"
+        if conditional and _is_school_hours():
+            if "school" in conditional.lower():
+                parsed = _parse_maxspeed(conditional.split("@")[0].strip())
+                if parsed:
+                    speed_limit = parsed
+                    zone_type = "school"
+                    source = "osm_conditional"
+            elif "playground" in conditional.lower() or "sunrise" in conditional.lower():
+                # Playground zones are sunrise-sunset every day
+                parsed = _parse_maxspeed(conditional.split("@")[0].strip())
+                if parsed:
+                    speed_limit = parsed
+                    zone_type = "playground"
+                    source = "osm_conditional"
 
         # Use OSM maxspeed if available and no conditional override
         if speed_limit is None and osm_result.get("speed_limit_kmh"):
