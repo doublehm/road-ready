@@ -17,11 +17,15 @@
 *   **Mapping:** Leaflet.js - Open-source JavaScript library for mobile-friendly interactive maps.
 *   **Map Tiles:** OpenStreetMap & CartoDB Dark Matter.
 
-## Mobile Application
-*   **Framework:** React Native with Expo - Framework for building native apps using React.
-*   **Navigation:** React Navigation.
-*   **State/API:** Axios for networking.
-*   **WebView:** react-native-webview for Leaflet-based interactive maps.
+## Mobile Application (KMP)
+*   **Framework:** Kotlin Multiplatform (KMP) - Shared logic with native UI (Compose/SwiftUI).
+*   **Navigation:** Voyager or native navigation.
+*   **Mapping:** 
+    *   **Android:** Google Maps SDK (Maps Compose).
+    *   **iOS:** Apple MapKit (Native UIInterops).
+    *   **Shared:** Common `PlatformOsmMap` component with OSM metadata overlays.
+*   **State/API:** Ktor for networking.
+*   **Serialization:** Kotlinx.serialization.
 
 ## External Services
 *   **Payments:** Stripe - Financial infrastructure for the internet.
@@ -29,4 +33,6 @@
 
 ## Infrastructure & Tools
 *   **Environment:** Docker (docker-compose.yml, Dockerfile).
+*   **Server:** Uvicorn/Gunicorn.
+cker (docker-compose.yml, Dockerfile).
 *   **Server:** Uvicorn/Gunicorn.

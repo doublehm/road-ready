@@ -18,7 +18,8 @@ Road Ready aims to modernize the driving education experience by providing a sea
 *   **Student & Instructor Portals:** Dedicated web and mobile interfaces tailored to each user type's needs.
 *   **Automated Scheduling & Booking:** A real-time system for managing availability and lesson reservations.
 *   **Educational Ecosystem:** Interactive driving handbooks, practice quizzes, and progress logs to ensure students are "Road Ready."
-*   **Diagnostic Evaluations:** Specialized tools for instructors to perform and log diagnostic rides, providing students with clear areas for improvement.
-*   **Live Ride Monitoring:** Real-time visualization of diagnostic rides, allowing instructors to see telemetry, location, and driving events as they happen.
+*   **Diagnostic Evaluations:** Specialized tools for instructors to perform and log diagnostic rides, providing students with clear areas for improvement. Now enhanced with HMM-based map matching for precise route alignment.
+*   **Live Ride Monitoring:** Real-time visualization of diagnostic rides, allowing instructors to see telemetry, location, and driving events as they happen. Includes real-time safety zone alerts (School & Playground) based on OSM metadata.
+*   **Smart Navigation (Planned):** Intelligent routing for lessons using OSM data to optimize for safety and efficiency.
 *   **Real-time Communication:** Built-in messaging to facilitate coordination between students and instructors.
 *   **Financial Management:** Automated payout tracking and financial reporting for instructors.
