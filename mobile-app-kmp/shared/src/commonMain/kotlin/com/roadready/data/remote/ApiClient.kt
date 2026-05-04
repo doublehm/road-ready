@@ -2,7 +2,11 @@ package com.roadready.data.remote
 
 import com.roadready.createPlatformHttpClient
 import com.roadready.data.model.*
+import com.roadready.data.repository.NearbyHazardsResponse
 import com.roadready.data.repository.SpeedLimitResponse
+import com.roadready.data.repository.TripReportRequest
+import com.roadready.data.repository.TripReportResponse
+import com.roadready.ml.RoadConditionEvent
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
@@ -190,6 +194,29 @@ class ApiClient(
         httpClient.get("diagnostic-rides/speed-limit") {
             parameter("lat", lat)
             parameter("lon", lon)
+        }.body()
+    }
+
+    // --- Road Conditions ---
+
+    suspend fun reportRoadConditions(
+        rideId: String,
+        events: List<RoadConditionEvent>,
+    ): Result<TripReportResponse> = safeCall {
+        httpClient.post("road-conditions/report") {
+            setBody(TripReportRequest(rideId = rideId, events = events))
+        }.body()
+    }
+
+    suspend fun getNearbyHazards(
+        lat: Double,
+        lon: Double,
+        radiusMetres: Double = 5000.0,
+    ): Result<NearbyHazardsResponse> = safeCall {
+        httpClient.get("road-conditions/nearby") {
+            parameter("lat", lat)
+            parameter("lng", lon)
+            parameter("radius_m", radiusMetres)
         }.body()
     }
 

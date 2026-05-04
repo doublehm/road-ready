@@ -1,12 +1,18 @@
 package com.roadready.ui.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
@@ -47,18 +53,6 @@ actual fun PlatformOsmMap(
         }
     }
 
-    val osmTileProvider = remember {
-        object : UrlTileProvider(256, 256) {
-            override fun getTileUrl(x: Int, y: Int, zoom: Int): URL? {
-                return try {
-                    URL("https://tile.openstreetmap.org/$zoom/$x/$y.png")
-                } catch (e: Exception) {
-                    null
-                }
-            }
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
@@ -74,9 +68,6 @@ actual fun PlatformOsmMap(
                 mapToolbarEnabled = false
             )
         ) {
-            // Optional OSM Overlay
-            TileOverlay(tileProvider = osmTileProvider, transparency = 0.3f)
-
             // Draw Route
         if (coordinates.size > 1) {
             Polyline(
@@ -96,12 +87,21 @@ actual fun PlatformOsmMap(
         // Draw Events
         events.forEach { event ->
             if (event.lat != 0.0 && event.lng != 0.0) {
-                val hue = when (event.severity) {
-                    "high" -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED
-                    "medium" -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_ORANGE
-                    else -> com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_BLUE
+                val hue = when {
+                    event.severity == "road_hazard_high" ->
+                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED
+                    event.severity == "road_hazard_med" ->
+                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW
+                    event.severity == "road_hazard_low" ->
+                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW
+                    event.severity == "high" ->
+                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED
+                    event.severity == "medium" ->
+                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_ORANGE
+                    else ->
+                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_BLUE
                 }
-                
+
                 Marker(
                     state = MarkerState(position = LatLng(event.lat, event.lng)),
                     title = event.type.replace("_", " ").uppercase(),
@@ -111,7 +111,8 @@ actual fun PlatformOsmMap(
             }
         }
 
-        // OSM Attribution
+        }
+        // OSM Attribution — outside GoogleMap scope, inside Box
         Text(
             text = "© OpenStreetMap contributors",
             fontSize = 10.sp,

@@ -9,14 +9,19 @@ Physics-Informed Neural Network (PINN) approach:
     (lat_g, lon_g, grip_g, friction_excess)
   - Physics penalty term in the loss: punishes predicting "normal" when
     G-force thresholds clearly indicate an event
+  - G-force thresholds are learnable nn.Parameters optimised jointly with
+    the classifier; the best values are exported to physics_thresholds.json
+    so the backend evaluator stays in sync with what the model learned.
 
 Output: mobile-app-kmp/androidApp/src/androidMain/assets/driving_coach.onnx
+        app/models/physics_thresholds.json
 
 Usage:
     python train_coaching_model.py                  # synthetic data only
     python train_coaching_model.py --rides-db URL   # + real ride data from backend
 """
 
+import json
 import os
 import sys
 import numpy as np
@@ -53,6 +58,10 @@ ASSET_PATH = os.path.join(
     os.path.dirname(__file__),
     "mobile-app-kmp", "androidApp", "src", "androidMain", "assets",
     "driving_coach.onnx",
+)
+
+THRESHOLDS_PATH = os.path.join(
+    os.path.dirname(__file__), "app", "models", "physics_thresholds.json"
 )
 
 # ── Physics feature helpers ──────────────────────────────────────────────────────
@@ -166,6 +175,42 @@ def build_dataset(n_per_class: int = 3000, seed: int = 42):
     return X[idx], y[idx]
 
 
+# ── Learnable physics thresholds ────────────────────────────────────────────────
+
+class PhysicsThresholds(nn.Module):
+    """
+    G-force boundary values trained jointly with the classifier.
+
+    Starting from the hand-tuned physics constants, gradient descent finds
+    the threshold values that minimise the combined classification +
+    physics-penalty loss.  The optimised values are exported to
+    physics_thresholds.json so the backend evaluator uses the same boundaries
+    as the on-device model — no manual constant-syncing required.
+    """
+    def __init__(self):
+        super().__init__()
+        self.braking_g  = nn.Parameter(torch.tensor(HARD_BRAKING_G))
+        self.accel_g    = nn.Parameter(torch.tensor(HARD_ACCEL_G))
+        self.turn_g     = nn.Parameter(torch.tensor(SHARP_TURN_G))
+        self.friction_g = nn.Parameter(torch.tensor(FRICTION_CIRCLE_G))
+
+    def clamp_(self):
+        """Keep every threshold inside a physically sensible range."""
+        with torch.no_grad():
+            self.braking_g.clamp_(0.30, 1.50)
+            self.accel_g.clamp_(0.20, 1.00)
+            self.turn_g.clamp_(0.20, 1.00)
+            self.friction_g.clamp_(0.30, 1.50)
+
+    def as_dict(self) -> dict:
+        return {
+            "hard_braking_g":    round(self.braking_g.item(),  4),
+            "hard_accel_g":      round(self.accel_g.item(),    4),
+            "sharp_turn_g":      round(self.turn_g.item(),     4),
+            "friction_circle_g": round(self.friction_g.item(), 4),
+        }
+
+
 # ── Model ───────────────────────────────────────────────────────────────────────
 
 class DrivingCoach(nn.Module):
@@ -183,9 +228,12 @@ class DrivingCoach(nn.Module):
       7  friction_excess  above-limit G             [0,1]
 
     ~26 K parameters — fits comfortably in 100 KB after quantisation.
+    The model also carries PhysicsThresholds parameters that are optimised
+    during training and exported to JSON (not included in ONNX forward pass).
     """
     def __init__(self, n_classes: int = NUM_CLASSES):
         super().__init__()
+        self.thresholds = PhysicsThresholds()
         self.encoder = nn.Sequential(
             nn.Conv1d(NUM_FEATURES, 32, kernel_size=5, padding=2),
             nn.ReLU(),
@@ -208,12 +256,17 @@ class DrivingCoach(nn.Module):
 
 # ── Physics penalty ──────────────────────────────────────────────────────────────
 
-def physics_penalty_loss(logits: torch.Tensor, xb: torch.Tensor) -> torch.Tensor:
+def physics_penalty_loss(
+    logits: torch.Tensor,
+    xb: torch.Tensor,
+    thresholds: PhysicsThresholds,
+) -> torch.Tensor:
     """
     Penalises predicting 'normal' (class 0) when physics clearly indicates an event.
 
-    Recovers raw G-forces from the normalised input channels and computes a
-    differentiable penalty using the probability mass on class 0.
+    Uses the model's learnable threshold parameters so gradient descent can
+    discover the G-force boundaries that minimise the combined loss — rather
+    than relying solely on hand-tuned constants.
     """
     # Recover raw m/s² from normalised channels (channels 0 and 1)
     lat_raw = xb[:, :, 0] * ACCEL_NORM
@@ -228,12 +281,14 @@ def physics_penalty_loss(logits: torch.Tensor, xb: torch.Tensor) -> torch.Tensor
     lon_g_max  = lon_g.max(dim=1).values
     grip_g_max = grip_g.max(dim=1).values
 
-    # Binary flags: physics says "this is not normal driving"
-    braking_flag  = (lon_g_max > HARD_BRAKING_G).float()
-    accel_flag    = (lon_g_max > HARD_ACCEL_G).float()
-    turn_flag     = (lat_g_max > SHARP_TURN_G).float()
-    friction_flag = (grip_g_max > FRICTION_CIRCLE_G).float()
-    physics_event = ((braking_flag + accel_flag + turn_flag + friction_flag) > 0).float()
+    # Soft thresholding via sigmoid keeps the flags differentiable so gradients
+    # flow back into the threshold parameters (hard > would zero the gradient).
+    k = 20.0  # sharpness — higher = closer to a step function
+    braking_flag  = torch.sigmoid(k * (lon_g_max - thresholds.braking_g))
+    accel_flag    = torch.sigmoid(k * (lon_g_max - thresholds.accel_g))
+    turn_flag     = torch.sigmoid(k * (lat_g_max - thresholds.turn_g))
+    friction_flag = torch.sigmoid(k * (grip_g_max - thresholds.friction_g))
+    physics_event = 1 - (1 - braking_flag) * (1 - accel_flag) * (1 - turn_flag) * (1 - friction_flag)
 
     # Penalty = probability of predicting "normal" when physics says event
     normal_prob = torch.softmax(logits, dim=1)[:, 0]   # class 0 = normal
@@ -267,6 +322,7 @@ def train(n_per_class: int = 3000, epochs: int = 60, batch_size: int = 128):
     n_params = sum(p.numel() for p in model.parameters())
     print(f"Training {n_params:,} parameters for {epochs} epochs  "
           f"(physics_lambda={PHYSICS_LAMBDA}, input_channels={NUM_FEATURES}) …")
+    print(f"Initial thresholds: {model.thresholds.as_dict()}")
     best_val_acc = 0.0
     best_state   = None
 
@@ -276,10 +332,11 @@ def train(n_per_class: int = 3000, epochs: int = 60, batch_size: int = 128):
             optimizer.zero_grad()
             logits    = model(xb)
             cls_loss  = cls_criterion(logits, yb)
-            phys_loss = physics_penalty_loss(logits, xb)
+            phys_loss = physics_penalty_loss(logits, xb, model.thresholds)
             loss      = cls_loss + PHYSICS_LAMBDA * phys_loss
             loss.backward()
             optimizer.step()
+            model.thresholds.clamp_()
         scheduler.step()
 
         if epoch % 10 == 0 or epoch == epochs:
@@ -291,13 +348,19 @@ def train(n_per_class: int = 3000, epochs: int = 60, batch_size: int = 128):
                     correct += (preds == yb).sum().item()
                     total   += len(yb)
             val_acc = correct / total
-            print(f"  epoch {epoch:3d}/{epochs}  val_acc={val_acc:.3f}")
+            t = model.thresholds.as_dict()
+            print(f"  epoch {epoch:3d}/{epochs}  val_acc={val_acc:.3f}  "
+                  f"braking={t['hard_braking_g']:.3f}G  "
+                  f"accel={t['hard_accel_g']:.3f}G  "
+                  f"turn={t['sharp_turn_g']:.3f}G  "
+                  f"friction={t['friction_circle_g']:.3f}G")
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
                 best_state   = {k: v.clone() for k, v in model.state_dict().items()}
 
     model.load_state_dict(best_state)
     print(f"Best validation accuracy: {best_val_acc:.3f}")
+    print(f"Learned thresholds: {model.thresholds.as_dict()}")
     return model
 
 
@@ -324,11 +387,25 @@ def export_onnx(model: nn.Module, path: str):
     print(f"Saved → {path}")
 
 
+# ── Threshold export ────────────────────────────────────────────────────────────
+
+def export_thresholds(model: DrivingCoach, path: str):
+    """Write learned G-force thresholds to JSON for backend and force_ml_model."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    d = model.thresholds.as_dict()
+    with open(path, "w") as f:
+        json.dump(d, f, indent=2)
+    print(f"Physics thresholds → {path}")
+    for key, val in d.items():
+        print(f"  {key}: {val:.4f} G")
+
+
 # ── Entry point ──────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     model = train()
     export_onnx(model, ASSET_PATH)
+    export_thresholds(model, THRESHOLDS_PATH)
     size_kb = os.path.getsize(ASSET_PATH) / 1024
     print(f"Model size: {size_kb:.1f} KB")
     print("Done. Rebuild the app to deploy.")

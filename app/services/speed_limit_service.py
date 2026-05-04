@@ -124,6 +124,7 @@ def _query_overpass(lat: float, lon: float, radius: int = 50) -> Optional[Dict]:
     );
     out tags;
     """
+    # Note: surface and smoothness tags are returned by 'out tags' above
     try:
         response = requests.post(
             OVERPASS_URL,
@@ -152,6 +153,8 @@ def _query_overpass(lat: float, lon: float, radius: int = 50) -> Optional[Dict]:
             "road_name": tags.get("name"),
             "road_type": tags.get("highway", "unknown"),
             "maxspeed_conditional": tags.get("maxspeed:conditional"),
+            "surface": tags.get("surface"),
+            "smoothness": tags.get("smoothness"),
         }
 
     except (requests.RequestException, ValueError, KeyError) as e:
@@ -215,10 +218,14 @@ def get_speed_limit(lat: float, lon: float) -> Dict:
     road_name = None
     road_type = "unknown"
     zone_type = "regular"
+    surface = None
+    smoothness = None
 
     if osm_result:
         road_name = osm_result.get("road_name")
         road_type = osm_result.get("road_type", "unknown")
+        surface = osm_result.get("surface")
+        smoothness = osm_result.get("smoothness")
 
         # Check for conditional speed limit (school/playground zone)
         conditional = osm_result.get("maxspeed_conditional")
@@ -272,6 +279,8 @@ def get_speed_limit(lat: float, lon: float) -> Dict:
         "road_name": road_name,
         "road_type": road_type,
         "zone_type": zone_type,
+        "surface": surface,
+        "smoothness": smoothness,
     }
 
     # Only cache successful OSM lookups — never cache fallback defaults.

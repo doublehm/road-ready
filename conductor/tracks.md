@@ -3,6 +3,7 @@
 This file tracks all major tracks for the project. Each track has its own detailed plan in its respective folder.
 
 ## Active Tracks
+- [Road Intelligence & Condition Learning](./tracks/road_intelligence_20260504/plan.md) (Planned: 2026-05-04) - *Crowdsourced ML-driven road condition detection: on-device ONNX classifier, persistent MongoDB hazard map with H3 indexing, proactive approach warnings.*
 - [Sensor ML Optimization](./tracks/sensor_ml_optimization_20260404/index.md) (Planned: 2026-04-04) - *Optimize the diagnostic ride evaluation by training a machine learning model on sensor data to improve mistake detection accuracy.*
 
 ## Archived Tracks
@@ -16,5 +17,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [~] **Track: OpenStreetMap Data Integration Research**
+- [x] **Track: OpenStreetMap Data Integration Research**
 *Link: [./tracks/osm_integration_research_20260504/](./tracks/osm_integration_research_20260504/)*

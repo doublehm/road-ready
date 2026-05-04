@@ -1,7 +1,7 @@
 package com.roadready.util
 
-import dev.yoxjames.kastro.sol.SolarEvent
-import dev.yoxjames.kastro.sol.SolarEventSequence
+import dev.jamesyox.kastro.sol.SolarEvent
+import dev.jamesyox.kastro.sol.SolarEventSequence
 import kotlinx.datetime.*
 
 class SafetyZoneCalculator(private val latitude: Double, private val longitude: Double) {
@@ -22,7 +22,7 @@ class SafetyZoneCalculator(private val latitude: Double, private val longitude: 
         // This is a simplified logic: if the next upcoming event is Sunset, 
         // we are currently between Sunrise and Sunset.
         val nextEvent = sequence.firstOrNull() ?: return false
-        return nextEvent.event == SolarEvent.Sunset
+        return nextEvent == SolarEvent.Sunset
     }
 
     /**
@@ -46,10 +46,10 @@ class SafetyZoneCalculator(private val latitude: Double, private val longitude: 
     /**
      * Returns the effective speed limit based on zone rules.
      */
-    fun getEffectiveLimit(baseLimit: Int, zoneType: String): Int {
+    fun getEffectiveLimit(baseLimit: Int, zoneType: String, now: Instant = Clock.System.now()): Int {
         return when (zoneType) {
-            "school" -> if (isSchoolZoneActive()) 30 else baseLimit
-            "playground" -> if (isPlaygroundZoneActive()) 30 else baseLimit
+            "school" -> if (isSchoolZoneActive(now)) 30 else baseLimit
+            "playground" -> if (isPlaygroundZoneActive(now)) 30 else baseLimit
             else -> baseLimit
         }
     }

@@ -38,3 +38,8 @@ numpy
 httpx
 joblib
 pandas
+h3
+scikit-learn
+skl2onnx
+onnxruntime
+scipy

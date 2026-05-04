@@ -1,46 +1,48 @@
-# Actionable Plan: OpenStreetMap Enhancements (KMP Focus)
+# Actionable Plan: OpenStreetMap Enhancements (KMP Implementation)
 
-This plan prioritizes implementing OSM-driven enhancements within the Kotlin Multiplatform (KMP) application, leveraging native mapping SDKs (Google Maps on Android, MapKit on iOS) while using OSM for metadata and intelligent backend services.
+This plan provides the technical roadmap for implementing OSM-driven features within the Road Ready Kotlin Multiplatform (KMP) application.
 
-## Priority 1: Native Performance & User Experience (Short Term)
-### 1. Optimize Native Map Rendering (Android/iOS)
-- **Feature:** Seamless route and event visualization using native SDKs.
+## Priority 1: Native Performance & Safety (Short Term)
+### 1. Enhanced Native Mapping (Android/iOS)
+- **Feature:** Seamlessly overlay OSM tiles and metadata on native map SDKs.
 - **Tasks:**
-    - [x] (Already Implemented) Use `Maps Compose` for Android to ensure ZERO-COST native performance.
-    - [ ] Implement native `MapKit` actual for iOS in `PlatformOsmMap.ios.kt` (currently a stub).
-    - [ ] Implement a custom dark theme for Google Maps and MapKit to match the Road Ready aesthetic.
-    - [ ] Add Polyline simplification in the `shared` module (using a KMP-compatible Douglas-Peucker implementation) to optimize long-ride rendering.
+    - [x] **Android:** Update `PlatformOsmMap.android.kt` to support optional OSM tile overlays via `TileOverlay` for areas with poor Google Maps detail. *(commit: 67eca31)*
+    - [x] **iOS:** Implement `PlatformOsmMap.ios.kt` using `MapKit` and `MKTileOverlay` to replace or overlay Apple Maps tiles with OSM. *(commit: 67eca31)*
+    - [x] **Shared:** Implement a custom Douglas-Peucker simplification algorithm in `commonMain` to optimize polyline rendering for long rides. *(commit: a14eac6 — `GeometryUtils.kt`)*
+    - [ ] **Shared:** Add a `MapAttribution` component in `commonMain` to display required OSM and MapKit/Google attribution.
 
-### 2. Intelligent Speed Limit Alerts (Backend + KMP Integration)
-- **Feature:** Real-time speed limit and safety zone alerts in the KMP app.
+### 2. Intelligent Safety Zone Alerts
+- **Feature:** Real-time school and playground zone warnings with BC-specific logic.
 - **Tasks:**
-    - [ ] Update `shared/src/commonMain/kotlin/com/roadready/data/repository/SpeedLimitService.kt` to handle the new `zone_type` and `source` metadata from the backend.
-    - [ ] Create a `SafetyAlertOverlay` in the KMP UI to display school/playground zone warnings.
-    - [ ] Implement a local buffer in the KMP app to store upcoming safety zones to ensure alerts work even with intermittent connectivity.
+    - [x] **Backend:** Refactor `speed_limit_service.py` to return `zone_type` (school/playground) and specific `maxspeed:conditional` tags. *(commit: 67eca31)*
+    - [x] **Shared:** Implement `SafetyZoneCalculator` in `commonMain` using the `Kastro` library for sunrise/sunset calculations (playground zones) and BC-specific school hour logic. *(commit: a14eac6)*
+    - [x] **Shared:** Update `SpeedLimitService.kt` to fetch and cache these safety zone details. *(commit: a14eac6)*
+    - [x] **UI:** Create a `SafetyAlertOverlay` that triggers visual and auditory warnings when entering an active 30km/h zone. *(commit: 67eca31)*
 
-## Priority 2: Safety & Precision (Medium Term)
-### 3. Advanced Safety Zone Detection (Backend)
-- **Feature:** Accurate school and playground zone identification using OSM metadata.
+## Priority 2: Precision & Accuracy (Medium Term)
+### 3. HMM Map-Matching Integration
+- **Feature:** Correct GPS 'drift' by snapping tracks to the OSM road network.
 - **Tasks:**
-    - [ ] (Backend) Update `_query_overpass` to fetch `leisure=playground` and `traffic_sign` nodes.
-    - [ ] (Backend) Implement stateful 'Safety Zone' logic for entry/exit detection.
-    - [ ] (Shared KMP) Refine local speed limit logic to prioritize these safety zones during active rides.
+    - [ ] **Backend:** Deploy a Map-Matching service (e.g., Valhalla `trace_attributes` or GraphHopper).
+    - [ ] **Shared:** Implement `MapMatchingRepository` using Ktor to send simplified polylines and receive snapped paths.
+    - [ ] **UI:** Add a "Corrected Path" toggle in the `RouteReplayMap` results screen.
 
-### 4. HMM Map-Matching Integration
-- **Feature:** Align GPS tracks to the OSM road network for precise scoring.
+### 4. Road Attribute Validation
+- **Feature:** Use OSM attributes to refine driving evaluation.
 - **Tasks:**
-    - [ ] (Backend) Implement HMM-based map matching using OSM way geometry.
-    - [ ] (Shared KMP) Add a 'Snapped Route' toggle in the `RouteReplayMap` to show the corrected path vs. raw GPS data.
+    - [ ] **Backend:** Fetch road `surface` and `smoothness` tags during evaluation.
+    - [ ] **Shared:** Pass these attributes to the `DiagnosticEvaluator` to dynamically adjust jerk/force thresholds (e.g., higher tolerance on unpaved roads).
 
-## Priority 3: Smart Navigation (Long Term)
-### 5. Smart Lesson Routing (Valhalla + KMP)
-- **Feature:** Proximity-based lesson scheduling and navigation.
+## Priority 3: Intelligent Logistics (Long Term)
+### 5. Smart Scheduling & Routing
+- **Feature:** Automated instructor routing and lesson scheduling.
 - **Tasks:**
-    - [ ] (Backend) Deploy/Integrate Valhalla for routing matrices and dynamic costing.
-    - [ ] (Shared KMP) Create a `RoutingRepository` to fetch optimized lesson paths.
-    - [ ] (Android/iOS) Implement native turn-by-turn guidance or intent-based navigation handoff (e.g., to Google Maps/Apple Maps app).
+    - [ ] **Backend:** Integrate Valhalla's Matrix API to calculate travel times between multiple student locations.
+    - [ ] **Backend:** Implement a VRPTW (Vehicle Routing Problem with Time Windows) solver using Google OR-Tools.
+    - [ ] **Shared:** Create `RoutingRepository` to provide instructors with optimized daily schedules based on real-time OSM travel estimates.
 
-## Summary of Technical Strategy
-- **Mapping:** Native SDKs (Google Maps Android / MapKit iOS) for performance.
-- **OSM Usage:** Strategic metadata retrieval (Overpass API) and advanced routing (Valhalla).
-- **Communication:** Incremental telemetry sync between KMP app and FastAPI backend.
+## Technical Summary
+- **Client Mapping:** `Maps Compose` (Android) / `MapKit` (iOS).
+- **Network Client:** `Ktor` with `kotlinx.serialization`.
+- **Astronomical Logic:** `Kastro` (KMP) for sunrise/sunset.
+- **Geometry Logic:** Shared custom Douglas-Peucker implementation.

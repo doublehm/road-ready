@@ -1,12 +1,9 @@
 import json
+import os
 from typing import Dict, List, Optional, Tuple
 import math
 import numpy as np
 from app.services.nosql_repo import NoSQLRepository
-try:
-    from app.services.ml_evaluator import MLEvaluator
-except ImportError:
-    MLEvaluator = None
 try:
     from app.services.force_ml_model import analyse_ride, ForceDecorrelator
     _FORCE_ML_AVAILABLE = True
@@ -80,9 +77,25 @@ class DiagnosticEvaluator:
     # threshold where it becomes genuinely harsh.
     TRAFFIC_BRAKING_THRESHOLD_G = 0.85
 
+    _THRESHOLDS_PATH = os.path.join(
+        os.path.dirname(__file__), "..", "models", "physics_thresholds.json"
+    )
+
     def __init__(self):
         self.nosql_repo = NoSQLRepository()
-        self.ml_evaluator = MLEvaluator() if MLEvaluator else None
+        self._load_physics_thresholds()
+
+    def _load_physics_thresholds(self):
+        """Override class-level G-force constants with CNN-learned values if available."""
+        try:
+            with open(self._THRESHOLDS_PATH) as f:
+                t = json.load(f)
+            self.HARD_BRAKING_THRESHOLD    = t.get("hard_braking_g",    0.60) * self.GRAVITY
+            self.HARSH_CORNERING_THRESHOLD = t.get("sharp_turn_g",      0.45) * self.GRAVITY
+            self.HARD_ACCEL_THRESHOLD      = t.get("hard_accel_g",      0.40) * self.GRAVITY
+            self.FRICTION_CIRCLE_THRESHOLD_G = t.get("friction_circle_g", 0.60)
+        except (FileNotFoundError, KeyError, ValueError):
+            pass  # class-level defaults remain
 
     @staticmethod
     def _median_filter(data: List[Dict], window: int = 5) -> List[Dict]:

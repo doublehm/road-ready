@@ -24,8 +24,36 @@ Statistical justification for Gram-Schmidt over PCA:
 
 from __future__ import annotations
 
+import json
+import os
 import numpy as np
 from typing import Dict, List, Optional, Tuple
+
+_THRESHOLDS_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "physics_thresholds.json")
+
+
+def _load_base_thresholds() -> Dict[str, float]:
+    """Load CNN-learned G-force thresholds; fall back to physics defaults."""
+    try:
+        with open(_THRESHOLDS_PATH) as f:
+            t = json.load(f)
+        g = 9.81
+        return {
+            "braking":   t.get("hard_braking_g",    0.60) * g,
+            "cornering": t.get("sharp_turn_g",       0.45) * g,
+            "jerk":      2.0,
+            "grip":      t.get("friction_circle_g",  0.60) * g,
+            "vertical":  0.40 * g,
+        }
+    except (FileNotFoundError, KeyError, ValueError):
+        g = 9.81
+        return {
+            "braking":   0.60 * g,
+            "cornering": 0.45 * g,
+            "jerk":      2.0,
+            "grip":      0.60 * g,
+            "vertical":  0.40 * g,
+        }
 
 
 # ── Feature names ──────────────────────────────────────────────────────────────
@@ -496,13 +524,7 @@ def analyse_ride(
       decorrelation          — ForceDecorrelator.report() (passed through)
     """
     if base_thresholds is None:
-        base_thresholds = {
-            "braking":   0.6 * 9.81,
-            "cornering": 0.45 * 9.81,
-            "jerk":      2.0,
-            "grip":      0.60 * 9.81,
-            "vertical":  0.40 * 9.81,
-        }
+        base_thresholds = _load_base_thresholds()
 
     result: Dict = {
         "calibrated_thresholds": dict(base_thresholds),

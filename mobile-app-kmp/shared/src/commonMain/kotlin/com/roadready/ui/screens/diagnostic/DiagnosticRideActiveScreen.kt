@@ -1,5 +1,8 @@
 package com.roadready.ui.screens.diagnostic
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -10,18 +13,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.*
-import com.roadready.ml.CoachingEvent
-import com.roadready.ml.RealTimeCoachingService
+import com.roadready.ml.*
 import com.roadready.ui.components.*
 import com.roadready.ui.theme.*
 import com.roadready.ui.util.pad2
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -29,6 +42,10 @@ import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.koin.compose.koinInject
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 
 // ── Sensor fault code → human name ──────────────────────────────────────────────
 
@@ -75,10 +92,14 @@ fun DiagnosticRideActiveScreen(
     val motionService = remember { DeviceMotionService(PlatformMotionProvider()) }
     val speedLimitService = remember { SpeedLimitService(apiClient) }
     val coachingService = remember { RealTimeCoachingService(motionService) }
+    val roadConditionClassifier = remember { RoadConditionClassifier() }
+    val roadConditionRepository = remember { RoadConditionRepository(apiClient) }
+    val hazardApproachDetector = remember { HazardApproachDetector(roadConditionRepository) }
 
     val gpsState by gpsService.state.collectAsState()
     val motionState by motionService.state.collectAsState()
     val speedLimitState by speedLimitService.state.collectAsState()
+    val hazardApproach by hazardApproachDetector.approach.collectAsState()
 
     var isActive by remember { mutableStateOf(true) }
     var elapsedSeconds by remember { mutableIntStateOf(0) }
@@ -93,6 +114,10 @@ fun DiagnosticRideActiveScreen(
     var icbcObsCount by remember { mutableIntStateOf(0) }
     val coachingEvent by coachingService.event.collectAsState()
     var speedAlertVisible by remember { mutableStateOf(false) }
+    var roadConditionEvents by remember { mutableStateOf<List<RoadConditionEvent>>(emptyList()) }
+    var hazardPrefetched by remember { mutableStateOf(false) }
+    var lastKnownLocation by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var lastClassifiedDataSize by remember { mutableIntStateOf(0) }
 
     val insightHistory = remember(events) {
         events.groupBy { it.type }.map { (type, list) ->
@@ -121,6 +146,8 @@ fun DiagnosticRideActiveScreen(
             gpsService.stopTracking()
             motionService.stopTracking()
             coachingService.stop()
+            hazardApproachDetector.reset()
+            roadConditionRepository.clear()
         }
     }
 
@@ -139,7 +166,28 @@ fun DiagnosticRideActiveScreen(
     LaunchedEffect(gpsState.speed) { prevSpeed = gpsState.speed }
     LaunchedEffect(gpsState.location) {
         val loc = gpsState.location ?: return@LaunchedEffect
+        lastKnownLocation = loc.latitude to loc.longitude
         speedLimitService.onLocationChanged(loc.latitude, loc.longitude)
+
+        // Prefetch hazard cache at first valid GPS fix
+        if (!hazardPrefetched) {
+            hazardPrefetched = true
+            scope.launch { roadConditionRepository.prefetchHazards(loc.latitude, loc.longitude) }
+        }
+
+        // 1 Hz approach detection — derive heading from last two route coordinates
+        val coords = gpsState.routeCoordinates
+        val heading = if (coords.size >= 2) {
+            val prev = coords[coords.size - 2]
+            val curr = coords.last()
+            _bearingDeg(prev.latitude, prev.longitude, curr.latitude, curr.longitude)
+        } else 0.0
+        hazardApproachDetector.onLocationUpdate(
+            lat = loc.latitude,
+            lon = loc.longitude,
+            speedKmh = gpsState.speed,
+            headingDeg = heading,
+        )
     }
     LaunchedEffect(Unit) {
         delay(5000)
@@ -147,6 +195,35 @@ fun DiagnosticRideActiveScreen(
     }
     LaunchedEffect(gpsState.location) {
         if (gpsState.location != null) gpsAvailable = true
+    }
+
+    // Classify Z-axis windows for road condition detection (every 20 samples = 2 s)
+    LaunchedEffect(Unit) {
+        snapshotFlow { motionState.data.size }
+            .collect { size ->
+                val newCount = size - lastClassifiedDataSize
+                if (newCount >= RoadConditionClassifier.WINDOW_SIZE) {
+                    lastClassifiedDataSize = size
+                    val window = motionState.data
+                        .takeLast(RoadConditionClassifier.WINDOW_SIZE)
+                        .map { it.userAccelZ.toFloat() }
+                        .toFloatArray()
+                    val loc = lastKnownLocation ?: return@collect
+                    val speed = gpsState.speed.toFloat()
+                    val label = roadConditionClassifier.classify(window, speed)
+                    if (label != RoadConditionLabel.SMOOTH) {
+                        val nowMs = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+                        roadConditionEvents = roadConditionEvents + RoadConditionEvent(
+                            lat = loc.first,
+                            lon = loc.second,
+                            speedKmh = speed,
+                            label = label.name.lowercase(),
+                            confidence = 0.8f,
+                            timestamp = nowMs,
+                        )
+                    }
+                }
+            }
     }
 
     // Real-time speeding alert: fires after 3 s of sustained speeding, with a 30 s cooldown.
@@ -245,13 +322,25 @@ fun DiagnosticRideActiveScreen(
                         put("acceleration_data", accelJson)
                         put("rotation_data", rotationJson)
                         put("speed_limit_data", speedLimitJson)
+                        speedLimitState.surface?.let { put("road_surface", it) }
+                        speedLimitState.smoothness?.let { put("road_smoothness", it) }
                         if (events.isNotEmpty()) {
                             put("evaluator_notes", events.joinToString("; ") { "${it.type}: ${it.description}" })
                         }
                     }
+                    val capturedConditionEvents = roadConditionEvents
                     apiClient.completeRide(payload)
                         .onSuccess { created ->
                             apiClient.evaluateRide(created.id)
+                            // Upload classified road condition events in background
+                            if (capturedConditionEvents.isNotEmpty()) {
+                                launch {
+                                    roadConditionRepository.uploadTrip(
+                                        rideId = created.id.toString(),
+                                        events = capturedConditionEvents,
+                                    )
+                                }
+                            }
                             onRideComplete(created.id)
                         }
                         .onFailure { onRideComplete(null) }
@@ -296,13 +385,6 @@ fun DiagnosticRideActiveScreen(
         // 2. Keep screen on while ride is active
         KeepScreenOn()
 
-        // 2.1 Safety Zone Alert Overlay (High Priority)
-        SafetyAlertOverlay(
-            zoneType = speedLimitState.zoneType,
-            isActive = speedLimitState.zoneType != "regular",
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 80.dp)
-        )
-
         // 3. Top Floating HUD (Timer + Distance + Status)
         Column(
             modifier = Modifier
@@ -328,7 +410,7 @@ fun DiagnosticRideActiveScreen(
             }
         }
 
-        // 4. Bottom Floating HUD (Speedometer + Controls)
+        // 4. Bottom Floating HUD (Safety Alert + Speedometer + Controls)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -336,6 +418,15 @@ fun DiagnosticRideActiveScreen(
                 .align(Alignment.BottomCenter),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Road Hazard Alert — slides up when approaching a confirmed hazard
+            RoadHazardAlert(approach = hazardApproach)
+            Spacer(Modifier.height(6.dp))
+            // Safety Zone Alert — above speedometer, clear of side panels
+            SafetyAlertOverlay(
+                zoneType = speedLimitState.zoneType,
+                isActive = speedLimitState.zoneType != "regular",
+            )
+            Spacer(Modifier.height(8.dp))
             // Large floating Speedometer
             FloatingSpeedometer(
                 speed = currentSpeed,
@@ -525,94 +616,180 @@ private fun FloatingSpeedometer(
     speedLimit: Int?,
     roadName: String?
 ) {
-    val speedColor = when {
-        speedLimit == null -> TextPrimary
+    val targetSpeedColor = when {
+        speedLimit == null    -> TextPrimary
         speed > speedLimit + 5 -> Error
-        speed > speedLimit -> Warning
-        else -> Secondary
+        speed > speedLimit    -> Warning
+        else                  -> Secondary
     }
+    val speedColor by animateColorAsState(
+        targetValue = targetSpeedColor,
+        animationSpec = tween(300),
+        label = "speedColor"
+    )
+
+    val maxDisplay = if (speedLimit != null) (speedLimit * 1.6f).coerceAtLeast(80f) else 120f
+    val fraction by animateFloatAsState(
+        targetValue = (speed / maxDisplay).coerceIn(0.0, 1.0).toFloat(),
+        animationSpec = tween(500, easing = FastOutSlowInEasing),
+        label = "speedFraction"
+    )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            // ── The Speedometer (Absolute Center) ──
+            // ── Arc-ring speedometer ──
             Box(
-                modifier = Modifier
-                    .size(140.dp)
-                    .clip(CircleShape)
-                    .background(Background.copy(alpha = 0.85f))
-                    .border(2.dp, speedColor.copy(alpha = 0.3f), CircleShape),
+                modifier = Modifier.size(152.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        speed.toInt().toString(),
-                        fontSize = 52.sp,
-                        fontWeight = FontWeight.Black,
-                        color = speedColor
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stroke = 7.dp.toPx()
+                    val inset = stroke / 2f
+                    val arcRect = Size(size.width - stroke, size.height - stroke)
+                    val arcOffset = Offset(inset, inset)
+
+                    // Background track
+                    drawArc(
+                        color = Color.White.copy(alpha = 0.07f),
+                        startAngle = 150f,
+                        sweepAngle = 240f,
+                        useCenter = false,
+                        topLeft = arcOffset,
+                        size = arcRect,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round)
                     )
-                    Text(
-                        "KM/H",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextMuted,
-                        letterSpacing = 1.sp
-                    )
+                    // Speed fill
+                    if (fraction > 0f) {
+                        drawArc(
+                            color = speedColor,
+                            startAngle = 150f,
+                            sweepAngle = 240f * fraction,
+                            useCenter = false,
+                            topLeft = arcOffset,
+                            size = arcRect,
+                            style = Stroke(width = stroke, cap = StrokeCap.Round)
+                        )
+                    }
+                }
+
+                // Speed number
+                Box(
+                    modifier = Modifier
+                        .size(130.dp)
+                        .clip(CircleShape)
+                        .background(Background.copy(alpha = 0.92f))
+                        .border(1.dp, Color.White.copy(alpha = 0.06f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            speed.toInt().toString(),
+                            fontSize = 52.sp,
+                            fontWeight = FontWeight.Black,
+                            color = speedColor,
+                            lineHeight = 52.sp
+                        )
+                        Text(
+                            "KM/H",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextMuted,
+                            letterSpacing = 1.5.sp
+                        )
+                    }
                 }
             }
 
-            // ── The Speed Limit (Regulatory Pillar) ──
+            // ── Speed limit sign (left of dial) ──
             if (speedLimit != null) {
-                Column(
+                SpeedLimitSign(
+                    limit = speedLimit,
+                    accentColor = speedColor,
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .offset(x = (-94).dp) // Offset to the left of the 140dp circle
-                        .width(42.dp)
-                        .height(58.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Color.White)
-                        .border(1.5.dp, Color(0xFF1F2937), RoundedCornerShape(6.dp)),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        "MAXIMUM",
-                        fontSize = 7.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(top = 3.dp)
-                    )
-                    Text(
-                        speedLimit.toString(),
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.Black,
-                        lineHeight = 24.sp
-                    )
-                    Spacer(Modifier.height(4.dp))
-                }
+                        .offset(x = (-104).dp)
+                )
             }
         }
-        
+
         if (!roadName.isNullOrBlank()) {
             Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Background.copy(alpha = 0.7f))
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.White.copy(alpha = 0.05f))
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(10.dp))
                     .padding(horizontal = 12.dp, vertical = 4.dp)
             ) {
                 Text(
                     roadName.uppercase(),
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextMuted,
-                    letterSpacing = 0.5.sp
+                    letterSpacing = 1.sp
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SpeedLimitSign(
+    limit: Int,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .width(50.dp)
+            .clip(RoundedCornerShape(7.dp))
+            .background(Color.White)
+            .border(1.5.dp, Color(0xFF1F2937), RoundedCornerShape(7.dp)),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Red header band — authentic BC style
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFDC2626))
+                .padding(vertical = 4.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "MAXIMUM",
+                fontSize = 6.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+                letterSpacing = 0.5.sp
+            )
+        }
+
+        // Speed number
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 7.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = limit.toString(),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = Color.Black,
+                lineHeight = 28.sp
+            )
+        }
+
+        // Live compliance stripe — color animates with the arc ring
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(accentColor)
+        )
     }
 }
 
@@ -818,6 +995,85 @@ private fun SpeedAlertBanner(speedKmh: Int, limit: Int) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
+                )
+            }
+        }
+    }
+}
+
+// ── Bearing helper ────────────────────────────────────────────────────────────
+private fun _bearingDeg(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val r = PI / 180.0
+    val dLon = (lon2 - lon1) * r
+    val y = sin(dLon) * cos(lat2 * r)
+    val x = cos(lat1 * r) * sin(lat2 * r) - sin(lat1 * r) * cos(lat2 * r) * cos(dLon)
+    return (Math.toDegrees(atan2(y, x)) + 360) % 360
+}
+
+// ── Road Hazard Alert ─────────────────────────────────────────────────────────
+// Slides up from below the safety zone pill when approaching a confirmed hazard.
+
+private val HazardRed    = Color(0xFFDC2626)
+private val HazardAmber  = Color(0xFFF59E0B)
+private val HazardBg     = Color(0xFF120A00).copy(alpha = 0.95f)
+
+@Composable
+private fun RoadHazardAlert(approach: HazardApproach?, modifier: Modifier = Modifier) {
+    val isVisible = approach != null
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = slideInVertically(
+            initialOffsetY = { it },
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+        ) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+        modifier = modifier,
+    ) {
+        val a = approach ?: return@AnimatedVisibility
+        val isPothole = a.label == RoadConditionLabel.POTHOLE || a.label == RoadConditionLabel.SPEED_BUMP
+        val accentColor = if (isPothole) HazardRed else HazardAmber
+
+        val icon = when (a.label) {
+            RoadConditionLabel.POTHOLE    -> "⚠️"
+            RoadConditionLabel.SPEED_BUMP -> "🚧"
+            RoadConditionLabel.BUMP       -> "〰️"
+            else                          -> "⚠️"
+        }
+        val distText = if (a.distanceMetres < 100) "${a.distanceMetres.toInt()} m"
+                       else "${(a.distanceMetres / 10).toInt() * 10} m"
+
+        Row(
+            modifier = Modifier
+                .wrapContentWidth()
+                .clip(RoundedCornerShape(22.dp))
+                .background(HazardBg)
+                .border(1.dp, accentColor.copy(alpha = 0.8f), RoundedCornerShape(22.dp))
+                .padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(accentColor.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(icon, fontSize = 16.sp)
+            }
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    text = a.label.displayName.uppercase(),
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = accentColor,
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    text = "Ahead · $distText",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
                 )
             }
         }

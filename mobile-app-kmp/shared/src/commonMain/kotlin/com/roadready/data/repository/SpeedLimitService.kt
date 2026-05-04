@@ -1,6 +1,7 @@
 package com.roadready.data.repository
 
 import com.roadready.data.remote.ApiClient
+import com.roadready.util.SafetyZoneCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +26,8 @@ data class SpeedLimitResponse(
     @SerialName("road_type") val roadType: String? = null,
     @SerialName("zone_type") val zoneType: String? = null,
     val source: String? = null,
+    val surface: String? = null,       // OSM surface tag: asphalt, gravel, cobblestone, …
+    val smoothness: String? = null,    // OSM smoothness tag: excellent → horrible
 )
 
 @Serializable
@@ -45,6 +48,8 @@ data class SpeedLimitState(
     val roadType: String? = null,
     val zoneType: String = "regular",
     val isLoading: Boolean = false,
+    val surface: String? = null,       // OSM surface tag (asphalt, gravel, etc.)
+    val smoothness: String? = null,    // OSM smoothness tag (excellent → horrible)
 )
 
 // ── Haversine helper (metres) ───────────────────────────────────────────────────
@@ -188,11 +193,21 @@ class SpeedLimitService(
 
     private fun applyResult(result: SpeedLimitResponse, lat: Double, lon: Double) {
         val rawLimit = result.speedLimitKmh ?: return
-        
+        val rawZone = result.zoneType ?: "regular"
+
         // Apply local Safety Zone logic (School/Playground hours)
         val safetyCalculator = SafetyZoneCalculator(lat, lon)
-        val newLimit = safetyCalculator.getEffectiveLimit(rawLimit.toInt(), result.zoneType ?: "regular").toDouble()
-        
+        val newLimit = safetyCalculator.getEffectiveLimit(rawLimit.toInt(), rawZone).toDouble()
+
+        // Only surface the zone type in state when the zone is temporally active.
+        // Outside school/playground hours the overlay should not fire even though
+        // OSM tags the road as a school or playground zone.
+        val activeZone = when (rawZone) {
+            "school"     -> if (safetyCalculator.isSchoolZoneActive())     rawZone else "regular"
+            "playground" -> if (safetyCalculator.isPlaygroundZoneActive()) rawZone else "regular"
+            else         -> rawZone
+        }
+
         val confirmed = confirmedLimit
 
         // Add to recent readings history
@@ -217,7 +232,9 @@ class SpeedLimitService(
             currentSpeedLimit = limitToApply,
             roadName = result.roadName,
             roadType = result.roadType,
-            zoneType = result.zoneType ?: "regular",
+            zoneType = activeZone,
+            surface = result.surface,
+            smoothness = result.smoothness,
         )
 
         // Store in history with the smoothed limit

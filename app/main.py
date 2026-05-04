@@ -128,6 +128,8 @@ async def _startup_log():
     logger = logging.getLogger("road_ready.startup")
     ws_routes = [r.path for r in app.routes if type(r).__name__ == "APIWebSocketRoute"]
     logger.info(f"[startup] Registered WebSocket routes: {ws_routes}")
+    from app.services.road_condition_service import ensure_indexes
+    await ensure_indexes()
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")

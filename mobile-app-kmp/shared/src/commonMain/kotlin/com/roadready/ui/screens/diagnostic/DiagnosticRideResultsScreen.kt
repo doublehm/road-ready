@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.roadready.data.model.DiagnosticRide
 import com.roadready.data.remote.ApiClient
+import com.roadready.data.repository.RoadConditionRepository
+import com.roadready.ml.RoadConditionLabel
 import com.roadready.ui.components.*
 import com.roadready.ui.theme.*
 import com.roadready.ui.util.fmtDouble
@@ -314,6 +316,30 @@ fun DiagnosticRideResultsScreen(
     val allEvents = remember(evalResult) { extractEvents(evalResult) }
     val routeEvents = remember(evalResult) { extractRouteEvents(evalResult) }
 
+    // Road hazard markers — fetch nearby confirmed hazards and overlay on route map
+    val roadConditionRepo = remember { RoadConditionRepository(apiClient) }
+    var hazardMarkers by remember { mutableStateOf<List<RouteEvent>>(emptyList()) }
+    LaunchedEffect(routeCoords) {
+        if (routeCoords.size >= 2) {
+            val center = routeCoords[routeCoords.size / 2]
+            roadConditionRepo.prefetchHazards(center.latitude, center.longitude, 5000.0)
+            hazardMarkers = roadConditionRepo.hazards.map { hazard ->
+                RouteEvent(
+                    type = "road_hazard",
+                    lat = hazard.lat,
+                    lng = hazard.lon,
+                    severity = when (hazard.label) {
+                        RoadConditionLabel.POTHOLE    -> "road_hazard_high"
+                        RoadConditionLabel.SPEED_BUMP -> "road_hazard_high"
+                        RoadConditionLabel.BUMP       -> "road_hazard_med"
+                        else                          -> "road_hazard_low"
+                    },
+                    description = hazard.label.displayName,
+                )
+            }
+        }
+    }
+
     val brakingFeedback: ResultCategoryFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "braking") }
     val speedFeedback: ResultCategoryFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "speed") }
     val corneringFeedback: ResultCategoryFeedback = remember(evalResult) { extractResultCategoryFeedback(evalResult, "cornering") }
@@ -403,7 +429,7 @@ fun DiagnosticRideResultsScreen(
                 Column(modifier = Modifier.padding(12.dp)) {
                     RouteReplayMap(
                         routeCoordinates = routeCoords,
-                        events = routeEvents,
+                        events = routeEvents + hazardMarkers,
                         height = 280.dp,
                     )
                 }

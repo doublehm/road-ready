@@ -1,0 +1,11 @@
+{
+  "classes": [
+    "smooth",
+    "rough",
+    "bump",
+    "pothole",
+    "speed_bump"
+  ],
+  "window_size": 20,
+  "sample_hz": 10.0
+}

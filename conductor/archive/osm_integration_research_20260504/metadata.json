@@ -1,8 +1,0 @@
-{
-  "track_id": "osm_integration_research_20260504",
-  "type": "chore",
-  "status": "new",
-  "created_at": "2026-05-04T12:00:00Z",
-  "updated_at": "2026-05-04T12:00:00Z",
-  "description": "Deep research into leveraging OpenStreetMap data for routing, live ride accuracy, safety alerts (school zones), and map performance."
-}
