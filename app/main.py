@@ -100,6 +100,30 @@ def _run_migrations():
                     conn.execute(text(f"ALTER TABLE instructor_profiles ADD COLUMN {col_name} {col_type}"))
                     logger.info(f"[migration] Added instructor_profiles.{col_name}")
             conn.commit()
+    # Speed limit flags table
+    if "speed_limit_flags" not in inspector.get_table_names():
+        with database.engine.connect() as conn:
+            conn.execute(text(
+                """CREATE TABLE speed_limit_flags (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER REFERENCES users(id),
+                    lat REAL NOT NULL,
+                    lon REAL NOT NULL,
+                    h3_cell TEXT NOT NULL,
+                    osm_speed_kmh REAL NOT NULL,
+                    observed_speed_kmh REAL NOT NULL,
+                    reported_speed_kmh REAL,
+                    status TEXT DEFAULT 'pending',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    corrected_at DATETIME,
+                    osm_changeset_id INTEGER
+                )"""
+            ))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_speed_limit_flags_h3_cell ON speed_limit_flags (h3_cell)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_speed_limit_flags_status ON speed_limit_flags (status)"))
+            conn.commit()
+        logger.info("[migration] Created speed_limit_flags table")
+
     logger.info("[migration] Migrations complete")
 
 _run_migrations()

@@ -219,6 +219,34 @@ def get_speed_limit_for_location(
     return result
 
 
+@router.get("/elevation")
+async def get_elevation_for_location(
+    lat: float = Query(...),
+    lng: float = Query(...),
+    lat2: Optional[float] = Query(None),
+    lng2: Optional[float] = Query(None),
+):
+    """
+    Return elevation and road grade for the given GPS coordinate.
+
+    Provide lat2/lng2 (the previous coordinate) to also get grade_pct,
+    category (e.g. 'moderate_uphill'), and terrain driving tips.
+    Without lat2/lng2 only elevation_m is returned.
+    """
+    from app.services.elevation_service import get_elevation, grade_summary
+
+    elev1 = await get_elevation(lat, lng)
+    if elev1 is None:
+        return {"elevation_m": None, "grade_pct": None, "category": "unknown", "tips": []}
+
+    if lat2 is not None and lng2 is not None:
+        elev2 = await get_elevation(lat2, lng2)
+        if elev2 is not None:
+            return grade_summary(elev1, elev2, lat, lng, lat2, lng2)
+
+    return {"elevation_m": round(elev1, 1), "grade_pct": None, "category": "unknown", "tips": []}
+
+
 @router.post("/", response_model=schemas.DiagnosticRide)
 async def create_diagnostic_ride(
     ride: schemas.DiagnosticRideCreate,

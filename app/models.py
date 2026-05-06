@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Float, Text
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from .database import Base
 
 class User(Base):
@@ -338,3 +339,24 @@ class StudentProgress(Base):
 User.comprehensive_progress = relationship("StudentProgress", uselist=False, back_populates="student")
 
 
+class SpeedLimitFlag(Base):
+    """Crowdsourced speed limit discrepancy report from mobile drivers."""
+    __tablename__ = "speed_limit_flags"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    lat = Column(Float, nullable=False)
+    lon = Column(Float, nullable=False)
+    h3_cell = Column(String(20), nullable=False, index=True)
+
+    osm_speed_kmh = Column(Float, nullable=False)        # speed OSM reported
+    observed_speed_kmh = Column(Float, nullable=False)   # driver's actual speed
+    reported_speed_kmh = Column(Float, nullable=True)    # driver-verified correct limit
+
+    # pending → corrected (auto OSM edit) or rejected (admin review)
+    status = Column(String(20), default="pending", index=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    corrected_at = Column(DateTime, nullable=True)
+    osm_changeset_id = Column(Integer, nullable=True)

@@ -19,6 +19,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.roadready.LocalNavigator
+import com.roadready.Screen
 import com.roadready.data.model.DiagnosticRide
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.RoadConditionRepository
@@ -970,6 +972,7 @@ private fun ActionButtons(
     isFromHistory: Boolean,
     onDone: () -> Unit,
 ) {
+    val navigator = LocalNavigator.current
     Column(modifier = Modifier.padding(horizontal = 16.dp)) {
         if (passed) {
             PrimaryButton(
@@ -990,8 +993,17 @@ private fun ActionButtons(
             )
         }
 
+        Spacer(Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = { navigator.push(com.roadready.Screen.FlaggedIncidents(rideId)) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        ) {
+            Text("View Route Analysis Map", color = Primary, fontWeight = FontWeight.Bold)
+        }
+
         if (!isFromHistory) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(4.dp))
             TextButton(
                 onClick = onDone,
                 modifier = Modifier.fillMaxWidth(),

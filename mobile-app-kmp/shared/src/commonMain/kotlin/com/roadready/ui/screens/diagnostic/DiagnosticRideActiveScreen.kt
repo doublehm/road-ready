@@ -28,6 +28,7 @@ import com.roadready.ml.*
 import com.roadready.ui.components.*
 import com.roadready.ui.theme.*
 import com.roadready.ui.util.pad2
+import kotlin.math.abs
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -95,11 +96,15 @@ fun DiagnosticRideActiveScreen(
     val roadConditionClassifier = remember { RoadConditionClassifier() }
     val roadConditionRepository = remember { RoadConditionRepository(apiClient) }
     val hazardApproachDetector = remember { HazardApproachDetector(roadConditionRepository) }
+    val elevationService = remember { ElevationService(apiClient) }
+    val discrepancyService = remember { SpeedLimitDiscrepancyService(apiClient) }
 
     val gpsState by gpsService.state.collectAsState()
     val motionState by motionService.state.collectAsState()
     val speedLimitState by speedLimitService.state.collectAsState()
     val hazardApproach by hazardApproachDetector.approach.collectAsState()
+    val elevationState by elevationService.state.collectAsState()
+    val discrepancyState by discrepancyService.discrepancy.collectAsState()
 
     var isActive by remember { mutableStateOf(true) }
     var elapsedSeconds by remember { mutableIntStateOf(0) }
@@ -168,6 +173,7 @@ fun DiagnosticRideActiveScreen(
         val loc = gpsState.location ?: return@LaunchedEffect
         lastKnownLocation = loc.latitude to loc.longitude
         speedLimitService.onLocationChanged(loc.latitude, loc.longitude)
+        elevationService.onLocationChanged(loc.latitude, loc.longitude)
 
         // Prefetch hazard cache at first valid GPS fix
         if (!hazardPrefetched) {
@@ -249,6 +255,31 @@ fun DiagnosticRideActiveScreen(
             delay(4_000)
             speedAlertVisible = false
         }
+    }
+
+    // Elevation tip auto-dismiss after 5 s
+    LaunchedEffect(elevationState.terrainTip) {
+        if (elevationState.terrainTip != null) {
+            delay(5_000)
+            elevationService.clearTip()
+        }
+    }
+
+    // Speed limit discrepancy monitor — feeds speed + limit every second
+    LaunchedEffect(Unit) {
+        snapshotFlow { gpsState.speed to speedLimitState.currentSpeedLimit }
+            .collect { (speed, limit) ->
+                val loc = lastKnownLocation ?: return@collect
+                if (limit != null) {
+                    discrepancyService.onSpeedAndLimit(
+                        speedKmh = speed,
+                        osmLimitKmh = limit,
+                        lat = loc.first,
+                        lon = loc.second,
+                        nowMs = kotlinx.datetime.Clock.System.now().toEpochMilliseconds(),
+                    )
+                }
+            }
     }
 
     if (showEndConfirm) {
@@ -494,7 +525,7 @@ fun DiagnosticRideActiveScreen(
                 .padding(top = 100.dp, start = 16.dp),
         )
 
-        // 7. Coaching & Speeding Alerts — floating below top HUD on the right
+        // 7. Coaching, Speed & Terrain Alerts — floating below top HUD on the right
         Column(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -504,6 +535,19 @@ fun DiagnosticRideActiveScreen(
         ) {
             if (speedAlertVisible) SpeedAlertBanner(speedKmh = gpsState.speed.toInt(), limit = currentLimit ?: 0)
             coachingEvent?.let { CoachingBanner(it) }
+            elevationState.terrainTip?.let { TerrainTipBanner(it, elevationState.gradePct, elevationState.category) }
+        }
+
+        // 8. Speed limit discrepancy verification dialog
+        if (discrepancyState.isVisible) {
+            SpeedLimitVerificationDialog(
+                osmSpeedKmh = discrepancyState.osmSpeedKmh,
+                observedSpeedKmh = discrepancyState.observedSpeedKmh,
+                onConfirm = { reportedSpeed ->
+                    scope.launch { discrepancyService.submitFlag(reportedSpeed) }
+                },
+                onDismiss = { discrepancyService.dismiss() },
+            )
         }
 
         // ── ICBC bottom sheet ────────────────────────────────────────────────
@@ -995,6 +1039,65 @@ private fun SpeedAlertBanner(speedKmh: Int, limit: Int) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     lineHeight = 18.sp,
+                )
+            }
+        }
+    }
+}
+
+// ── Terrain tip banner ────────────────────────────────────────────────────────
+// Shows elevation grade and a driving tip for 5 s. Uses teal/earth tones to
+// distinguish from coaching (indigo) and speed alerts (red).
+
+private val TerrainTeal = Color(0xFF0D9488)
+private val TerrainTeal2 = Color(0xFF0F766E)
+
+@Composable
+private fun TerrainTipBanner(tip: String, gradePct: Double?, category: String) {
+    val icon = when {
+        category.contains("uphill")   -> "⛰️"
+        category.contains("downhill") -> "🏔️"
+        else                           -> "📍"
+    }
+    val gradeText = gradePct?.let { " (${if (it > 0) "+" else ""}${"%.1f".format(it)}%)" } ?: ""
+
+    Box(
+        modifier = Modifier
+            .width(220.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(TerrainTeal, TerrainTeal2)
+                )
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+            .padding(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(icon, fontSize = 14.sp)
+            }
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    text = "TERRAIN$gradeText",
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 10.sp,
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    text = tip,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
                 )
             }
         }

@@ -2,7 +2,10 @@ package com.roadready.data.remote
 
 import com.roadready.createPlatformHttpClient
 import com.roadready.data.model.*
+import com.roadready.data.repository.ElevationResponse
 import com.roadready.data.repository.NearbyHazardsResponse
+import com.roadready.data.repository.SpeedLimitFlagRequest
+import com.roadready.data.repository.SpeedLimitFlagResponse
 import com.roadready.data.repository.SpeedLimitResponse
 import com.roadready.data.repository.TripReportRequest
 import com.roadready.data.repository.TripReportResponse
@@ -217,6 +220,33 @@ class ApiClient(
             parameter("lat", lat)
             parameter("lng", lon)
             parameter("radius_m", radiusMetres)
+        }.body()
+    }
+
+    // --- Elevation ---
+
+    suspend fun getElevation(lat: Double, lon: Double, lat2: Double? = null, lon2: Double? = null): Result<ElevationResponse> = safeCall {
+        httpClient.get("diagnostic-rides/elevation") {
+            parameter("lat", lat)
+            parameter("lng", lon)
+            lat2?.let { parameter("lat2", it) }
+            lon2?.let { parameter("lng2", it) }
+        }.body()
+    }
+
+    // --- Speed Limit Flags ---
+
+    suspend fun flagSpeedLimit(request: SpeedLimitFlagRequest): Result<SpeedLimitFlagResponse> = safeCall {
+        httpClient.post("speed-limits/flag") {
+            setBody(request)
+        }.body()
+    }
+
+    suspend fun getNearbyFlags(lat: Double, lon: Double, radiusKm: Double = 1.0): Result<List<SpeedLimitFlagResponse>> = safeCall {
+        httpClient.get("speed-limits/flags/nearby") {
+            parameter("lat", lat)
+            parameter("lon", lon)
+            parameter("radius_km", radiusKm)
         }.body()
     }
 

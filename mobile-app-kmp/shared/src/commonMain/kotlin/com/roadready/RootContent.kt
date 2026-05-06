@@ -68,6 +68,9 @@ sealed class Screen {
     data class SessionDetail(val bookingId: Int) : Screen()
     data object DriveLog : Screen()
     data class Legal(val type: String) : Screen()
+
+    // Map analysis
+    data class FlaggedIncidents(val rideId: Int) : Screen()
 }
 
 class Navigator {
@@ -336,6 +339,11 @@ fun RootContent() {
 
             is Screen.Legal -> LegalScreen(
                 type = screen.type,
+                onBack = { navigator.pop() },
+            )
+
+            is Screen.FlaggedIncidents -> FlaggedIncidentsScreen(
+                rideId = screen.rideId,
                 onBack = { navigator.pop() },
             )
         }
