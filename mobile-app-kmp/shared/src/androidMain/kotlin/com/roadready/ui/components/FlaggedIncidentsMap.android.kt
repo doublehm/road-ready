@@ -16,45 +16,43 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.*
 
-/** Returns a color appropriate for a given speed limit. */
-private fun speedLimitColor(kmh: Int): Color = when {
-    kmh <= 30  -> Color(0xFF22C55E)   // green  — school/playground zone
-    kmh <= 50  -> Color(0xFF3B82F6)   // blue   — residential
-    kmh <= 70  -> Color(0xFFF59E0B)   // amber  — secondary
-    kmh <= 90  -> Color(0xFFF97316)   // orange — primary/trunk
-    else       -> Color(0xFFEF4444)   // red    — motorway
+private fun complianceColor(level: ComplianceLevel): Color = when (level) {
+    ComplianceLevel.COMPLIANT -> Color(0xFF22C55E)   // green  — at or under the limit
+    ComplianceLevel.MARGINAL  -> Color(0xFFF59E0B)   // amber  — 1–10 km/h over
+    ComplianceLevel.SPEEDING  -> Color(0xFFEF4444)   // red    — 10+ km/h over
+}
+
+private fun incidentMarkerHue(type: String, severity: String): Float = when {
+    type == "speeding" || type == "sudden_stop" -> BitmapDescriptorFactory.HUE_RED
+    type == "harsh_braking" || type == "harsh_acceleration" -> BitmapDescriptorFactory.HUE_ORANGE
+    severity == "high" || severity == "critical" -> BitmapDescriptorFactory.HUE_RED
+    else -> BitmapDescriptorFactory.HUE_YELLOW
 }
 
 @Composable
 actual fun FlaggedIncidentsMap(
     segments: List<SpeedSegment>,
-    flags: List<SpeedFlag>,
-    onFlagTapped: (SpeedFlag) -> Unit,
+    incidents: List<RideIncident>,
+    onIncidentTapped: (RideIncident) -> Unit,
     modifier: Modifier,
 ) {
     val allPoints = segments.flatMap { it.points }
     val center = remember(allPoints) {
         if (allPoints.isEmpty()) LatLng(49.2827, -123.1207)
-        else {
-            val latAvg = allPoints.map { it.first }.average()
-            val lonAvg = allPoints.map { it.second }.average()
-            LatLng(latAvg, lonAvg)
-        }
+        else LatLng(allPoints.map { it.first }.average(), allPoints.map { it.second }.average())
     }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(center, 14f)
     }
 
-    // Auto-fit camera to all points on first load
     LaunchedEffect(allPoints) {
         if (allPoints.size > 1) {
-            val bounds = LatLngBounds.builder().apply {
-                allPoints.forEach { include(LatLng(it.first, it.second)) }
-                flags.forEach { include(LatLng(it.lat, it.lon)) }
-            }.build()
+            val builder = LatLngBounds.builder()
+            allPoints.forEach { builder.include(LatLng(it.first, it.second)) }
+            incidents.forEach { builder.include(LatLng(it.lat, it.lon)) }
             cameraPositionState.animate(
-                com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds(bounds, 80)
+                com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds(builder.build(), 80)
             )
         }
     }
@@ -70,31 +68,28 @@ actual fun FlaggedIncidentsMap(
                 mapToolbarEnabled = false,
             ),
         ) {
-            // Color-coded route segments by speed limit
+            // Compliance-colored route polyline
             segments.forEach { segment ->
                 if (segment.points.size > 1) {
                     Polyline(
                         points = segment.points.map { LatLng(it.first, it.second) },
-                        color = speedLimitColor(segment.speedLimitKmh),
+                        color = complianceColor(segment.compliance),
                         width = 14f,
                         zIndex = 1f,
                     )
                 }
             }
 
-            // Flag markers — orange for pending, grey for corrected
-            flags.forEach { flag ->
-                val hue = when (flag.status) {
-                    "corrected" -> BitmapDescriptorFactory.HUE_CYAN
-                    else        -> BitmapDescriptorFactory.HUE_ORANGE
-                }
-                val reported = flag.reportedSpeedKmh?.let { "→ ${it.toInt()} km/h" } ?: ""
+            // Incident markers from actual ride events
+            incidents.forEach { incident ->
                 Marker(
-                    state = MarkerState(position = LatLng(flag.lat, flag.lon)),
-                    title = "Speed Limit Flag",
-                    snippet = "OSM: ${flag.osmSpeedKmh.toInt()} km/h  Observed: ${flag.observedSpeedKmh.toInt()} km/h  $reported".trim(),
-                    icon = BitmapDescriptorFactory.defaultMarker(hue),
-                    onClick = { onFlagTapped(flag); false },
+                    state = MarkerState(position = LatLng(incident.lat, incident.lon)),
+                    title = incident.type.replace('_', ' ').replaceFirstChar { it.uppercase() },
+                    snippet = incident.description,
+                    icon = BitmapDescriptorFactory.defaultMarker(
+                        incidentMarkerHue(incident.type, incident.severity)
+                    ),
+                    onClick = { onIncidentTapped(incident); false },
                 )
             }
         }

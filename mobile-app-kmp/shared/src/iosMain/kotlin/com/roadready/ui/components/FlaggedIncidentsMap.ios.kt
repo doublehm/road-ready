@@ -11,8 +11,8 @@ import com.roadready.ui.theme.TextMuted
 @Composable
 actual fun FlaggedIncidentsMap(
     segments: List<SpeedSegment>,
-    flags: List<SpeedFlag>,
-    onFlagTapped: (SpeedFlag) -> Unit,
+    incidents: List<RideIncident>,
+    onIncidentTapped: (RideIncident) -> Unit,
     modifier: Modifier,
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

@@ -5,7 +5,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,131 +21,137 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.roadready.data.remote.ApiClient
 import com.roadready.data.repository.SpeedLimitDataPoint
-import com.roadready.data.repository.SpeedLimitFlagResponse
 import com.roadready.ui.components.*
 import com.roadready.ui.theme.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import org.koin.compose.koinInject
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 private val jsonParser = Json { ignoreUnknownKeys = true }
 
-// Speed limit → hex color (string for use in legend)
-private fun limitColor(kmh: Int): Color = when {
-    kmh <= 30  -> Color(0xFF22C55E)
-    kmh <= 50  -> Color(0xFF3B82F6)
-    kmh <= 70  -> Color(0xFFF59E0B)
-    kmh <= 90  -> Color(0xFFF97316)
-    else       -> Color(0xFFEF4444)
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+private fun parseSpeedPoints(raw: String?): List<SpeedDataPoint> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return try { jsonParser.decodeFromString(raw) } catch (_: Exception) { emptyList() }
 }
 
-private fun limitLabel(kmh: Int): String = when {
-    kmh <= 30  -> "≤30 km/h"
-    kmh <= 50  -> "31–50 km/h"
-    kmh <= 70  -> "51–70 km/h"
-    kmh <= 90  -> "71–90 km/h"
-    else       -> "91+ km/h"
+private fun parseLimitPoints(raw: String?): List<SpeedLimitDataPoint> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return try { jsonParser.decodeFromString(raw) } catch (_: Exception) { emptyList() }
 }
 
-/** Build color-coded segments from a list of speed limit data points + route coordinates. */
+private fun parseEvalEvents(raw: String?): List<RouteEvent> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return try {
+        val obj = jsonParser.parseToJsonElement(raw).jsonObject
+        val arr = obj["events"]?.jsonArray ?: return emptyList()
+        jsonParser.decodeFromString(arr.toString())
+    } catch (_: Exception) { emptyList() }
+}
+
+private fun nearestLimit(lat: Double, lon: Double, limits: List<SpeedLimitDataPoint>): Float {
+    if (limits.isEmpty()) return 50f
+    return limits.minByOrNull { pt ->
+        val dlat = pt.latitude - lat
+        val dlon = pt.longitude - lon
+        dlat * dlat + dlon * dlon
+    }?.speedLimit?.toFloat() ?: 50f
+}
+
+private fun complianceLevel(speedKmh: Float, limitKmh: Float): ComplianceLevel = when {
+    speedKmh <= limitKmh      -> ComplianceLevel.COMPLIANT
+    speedKmh <= limitKmh + 10 -> ComplianceLevel.MARGINAL
+    else                       -> ComplianceLevel.SPEEDING
+}
+
+/** Build compliance-colored segments from GPS speed points + OSM limit points. */
 private fun buildSegments(
-    routeCoords: List<Pair<Double, Double>>,
-    speedLimitPoints: List<SpeedLimitDataPoint>,
+    speedPoints: List<SpeedDataPoint>,
+    limitPoints: List<SpeedLimitDataPoint>,
 ): List<SpeedSegment> {
-    if (routeCoords.isEmpty()) return emptyList()
-    if (speedLimitPoints.isEmpty()) {
-        return listOf(SpeedSegment(routeCoords, 50))
-    }
-
-    fun nearestLimit(lat: Double, lon: Double): Int {
-        var best = speedLimitPoints.first()
-        var bestDist = Double.MAX_VALUE
-        speedLimitPoints.forEach { pt ->
-            val d = abs(pt.latitude - lat) + abs(pt.longitude - lon)
-            if (d < bestDist) { bestDist = d; best = pt }
-        }
-        return best.speedLimit.roundToInt()
-    }
+    if (speedPoints.size < 2) return emptyList()
 
     val segments = mutableListOf<SpeedSegment>()
-    var currentLimit = nearestLimit(routeCoords.first().first, routeCoords.first().second)
-    var currentPoints = mutableListOf(routeCoords.first())
+    val first = speedPoints.first()
+    var curLimit = nearestLimit(first.lat, first.lon, limitPoints)
+    var curCompliance = complianceLevel(first.speed, curLimit)
+    var curPts = mutableListOf(first.lat to first.lon)
+    var speedSum = first.speed
+    var ptCount = 1
 
-    for (i in 1 until routeCoords.size) {
-        val coord = routeCoords[i]
-        val limit = nearestLimit(coord.first, coord.second)
-        if (limit != currentLimit) {
-            currentPoints.add(coord)   // bridge point for visual continuity
-            segments.add(SpeedSegment(currentPoints.toList(), currentLimit))
-            currentPoints = mutableListOf(coord)
-            currentLimit = limit
+    for (i in 1 until speedPoints.size) {
+        val pt = speedPoints[i]
+        val lim = nearestLimit(pt.lat, pt.lon, limitPoints)
+        val comp = complianceLevel(pt.speed, lim)
+        if (comp != curCompliance) {
+            curPts.add(pt.lat to pt.lon)  // bridge point for visual continuity
+            segments.add(SpeedSegment(curPts.toList(), curCompliance, speedSum / ptCount, curLimit))
+            curPts = mutableListOf(pt.lat to pt.lon)
+            curCompliance = comp
+            curLimit = lim
+            speedSum = pt.speed
+            ptCount = 1
         } else {
-            currentPoints.add(coord)
+            curPts.add(pt.lat to pt.lon)
+            speedSum += pt.speed
+            ptCount++
         }
     }
-    if (currentPoints.size > 1) {
-        segments.add(SpeedSegment(currentPoints.toList(), currentLimit))
+    if (curPts.size > 1) {
+        segments.add(SpeedSegment(curPts.toList(), curCompliance, speedSum / ptCount, curLimit))
     }
     return segments
 }
 
-/**
- * Full-screen map showing:
- *  - Route color-coded by speed limit
- *  - Crowdsourced speed limit flag markers
- *  - Tappable flag detail card at the bottom
- */
+private fun improvementTip(type: String): String = when (type) {
+    "speeding"             -> "Reduce speed to comply with posted limits. Speeding significantly increases collision risk."
+    "harsh_braking"        -> "Increase following distance so you can brake gradually rather than suddenly."
+    "sharp_turn"           -> "Slow down before entering curves — don't brake mid-corner where traction is limited."
+    "sudden_stop"          -> "Maintain a safe gap so you can stop progressively without jarring passengers."
+    "harsh_acceleration"   -> "Accelerate smoothly and progressively — avoid jackrabbit starts for safety and fuel economy."
+    "erratic_speed"        -> "Maintain consistent speed. Unnecessary acceleration and deceleration waste fuel and unsettle traffic."
+    "hard_acceleration"    -> "Build speed gradually. Smooth acceleration extends brake and tire life."
+    "human_flag"           -> "Review the supervisor note and discuss with your instructor."
+    else                   -> "Focus on smooth, anticipatory driving to improve your overall score."
+}
+
+private fun formatEventType(type: String): String =
+    type.replace('_', ' ').split(' ').joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+
+// ── Screen ───────────────────────────────────────────────────────────────────
+
 @Composable
 fun FlaggedIncidentsScreen(
     rideId: Int,
     onBack: () -> Unit,
 ) {
     val apiClient: ApiClient = koinInject()
-    val scope = rememberCoroutineScope()
 
     var segments by remember { mutableStateOf<List<SpeedSegment>>(emptyList()) }
-    var flags by remember { mutableStateOf<List<SpeedFlag>>(emptyList()) }
-    var selectedFlag by remember { mutableStateOf<SpeedFlag?>(null) }
+    var incidents by remember { mutableStateOf<List<RideIncident>>(emptyList()) }
+    var selectedIncident by remember { mutableStateOf<RideIncident?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-    var centerLat by remember { mutableStateOf(49.2827) }
-    var centerLon by remember { mutableStateOf(-123.1207) }
 
     LaunchedEffect(rideId) {
-        val rideResult = apiClient.getDiagnosticRide(rideId)
-        rideResult.onSuccess { ride ->
-            // Parse route
-            val routeCoords: List<Pair<Double, Double>> = try {
-                jsonParser.decodeFromString<List<RouteCoordinate>>(ride.routeCoords ?: "[]")
-                    .map { it.latitude to it.longitude }
-            } catch (_: Exception) { emptyList() }
+        apiClient.getDiagnosticRide(rideId).onSuccess { ride ->
+            val speedPoints = parseSpeedPoints(ride.speedData)
+            val limitPoints = parseLimitPoints(ride.speedLimitData)
+            segments = buildSegments(speedPoints, limitPoints)
 
-            // Parse speed limit data
-            val speedLimitPoints: List<SpeedLimitDataPoint> = try {
-                jsonParser.decodeFromString<List<SpeedLimitDataPoint>>(ride.speedLimitData ?: "[]")
-            } catch (_: Exception) { emptyList() }
-
-            segments = buildSegments(routeCoords, speedLimitPoints)
-
-            if (routeCoords.isNotEmpty()) {
-                centerLat = routeCoords.map { it.first }.average()
-                centerLon = routeCoords.map { it.second }.average()
-
-                // Fetch nearby flags around the route center
-                apiClient.getNearbyFlags(centerLat, centerLon).onSuccess { flagList ->
-                    flags = flagList.map { f ->
-                        SpeedFlag(
-                            id = f.id,
-                            lat = f.lat,
-                            lon = f.lon,
-                            osmSpeedKmh = f.osmSpeedKmh,
-                            observedSpeedKmh = f.observedSpeedKmh,
-                            reportedSpeedKmh = f.reportedSpeedKmh,
-                            status = f.status,
-                        )
-                    }
+            // Ride incidents from the evaluator — these have exact GPS coordinates
+            incidents = parseEvalEvents(ride.evaluationResult)
+                .filter { it.lat != 0.0 && it.lng != 0.0 }
+                .map { event ->
+                    RideIncident(
+                        lat = event.lat,
+                        lon = event.lng,
+                        type = event.type,
+                        severity = event.severity,
+                        description = event.description,
+                    )
                 }
-            }
         }
         isLoading = false
     }
@@ -158,11 +163,10 @@ fun FlaggedIncidentsScreen(
                 color = Primary,
             )
         } else {
-            // Full-screen map
             FlaggedIncidentsMap(
                 segments = segments,
-                flags = flags,
-                onFlagTapped = { selectedFlag = it },
+                incidents = incidents,
+                onIncidentTapped = { selectedIncident = it },
                 modifier = Modifier.fillMaxSize(),
             )
 
@@ -203,15 +207,15 @@ fun FlaggedIncidentsScreen(
                 }
             }
 
-            // Speed limit legend
-            SpeedLimitLegend(
+            // Compliance legend (top-right)
+            ComplianceLegend(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(top = 16.dp, end = 12.dp),
             )
 
-            // Flag count pill
-            if (flags.isNotEmpty()) {
+            // Incident count pill
+            if (incidents.isNotEmpty()) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -221,7 +225,7 @@ fun FlaggedIncidentsScreen(
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                 ) {
                     Text(
-                        "${flags.size} speed limit flag${if (flags.size != 1) "s" else ""} in this area",
+                        "${incidents.size} incident${if (incidents.size != 1) "s" else ""} flagged",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
@@ -230,17 +234,17 @@ fun FlaggedIncidentsScreen(
             }
         }
 
-        // Flag detail card — slides up from bottom
+        // Incident detail card — slides up when a marker is tapped
         AnimatedVisibility(
-            visible = selectedFlag != null,
+            visible = selectedIncident != null,
             enter = slideInVertically(initialOffsetY = { it }),
             exit = slideOutVertically(targetOffsetY = { it }),
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
-            selectedFlag?.let { flag ->
-                FlagDetailCard(
-                    flag = flag,
-                    onDismiss = { selectedFlag = null },
+            selectedIncident?.let { incident ->
+                IncidentDetailCard(
+                    incident = incident,
+                    onDismiss = { selectedIncident = null },
                 )
             }
         }
@@ -248,13 +252,11 @@ fun FlaggedIncidentsScreen(
 }
 
 @Composable
-private fun SpeedLimitLegend(modifier: Modifier = Modifier) {
+private fun ComplianceLegend(modifier: Modifier = Modifier) {
     val entries = listOf(
-        Color(0xFF22C55E) to "≤30",
-        Color(0xFF3B82F6) to "31–50",
-        Color(0xFFF59E0B) to "51–70",
-        Color(0xFFF97316) to "71–90",
-        Color(0xFFEF4444) to "91+",
+        Color(0xFF22C55E) to "Compliant",
+        Color(0xFFF59E0B) to "1–10 over",
+        Color(0xFFEF4444) to "10+ over",
     )
     Box(
         modifier = modifier
@@ -264,7 +266,13 @@ private fun SpeedLimitLegend(modifier: Modifier = Modifier) {
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("SPEED LIMIT", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = TextMuted, letterSpacing = 1.sp)
+            Text(
+                "SPEED LIMIT",
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextMuted,
+                letterSpacing = 1.sp,
+            )
             entries.forEach { (color, label) ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
@@ -274,7 +282,7 @@ private fun SpeedLimitLegend(modifier: Modifier = Modifier) {
                             .background(color),
                     )
                     Spacer(Modifier.width(6.dp))
-                    Text("$label km/h", fontSize = 10.sp, color = TextPrimary)
+                    Text(label, fontSize = 10.sp, color = TextPrimary)
                 }
             }
         }
@@ -282,15 +290,18 @@ private fun SpeedLimitLegend(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun FlagDetailCard(flag: SpeedFlag, onDismiss: () -> Unit) {
-    val statusColor = if (flag.status == "corrected") Color(0xFF22C55E) else Warning
-    val statusLabel = if (flag.status == "corrected") "Corrected in OSM" else "Pending Review"
+private fun IncidentDetailCard(incident: RideIncident, onDismiss: () -> Unit) {
+    val severityColor = when (incident.severity) {
+        "high", "critical" -> Error
+        "medium"           -> Warning
+        else               -> Color(0xFF3B82F6)
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 20.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
     ) {
@@ -301,7 +312,7 @@ private fun FlagDetailCard(flag: SpeedFlag, onDismiss: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    "Speed Limit Flag",
+                    formatEventType(incident.type),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 16.sp,
                     color = TextPrimary,
@@ -309,40 +320,35 @@ private fun FlagDetailCard(flag: SpeedFlag, onDismiss: () -> Unit) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(statusColor.copy(alpha = 0.15f))
+                        .background(severityColor.copy(alpha = 0.15f))
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
-                    Text(statusLabel, fontSize = 11.sp, color = statusColor, fontWeight = FontWeight.Bold)
-                }
-            }
-            Spacer(Modifier.height(12.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                FlagStat("OSM Limit", "${flag.osmSpeedKmh.toInt()} km/h", Error)
-                FlagStat("Observed Speed", "${flag.observedSpeedKmh.toInt()} km/h", Warning)
-                flag.reportedSpeedKmh?.let {
-                    FlagStat("Reported Limit", "${it.toInt()} km/h", Color(0xFF22C55E))
+                    Text(
+                        incident.severity.replaceFirstChar { it.uppercase() },
+                        fontSize = 11.sp,
+                        color = severityColor,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             }
 
-            if (flag.status == "pending") {
-                Spacer(Modifier.height(12.dp))
+            if (incident.description.isNotBlank()) {
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    "This area has been flagged for a possible speed limit error. " +
-                    "When 5 or more drivers confirm this discrepancy, the map data will be corrected automatically.",
-                    fontSize = 12.sp,
-                    color = TextMuted,
-                    lineHeight = 18.sp,
-                )
-            } else {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    "This speed limit discrepancy has been confirmed and the OpenStreetMap data has been updated.",
-                    fontSize = 12.sp,
-                    color = TextMuted,
-                    lineHeight = 18.sp,
+                    incident.description,
+                    fontSize = 13.sp,
+                    color = TextPrimary,
+                    lineHeight = 19.sp,
                 )
             }
+
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Tip: ${improvementTip(incident.type)}",
+                fontSize = 12.sp,
+                color = TextMuted,
+                lineHeight = 18.sp,
+            )
 
             Spacer(Modifier.height(16.dp))
             TextButton(
@@ -352,13 +358,5 @@ private fun FlagDetailCard(flag: SpeedFlag, onDismiss: () -> Unit) {
                 Text("Dismiss", color = Primary)
             }
         }
-    }
-}
-
-@Composable
-private fun FlagStat(label: String, value: String, valueColor: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = valueColor)
-        Text(label, fontSize = 10.sp, color = TextMuted, fontWeight = FontWeight.Medium)
     }
 }
