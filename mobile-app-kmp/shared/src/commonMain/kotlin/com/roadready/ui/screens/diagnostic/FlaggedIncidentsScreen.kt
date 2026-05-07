@@ -20,15 +20,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.roadready.data.remote.ApiClient
-import com.roadready.data.repository.SpeedLimitDataPoint
 import com.roadready.ui.components.*
 import com.roadready.ui.theme.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.koin.compose.koinInject
+import kotlin.math.abs
 
 private val jsonParser = Json { ignoreUnknownKeys = true }
+
+// Speed limit point using the same lat/lon keys the phone stores
+@Serializable
+private data class LimitPoint(
+    val lat: Double = 0.0,
+    val lon: Double = 0.0,
+    @SerialName("speed_limit") val speedLimit: Float = 50f,
+)
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -37,7 +47,7 @@ private fun parseSpeedPoints(raw: String?): List<SpeedDataPoint> {
     return try { jsonParser.decodeFromString(raw) } catch (_: Exception) { emptyList() }
 }
 
-private fun parseLimitPoints(raw: String?): List<SpeedLimitDataPoint> {
+private fun parseLimitPoints(raw: String?): List<LimitPoint> {
     if (raw.isNullOrBlank()) return emptyList()
     return try { jsonParser.decodeFromString(raw) } catch (_: Exception) { emptyList() }
 }
@@ -51,13 +61,30 @@ private fun parseEvalEvents(raw: String?): List<RouteEvent> {
     } catch (_: Exception) { emptyList() }
 }
 
-private fun nearestLimit(lat: Double, lon: Double, limits: List<SpeedLimitDataPoint>): Float {
+/**
+ * For events stored without GPS (acceleration-based events before the backend fix),
+ * resolve coordinates from the nearest speed_data point by timestamp.
+ */
+private fun resolveEventGps(events: List<RouteEvent>, speedPoints: List<SpeedDataPoint>): List<RouteEvent> {
+    if (speedPoints.isEmpty()) return events
+    return events.map { event ->
+        if (event.lat != 0.0 && event.lng != 0.0) event
+        else if (event.timestamp == 0L) event
+        else {
+            val closest = speedPoints.minByOrNull { abs(it.timestamp - event.timestamp) }
+            if (closest != null) event.copy(lat = closest.lat, lng = closest.lon)
+            else event
+        }
+    }
+}
+
+private fun nearestLimit(lat: Double, lon: Double, limits: List<LimitPoint>): Float {
     if (limits.isEmpty()) return 50f
     return limits.minByOrNull { pt ->
-        val dlat = pt.latitude - lat
-        val dlon = pt.longitude - lon
+        val dlat = pt.lat - lat
+        val dlon = pt.lon - lon
         dlat * dlat + dlon * dlon
-    }?.speedLimit?.toFloat() ?: 50f
+    }?.speedLimit ?: 50f
 }
 
 private fun complianceLevel(speedKmh: Float, limitKmh: Float): ComplianceLevel = when {
@@ -69,7 +96,7 @@ private fun complianceLevel(speedKmh: Float, limitKmh: Float): ComplianceLevel =
 /** Build compliance-colored segments from GPS speed points + OSM limit points. */
 private fun buildSegments(
     speedPoints: List<SpeedDataPoint>,
-    limitPoints: List<SpeedLimitDataPoint>,
+    limitPoints: List<LimitPoint>,
 ): List<SpeedSegment> {
     if (speedPoints.size < 2) return emptyList()
 
@@ -140,8 +167,11 @@ fun FlaggedIncidentsScreen(
             val limitPoints = parseLimitPoints(ride.speedLimitData)
             segments = buildSegments(speedPoints, limitPoints)
 
-            // Ride incidents from the evaluator — these have exact GPS coordinates
-            incidents = parseEvalEvents(ride.evaluationResult)
+            // Resolve GPS for events — acceleration-based events have no lat/lng
+            // in older evaluations, so we cross-reference by timestamp with speed_data.
+            val rawEvents = parseEvalEvents(ride.evaluationResult)
+            val resolvedEvents = resolveEventGps(rawEvents, speedPoints)
+            incidents = resolvedEvents
                 .filter { it.lat != 0.0 && it.lng != 0.0 }
                 .map { event ->
                     RideIncident(

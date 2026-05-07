@@ -292,6 +292,7 @@ class DiagnosticEvaluator:
 
         # 5. Metadata and Events
         all_events = self._collect_events(braking_fb, speed_fb, cornering_fb, erratic_fb, combined_fb, impact_fb)
+        all_events = self._enrich_events_with_gps(all_events, speed_data)
         route_segments = self._build_route_segments(speed_data, speed_limit_data)
 
         # 6. ML Enhancement — Ridge correlation analysis + ESN temporal detection
@@ -663,7 +664,9 @@ class DiagnosticEvaluator:
                     events.append({
                         'type': 'speeding',
                         'timestamp': p.get('timestamp'),
+                        'lat': lat, 'lng': lon,
                         'value': speed, 'limit': limit,
+                        'severity': 'high' if speed > limit + 20 else 'medium',
                         'description': f'Speeding: {round(speed, 0)} in a {limit} zone'
                     })
         score -= (speeding_points * 0.4)
@@ -706,6 +709,21 @@ class DiagnosticEvaluator:
         all_e = []
         for fb in feedbacks: all_e.extend(fb.get('events', []))
         return sorted(all_e, key=lambda x: x.get('timestamp', 0))
+
+    def _enrich_events_with_gps(self, events: List[Dict], speed_data: List[Dict]) -> List[Dict]:
+        """For any event missing lat/lng, find the nearest speed_data point by timestamp."""
+        if not speed_data or not events:
+            return events
+        for event in events:
+            if event.get('lat') is not None and event.get('lng') is not None:
+                continue
+            ts = event.get('timestamp')
+            if ts is None:
+                continue
+            closest = min(speed_data, key=lambda p: abs((p.get('timestamp') or 0) - ts))
+            event['lat'] = self._get_lat(closest)
+            event['lng'] = self._get_lon(closest)
+        return events
 
     def _build_route_segments(self, speed_data: List[Dict], speed_limit_data: List[Dict]) -> List[Dict]:
         segments = []
