@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -393,6 +394,23 @@ fun DiagnosticRideActiveScreen(
         return
     }
 
+    val pip = rememberPipController()
+
+    // In PiP (float) mode show only the essential gauges — full UI is hidden
+    if (pip.isInPipMode) {
+        val recentAlert = remember(events) {
+            val cutoff = kotlinx.datetime.Clock.System.now().toEpochMilliseconds() - 10_000
+            events.lastOrNull { it.timestamp >= cutoff }?.description
+        }
+        PipMiniDashboard(
+            speedKmh = gpsState.speed,
+            limitKmh = speedLimitState.currentSpeedLimit,
+            distanceKm = gpsState.distance,
+            activeAlert = recentAlert,
+        )
+        return
+    }
+
     val currentSpeed = gpsState.speed
     val currentAccel = motionState.acceleration
     val currentRotation = motionState.rotation
@@ -416,6 +434,22 @@ fun DiagnosticRideActiveScreen(
 
         // 2. Keep screen on while ride is active
         KeepScreenOn()
+
+        // Float mode button — tap to shrink the ride into a PiP corner while navigating
+        if (pip.isSupported && gpsState.location != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 18.dp, end = 16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Background.copy(alpha = 0.82f))
+                    .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
+                    .clickable { pip.enter() }
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            ) {
+                Text("⊡  Float", fontSize = 12.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
+            }
+        }
 
         // 3. Top Floating HUD (Timer + Distance + Status)
         Column(
@@ -1240,6 +1274,81 @@ private fun CoachingBanner(event: CoachingEvent) {
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     lineHeight = 18.sp
+                )
+            }
+        }
+    }
+}
+
+// ── PiP mini dashboard — shown when the ride floats over other apps ──────────────
+
+@Composable
+private fun PipMiniDashboard(
+    speedKmh: Double,
+    limitKmh: Double?,
+    distanceKm: Double,
+    activeAlert: String?,
+) {
+    val isSpeeding = limitKmh != null && speedKmh > limitKmh + 5
+    val speedColor = if (isSpeeding) Error else Color.White
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF080D1A)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Live speed — big and readable in a small window
+                Text(
+                    "${speedKmh.toInt()}",
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Black,
+                    color = speedColor,
+                )
+
+                // Speed limit sign
+                if (limitKmh != null) {
+                    Box(
+                        modifier = Modifier
+                            .border(2.5.dp, Error, CircleShape)
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "${limitKmh.toInt()}",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White,
+                        )
+                    }
+                }
+            }
+
+            Text("km/h", fontSize = 10.sp, color = Color.White.copy(alpha = 0.45f))
+
+            Spacer(Modifier.height(2.dp))
+
+            if (activeAlert != null) {
+                Text(
+                    "⚠ ${activeAlert.take(30)}",
+                    fontSize = 11.sp,
+                    color = Warning,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+            } else {
+                Text(
+                    "● ${"%.1f".format(distanceKm)} km",
+                    fontSize = 11.sp,
+                    color = Color(0xFF22C55E),
                 )
             }
         }
