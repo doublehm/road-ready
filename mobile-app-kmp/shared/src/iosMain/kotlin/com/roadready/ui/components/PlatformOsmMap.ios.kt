@@ -18,6 +18,15 @@ import platform.UIKit.*
 import platform.Foundation.*
 import platform.objc.*
 
+private fun metersPerSide(kmh: Double): Double = when {
+    kmh < 20  -> 200.0
+    kmh < 40  -> 400.0
+    kmh < 65  -> 700.0
+    kmh < 90  -> 1200.0
+    kmh < 120 -> 2000.0
+    else      -> 3500.0
+}
+
 @Composable
 actual fun PlatformOsmMap(
     coordinates: List<Pair<Double, Double>>,
@@ -25,6 +34,7 @@ actual fun PlatformOsmMap(
     height: Dp,
     modifier: Modifier,
     followCurrentLocation: Boolean,
+    speedKmh: Double,
 ) {
     val osmUrlTemplate = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
     
@@ -61,7 +71,8 @@ actual fun PlatformOsmMap(
                 val lastCoord = coordinates.lastOrNull()
                 if (followCurrentLocation && lastCoord != null) {
                     val center = CLLocationCoordinate2DMake(lastCoord.first, lastCoord.second)
-                    val region = MKCoordinateRegionMakeWithDistance(center, 500.0, 500.0)
+                    val side = metersPerSide(speedKmh)
+                    val region = MKCoordinateRegionMakeWithDistance(center, side, side)
                     mapView.setRegion(region, animated = true)
                 }
                 

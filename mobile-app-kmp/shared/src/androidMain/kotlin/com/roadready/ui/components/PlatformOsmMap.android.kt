@@ -2,8 +2,6 @@ package com.roadready.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -13,14 +11,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.*
 import com.roadready.ui.theme.Primary
-import com.roadready.ui.theme.Secondary
-import com.roadready.ui.theme.Error
-import com.roadready.ui.theme.Warning
+
+/** Zoom level that keeps the driver's immediate context visible at each speed range. */
+private fun zoomForSpeed(kmh: Double): Float = when {
+    kmh < 20  -> 17.5f   // parking / very slow — maximum street detail
+    kmh < 40  -> 16.5f   // urban residential
+    kmh < 65  -> 15.5f   // arterial / city roads
+    kmh < 90  -> 14.5f   // primary roads / regional
+    kmh < 120 -> 13.5f   // highway
+    else      -> 12.5f   // motorway
+}
 
 @Composable
 actual fun PlatformOsmMap(
@@ -29,26 +34,31 @@ actual fun PlatformOsmMap(
     height: Dp,
     modifier: Modifier,
     followCurrentLocation: Boolean,
+    speedKmh: Double,
 ) {
     val lastCoord = coordinates.lastOrNull()
     val center = remember(lastCoord) {
-        if (lastCoord != null) {
-            LatLng(lastCoord.first, lastCoord.second)
-        } else {
-            LatLng(49.2827, -123.1207) // Default to Vancouver
-        }
+        if (lastCoord != null) LatLng(lastCoord.first, lastCoord.second)
+        else LatLng(49.2827, -123.1207)
     }
+
+    val targetZoom = zoomForSpeed(speedKmh)
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(center, 17f)
+        position = CameraPosition.fromLatLngZoom(center, targetZoom)
     }
 
-    // Smoothly follow the current location — ZERO COST Native API
-    LaunchedEffect(center) {
+    // Follow current position and auto-scale zoom to speed
+    LaunchedEffect(center, targetZoom) {
         if (followCurrentLocation) {
             cameraPositionState.animate(
-                com.google.android.gms.maps.CameraUpdateFactory.newLatLng(center),
-                1000
+                com.google.android.gms.maps.CameraUpdateFactory.newCameraPosition(
+                    CameraPosition.Builder()
+                        .target(center)
+                        .zoom(targetZoom)
+                        .build()
+                ),
+                durationMs = 1200,
             )
         }
     }
@@ -65,61 +75,46 @@ actual fun PlatformOsmMap(
                 zoomControlsEnabled = false,
                 myLocationButtonEnabled = false,
                 compassEnabled = false,
-                mapToolbarEnabled = false
-            )
+                mapToolbarEnabled = false,
+            ),
         ) {
-            // Draw Route
-        if (coordinates.size > 1) {
-            Polyline(
-                points = coordinates.map { LatLng(it.first, it.second) },
-                color = Primary,
-                width = 12f
-            )
-            
-            // Start Marker
-            Marker(
-                state = MarkerState(position = LatLng(coordinates.first().first, coordinates.first().second)),
-                title = "Start",
-                icon = com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_GREEN)
-            )
-        }
-
-        // Draw Events
-        events.forEach { event ->
-            if (event.lat != 0.0 && event.lng != 0.0) {
-                val hue = when {
-                    event.severity == "road_hazard_high" ->
-                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED
-                    event.severity == "road_hazard_med" ->
-                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW
-                    event.severity == "road_hazard_low" ->
-                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW
-                    event.severity == "high" ->
-                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED
-                    event.severity == "medium" ->
-                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_ORANGE
-                    else ->
-                        com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_BLUE
-                }
-
-                Marker(
-                    state = MarkerState(position = LatLng(event.lat, event.lng)),
-                    title = event.type.replace("_", " ").uppercase(),
-                    snippet = event.description,
-                    icon = com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker(hue)
+            if (coordinates.size > 1) {
+                Polyline(
+                    points = coordinates.map { LatLng(it.first, it.second) },
+                    color = Primary,
+                    width = 12f,
                 )
+                Marker(
+                    state = MarkerState(position = LatLng(coordinates.first().first, coordinates.first().second)),
+                    title = "Start",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
+                )
+            }
+
+            events.forEach { event ->
+                if (event.lat != 0.0 && event.lng != 0.0) {
+                    val hue = when (event.severity) {
+                        "high", "road_hazard_high" -> BitmapDescriptorFactory.HUE_RED
+                        "medium", "road_hazard_med" -> BitmapDescriptorFactory.HUE_ORANGE
+                        else -> BitmapDescriptorFactory.HUE_YELLOW
+                    }
+                    Marker(
+                        state = MarkerState(position = LatLng(event.lat, event.lng)),
+                        title = event.type.replace("_", " ").uppercase(),
+                        snippet = event.description,
+                        icon = BitmapDescriptorFactory.defaultMarker(hue),
+                    )
+                }
             }
         }
 
-        }
-        // OSM Attribution — outside GoogleMap scope, inside Box
         Text(
             text = "© OpenStreetMap contributors",
             fontSize = 10.sp,
             color = Color.Gray.copy(alpha = 0.8f),
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(8.dp)
+                .padding(8.dp),
         )
     }
 }

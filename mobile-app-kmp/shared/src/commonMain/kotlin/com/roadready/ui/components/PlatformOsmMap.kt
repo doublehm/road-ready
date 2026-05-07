@@ -17,4 +17,5 @@ expect fun PlatformOsmMap(
     height: Dp = 300.dp,
     modifier: Modifier = Modifier,
     followCurrentLocation: Boolean = false,
+    speedKmh: Double = 0.0,
 )

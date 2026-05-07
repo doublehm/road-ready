@@ -410,6 +410,7 @@ fun DiagnosticRideActiveScreen(
             gpsState = gpsState.copy(routeCoordinates = mapCoords),
             events = events,
             currentLocation = gpsState.location?.let { it.latitude to it.longitude },
+            speedKmh = gpsState.speed,
             modifier = Modifier.fillMaxSize(),
         )
 
@@ -930,6 +931,7 @@ private fun LiveMapSection(
     gpsState: GPSTrackingState,
     events: List<RideEvent>,
     currentLocation: Pair<Double, Double>?,
+    speedKmh: Double,
     modifier: Modifier = Modifier,
 ) {
     val coords = remember(gpsState.routeCoordinates) {
@@ -950,7 +952,13 @@ private fun LiveMapSection(
     }
 
     if (coords.isNotEmpty()) {
-        PlatformOsmMap(coordinates = coords, events = routeEvents, modifier = modifier, followCurrentLocation = true)
+        PlatformOsmMap(
+            coordinates = coords,
+            events = routeEvents,
+            modifier = modifier,
+            followCurrentLocation = true,
+            speedKmh = speedKmh,
+        )
     } else {
         Box(modifier = modifier.background(SurfaceVariant), contentAlignment = Alignment.Center) {
             Text("Waiting for GPS signal…", color = TextMuted)
