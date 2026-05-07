@@ -396,7 +396,7 @@ fun DiagnosticRideActiveScreen(
 
     val pip = rememberPipController()
 
-    // In PiP (float) mode show only the essential gauges — full UI is hidden
+    // In PiP (float) mode show the full gauge dashboard in a compact portrait window
     if (pip.isInPipMode) {
         val recentAlert = remember(events) {
             val cutoff = kotlinx.datetime.Clock.System.now().toEpochMilliseconds() - 10_000
@@ -405,8 +405,14 @@ fun DiagnosticRideActiveScreen(
         PipMiniDashboard(
             speedKmh = gpsState.speed,
             limitKmh = speedLimitState.currentSpeedLimit,
+            elapsedSeconds = elapsedSeconds,
             distanceKm = gpsState.distance,
+            acceleration = motionState.acceleration,
             activeAlert = recentAlert,
+            terrainTip = elevationState.terrainTip,
+            isSpeeding = speedLimitState.currentSpeedLimit != null &&
+                gpsState.speed > speedLimitState.currentSpeedLimit!! + 5,
+            recentEvents = events.takeLast(3),
         )
         return
     }
@@ -1280,77 +1286,172 @@ private fun CoachingBanner(event: CoachingEvent) {
     }
 }
 
-// ── PiP mini dashboard — shown when the ride floats over other apps ──────────────
+// ── PiP full gauge dashboard — floats over Google Maps / any other app ───────────
 
 @Composable
 private fun PipMiniDashboard(
     speedKmh: Double,
     limitKmh: Double?,
+    elapsedSeconds: Int,
     distanceKm: Double,
+    acceleration: Vec3,
     activeAlert: String?,
+    terrainTip: String?,
+    isSpeeding: Boolean,
+    recentEvents: List<RideEvent>,
 ) {
-    val isSpeeding = limitKmh != null && speedKmh > limitKmh + 5
+    val bg = Color(0xFF080D1A)
+    val divider = Color.White.copy(alpha = 0.08f)
+    val muted = Color.White.copy(alpha = 0.45f)
     val speedColor = if (isSpeeding) Error else Color.White
 
+    // G-force values — gravity is already removed; 9.81 m/s² = 1 G
+    val brakingG = (kotlin.math.abs(acceleration.z) / 9.81f).toFloat().coerceIn(0f, 1.2f)
+    val lateralG = (kotlin.math.abs(acceleration.x) / 9.81f).toFloat().coerceIn(0f, 1.2f)
+
+    val mins = elapsedSeconds / 60
+    val secs = elapsedSeconds % 60
+
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF080D1A)),
-        contentAlignment = Alignment.Center,
+        modifier = Modifier.fillMaxSize().background(bg),
+        contentAlignment = Alignment.TopCenter,
     ) {
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
+
+            // ── Row 1: Time + Distance ──────────────────────────────────────
             Row(
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                PipStat("⏱", "${pad2(mins)}:${pad2(secs)}", muted)
+                PipStat("📏", "${"%.1f".format(distanceKm)} km", muted, rightAlign = true)
+            }
+
+            // ── Row 2: Speed + Limit ───────────────────────────────────────
+            Divider(color = divider, thickness = 0.5.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Live speed — big and readable in a small window
-                Text(
-                    "${speedKmh.toInt()}",
-                    fontSize = 44.sp,
-                    fontWeight = FontWeight.Black,
-                    color = speedColor,
-                )
+                Column {
+                    Text(
+                        "${speedKmh.toInt()}",
+                        fontSize = 40.sp,
+                        fontWeight = FontWeight.Black,
+                        color = speedColor,
+                        lineHeight = 40.sp,
+                    )
+                    Text("km/h", fontSize = 9.sp, color = muted)
+                }
 
-                // Speed limit sign
                 if (limitKmh != null) {
                     Box(
                         modifier = Modifier
-                            .border(2.5.dp, Error, CircleShape)
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                            .size(44.dp)
+                            .border(2.dp, Error, CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            "${limitKmh.toInt()}",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White,
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "${limitKmh.toInt()}",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                lineHeight = 16.sp,
+                            )
+                            Text("limit", fontSize = 7.sp, color = muted, lineHeight = 8.sp)
+                        }
                     }
                 }
             }
 
-            Text("km/h", fontSize = 10.sp, color = Color.White.copy(alpha = 0.45f))
+            // ── Row 3: G-Force bars ────────────────────────────────────────
+            Divider(color = divider, thickness = 0.5.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                PipGBar(label = "Brake", value = brakingG, color = if (brakingG > 0.5f) Error else Color(0xFFF59E0B))
+                PipGBar(label = "Lateral", value = lateralG, color = if (lateralG > 0.4f) Error else Color(0xFF3B82F6))
+            }
 
-            Spacer(Modifier.height(2.dp))
-
-            if (activeAlert != null) {
-                Text(
-                    "⚠ ${activeAlert.take(30)}",
-                    fontSize = 11.sp,
-                    color = Warning,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
+            // ── Row 4: Alert / Terrain / Recent events ────────────────────
+            Divider(color = divider, thickness = 0.5.dp)
+            when {
+                activeAlert != null -> Text(
+                    "⚠ ${activeAlert.take(34)}",
+                    fontSize = 10.sp, color = Warning,
+                    maxLines = 2, lineHeight = 13.sp,
                 )
-            } else {
-                Text(
-                    "● ${"%.1f".format(distanceKm)} km",
-                    fontSize = 11.sp,
-                    color = Color(0xFF22C55E),
+                terrainTip != null -> Text(
+                    "⛰ ${terrainTip.take(34)}",
+                    fontSize = 10.sp, color = Color(0xFF38BDF8),
+                    maxLines = 2, lineHeight = 13.sp,
                 )
+                recentEvents.isNotEmpty() -> {
+                    recentEvents.takeLast(2).forEach { ev ->
+                        Text(
+                            "● ${ev.type.replace('_', ' ')} — ${ev.description.take(22)}",
+                            fontSize = 9.sp, color = muted,
+                            maxLines = 1, lineHeight = 12.sp,
+                        )
+                    }
+                }
+                else -> Text("● RECORDING", fontSize = 10.sp, color = Color(0xFF22C55E))
             }
         }
+    }
+}
+
+@Composable
+private fun PipStat(icon: String, value: String, color: Color, rightAlign: Boolean = false) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (!rightAlign) Text(icon, fontSize = 10.sp)
+        Text(value, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color)
+        if (rightAlign) Text(icon, fontSize = 10.sp)
+    }
+}
+
+@Composable
+private fun PipGBar(label: String, value: Float, color: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            label,
+            fontSize = 9.sp,
+            color = Color.White.copy(alpha = 0.5f),
+            modifier = Modifier.width(36.dp),
+        )
+        // Bar track
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(5.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(Color.White.copy(alpha = 0.1f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(fraction = (value / 1.0f).coerceIn(0f, 1f))
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(color),
+            )
+        }
+        Text(
+            "${"%.2f".format(value)}g",
+            fontSize = 9.sp,
+            color = color,
+            modifier = Modifier.width(30.dp),
+        )
     }
 }

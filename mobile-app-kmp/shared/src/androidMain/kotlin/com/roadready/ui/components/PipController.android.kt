@@ -20,7 +20,7 @@ actual fun rememberPipController(): PipController {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return@enter
             val activity = AndroidContextHolder.activity ?: return@enter
             val params = PictureInPictureParams.Builder()
-                .setAspectRatio(Rational(5, 3))   // wide card — shows speed + limit side by side
+                .setAspectRatio(Rational(2, 3))   // portrait — fits full gauge dashboard
                 .build()
             activity.enterPictureInPictureMode(params)
         },
