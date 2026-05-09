@@ -422,7 +422,8 @@ fun DiagnosticRideActiveScreen(
                     scope.launch {
                         if (categoryToReport != null) {
                             apiClient.reportRoadEvent(
-                                category = categoryToReport,
+ 
+                               category = categoryToReport,
                                 subtypeId = subtype.id,
                                 severity = sev,
                                 lat = loc.first,
@@ -525,102 +526,15 @@ private fun ReportSubtypePanel(category: ReportCategory, onSubmit: (ReportSubtyp
             LazyVerticalGrid(columns = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.heightIn(max = 240.dp)) {
                 items(subtypes) { subtype ->
                     val isSelected = selectedSubtype == subtype
-                    Surface(onClick = { selectedSubtype = subtype }, shape = RoundedCornerShape(14.dp), color = if (isSelected) Color(0xFF6366F1).copy(alpha = 0.15f) else Color(0xFF1E293B), border = BorderStroke(1.dp, if (isSelected) Color(0xFF6366F1) else Color.White.copy(alpha = 0.05f))) {
-                        Row(modifier = Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(subtype.icon, fontSize = 16.sp); Spacer(Modifier.width(8.dp))
-                            Text(subtype.label, color = if (isSelected) Color.White else TextSecondary, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
+                    Surface(onClick = { selectedSubtype = subtype }, shape = RoundedCornerShape(14.dp), color = if (isSelected) Color(0xFF6366F1).copy(alpha = 0.15f) else Color(0xFF1E293B), border = BorderStroke(1.dp, if (isSelected) {
+                        true
+                    }) {
+                        true
+                    }) {
+                        true
                     }
                 }
-            }
-            if (category != ReportCategory.SpeedLimitSign) {
-                Spacer(Modifier.height(20.dp)); Text("SEVERITY", fontSize = 10.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp); Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("Low", "Medium", "High").forEach { sev ->
-                        val isSel = selectedSeverity == sev
-                        Surface(onClick = { selectedSeverity = sev }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), color = if (isSel) Color.White.copy(alpha = 0.1f) else Color.Transparent, border = BorderStroke(1.dp, if (isSel) Color.White else Color.White.copy(alpha = 0.1f))) {
-                            Box(modifier = Modifier.padding(vertical = 8.dp), contentAlignment = Alignment.Center) { Text(sev.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (isSel) Color.White else TextMuted) }
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(24.dp))
-            Button(onClick = { selectedSubtype?.let { onSubmit(it, selectedSeverity) } }, enabled = selectedSubtype != null, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(18.dp), colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
-                Text("SUBMIT REPORT", fontWeight = FontWeight.Black, fontSize = 14.sp, letterSpacing = 0.5.sp)
             }
         }
     }
 }
-
-@Composable
-private fun FloatingObservePanel(elapsedSeconds: Int, icbcStates: Map<String, ObsState>, onObservation: (String, String, String) -> Unit) {
-    Surface(color = Color.Black.copy(alpha = 0.85f), shape = RoundedCornerShape(24.dp), border = BorderStroke(1.dp, GlassStroke), modifier = Modifier.width(320.dp).heightIn(max = 440.dp)) {
-        Column {
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("OBSERVATION LOG", fontSize = 11.sp, fontWeight = FontWeight.Black, color = TextMuted, letterSpacing = 1.sp)
-                Surface(color = Color.White.copy(alpha = 0.1f), shape = RoundedCornerShape(6.dp)) {
-                    Text("%02d:%02d".format(elapsedSeconds / 60, elapsedSeconds % 60), fontSize = 10.sp, color = Color.White, fontWeight = FontWeight.Black, modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
-                }
-            }
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f))
-            IcbcObservationList(itemStates = icbcStates, onItemTap = { item, state ->
-                val nextSeverity = when (state) { ObsState.NONE -> "needs_work"; ObsState.NEEDS_WORK -> "error"; else -> "none" }
-                onObservation(item.id, item.label, nextSeverity)
-            }, modifier = Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun FloatingSessionCard(
-    isActive: Boolean,
-    elapsedSeconds: Int,
-    distance: Double,
-    avgSpeed: Double,
-    elevationM: Double? = null,
-    gradePct: Double? = null
-) {
-    Surface(color = Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(24.dp), border = BorderStroke(1.dp, GlassStroke), modifier = Modifier.wrapContentSize()) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(if (isActive) Secondary else Warning))
-                Spacer(Modifier.width(12.dp))
-                Text("${pad2(elapsedSeconds / 60)}:${pad2(elapsedSeconds % 60)}", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
-                Spacer(Modifier.width(16.dp)); Box(Modifier.width(1.dp).height(16.dp).background(Color.White.copy(alpha = 0.2f))); Spacer(Modifier.width(16.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text("%.1f".format(distance), fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Text(" km", fontSize = 10.sp, color = TextMuted, modifier = Modifier.padding(start = 2.dp, bottom = 1.dp))
-                    }
-                    Text("DISTANCE", fontSize = 8.sp, color = TextMuted, fontWeight = FontWeight.Black)
-                }
-                Spacer(Modifier.width(16.dp)); Box(Modifier.width(1.dp).height(16.dp).background(Color.White.copy(alpha = 0.2f))); Spacer(Modifier.width(16.dp))
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(avgSpeed.toInt().toString(), fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
-                        Text(" avg", fontSize = 10.sp, color = TextMuted, modifier = Modifier.padding(start = 2.dp, bottom = 1.dp))
-                    }
-                    Text("KM/H", fontSize = 8.sp, color = TextMuted, fontWeight = FontWeight.Black)
-                }
-            }
-            if (elevationM != null) {
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp), color = Color.White.copy(alpha = 0.1f))
-                Row(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("⛰ ${elevationM.toInt()}m", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    if (gradePct != null) {
-                        Spacer(Modifier.width(12.dp))
-                        val gradeColor = when {
-                            gradePct > 10 -> Color(0xFFEF4444)
-                            gradePct > 5 -> Color(0xFFF97316)
-                            gradePct > 2 -> Color(0xFFF59E0B)
-                            gradePct > -2 -> Color(0xFF94A3B8)
-                            gradePct > -5 -> Color(0xFF38BDF8)
-                            else -> Color(0xFF636666)
-                        }
-                        // Changed color to a more neutral gray for better contrast
-                        // Removed the explicit color assignment to use the default color
-                    }
-                }
-            }
-        }
-    }
