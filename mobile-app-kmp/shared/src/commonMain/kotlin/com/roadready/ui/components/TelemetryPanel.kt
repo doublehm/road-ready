@@ -154,6 +154,7 @@ fun TelemetryPanel(
 
     val leftTurn  = gauges.firstOrNull { it.id == "left-turn"  } ?: return
     val rightTurn = gauges.firstOrNull { it.id == "right-turn" } ?: return
+    val turnRate  = gauges.firstOrNull { it.id == "turn-rate"  } ?: return
     val braking   = gauges.firstOrNull { it.id == "stop-force" } ?: return
     val accel     = gauges.firstOrNull { it.id == "accel"      } ?: return
     val grip      = gauges.firstOrNull { it.id == "grip"       } ?: return
@@ -162,33 +163,28 @@ fun TelemetryPanel(
 
     Box(modifier = modifier.padding(horizontal = 16.dp)) {
 
-        // ── LEFT RAIL — stacked on left edge ──────────────────────────────────
+        // ── LEFT RAIL: LEFT TURN · BRAKE · SMOOTH · TURN RATE ────────────────
         Column(
             modifier = Modifier.align(Alignment.CenterStart),
-            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Existing Left Turn indicator
-            ArcGauge(leftTurn, sizeDp = 72.dp)
-            
-            // Forces: BRAKE, SMOOTH
-            ArcGauge(braking, sizeDp = 66.dp)
-            ArcGauge(smooth,  sizeDp = 58.dp)
+            ArcGauge(leftTurn,  sizeDp = 72.dp)
+            ArcGauge(braking,   sizeDp = 66.dp)
+            ArcGauge(smooth,    sizeDp = 58.dp)
+            ArcGauge(turnRate,  sizeDp = 54.dp)
         }
 
-        // ── RIGHT RAIL — stacked on right edge ─────────────────────────────────
+        // ── RIGHT RAIL: RIGHT TURN · ACCEL · GRIP · VERT ─────────────────────
         Column(
             modifier = Modifier.align(Alignment.CenterEnd),
-            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Existing Right Turn indicator
             ArcGauge(rightTurn, sizeDp = 72.dp)
-            
-            // Forces: ACCEL, GRIP, VERT
-            ArcGauge(accel,   sizeDp = 58.dp)
-            ArcGauge(grip,    sizeDp = 58.dp)
-            ArcGauge(vertical, sizeDp = 54.dp)
+            ArcGauge(accel,     sizeDp = 58.dp)
+            ArcGauge(grip,      sizeDp = 58.dp)
+            ArcGauge(vertical,  sizeDp = 54.dp)
         }
     }
 }
@@ -266,7 +262,7 @@ private fun ArcGauge(
             }
         }
 
-        // Label + value text
+        // Label + value text + mini bar
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -368,12 +364,13 @@ fun computeGauges(
     }
 
     return listOf(
-        GaugeData("left-turn",  "LEFT",  "↰", if (dax > 0) lateralG else 0.0,  "G",     THRESHOLDS["lateral"]!!,  faultType = "C1"),
-        GaugeData("right-turn", "RIGHT", "↱", if (dax < 0) lateralG else 0.0,  "G",     THRESHOLDS["lateral"]!!,  faultType = "C2"),
-        GaugeData("stop-force", "BRAKE", "🛑", brakingG,                          "G",    THRESHOLDS["braking"]!!,  faultType = "A1"),
-        GaugeData("accel",      "ACCEL", "⚡", accelG,                            "G",    THRESHOLDS["throttle"]!!, faultType = "A2"),
-        GaugeData("grip",       "GRIP",  "⊗", gripG,                             "G",    THRESHOLDS["grip"]!!,     faultType = "C3"),
-        GaugeData("smoothness", "SMOOTH","〰", jerk,                              "m/s³", THRESHOLDS["jerk"]!!,     faultType = "D1"),
-        GaugeData("vertical",   "VERT",  "↕", verticalG,                         "G",    THRESHOLDS["vertical"]!!, faultType = "E1"),
+        GaugeData("left-turn",  "LEFT",  "↰", if (dax > 0) lateralG else 0.0,  "G",      THRESHOLDS["lateral"]!!,  faultType = "C1"),
+        GaugeData("right-turn", "RIGHT", "↱", if (dax < 0) lateralG else 0.0,  "G",      THRESHOLDS["lateral"]!!,  faultType = "C2"),
+        GaugeData("turn-rate",  "TURN",  "↻", turnRate,                          "rad/s", THRESHOLDS["steering"]!!, faultType = "C4"),
+        GaugeData("stop-force", "BRAKE", "🛑", brakingG,                          "G",     THRESHOLDS["braking"]!!,  faultType = "A1"),
+        GaugeData("accel",      "ACCEL", "⚡", accelG,                            "G",     THRESHOLDS["throttle"]!!, faultType = "A2"),
+        GaugeData("grip",       "GRIP",  "⊗", gripG,                             "G",     THRESHOLDS["grip"]!!,     faultType = "C3"),
+        GaugeData("smoothness", "SMOOTH","〰", jerk,                              "m/s³",  THRESHOLDS["jerk"]!!,     faultType = "D1"),
+        GaugeData("vertical",   "VERT",  "↕", verticalG,                         "G",     THRESHOLDS["vertical"]!!, faultType = "E1"),
     )
 }
