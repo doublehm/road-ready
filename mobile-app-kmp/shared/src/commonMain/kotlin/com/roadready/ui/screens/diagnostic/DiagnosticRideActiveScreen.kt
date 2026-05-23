@@ -100,7 +100,7 @@ fun DiagnosticRideActiveScreen(
     val roadConditionClassifier = remember { RoadConditionClassifier() }
     val roadConditionRepository = remember { RoadConditionRepository(apiClient) }
     val hazardApproachDetector = remember { HazardApproachDetector(roadConditionRepository) }
-    val elevationService = remember { ElevationService() }
+    val elevationService = remember { ElevationService(apiClient) }
     val discrepancyService = remember { SpeedLimitDiscrepancyService(apiClient) }
 
     val gpsState by gpsService.state.collectAsState()
@@ -131,7 +131,7 @@ fun DiagnosticRideActiveScreen(
     var hazardPrefetched by remember { mutableStateOf(false) }
     var lastKnownLocation by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var lastClassifiedDataSize by remember { mutableIntStateOf(0) }
-    var elevationSegments by remember { mutableStateOf<List<ElevationSegment>>(emptyList()) }
+    var elevationSegments by remember { mutableStateOf<List<Triple<Double, Double, Double>>>(emptyList()) }
 
     val insightHistory = remember(events) {
         events.groupBy { it.type }.map { (type, list) ->
@@ -177,18 +177,14 @@ fun DiagnosticRideActiveScreen(
     }
     LaunchedEffect(motionState.acceleration) { prevAcceleration = motionState.acceleration }
     LaunchedEffect(gpsState.speed) { prevSpeed = gpsState.speed }
-    val roadIntelligence = remember { RoadIntelligenceService(apiClient, scope) }
-    val activeHazard by roadIntelligence.activeWarning.collectAsState()
+
 
     LaunchedEffect(gpsState.location) {
         val loc = gpsState.location ?: return@LaunchedEffect
         gpsAvailable = true
         lastKnownLocation = loc.latitude to loc.longitude
         speedLimitService.onLocationChanged(loc.latitude, loc.longitude)
-        elevationService.onLocationChanged(loc.latitude, loc.longitude, loc.altitudeM)
-        
-        val coord = Coordinate(loc.latitude, loc.longitude)
-        roadIntelligence.maybeFetchHazards(coord)
+        elevationService.onLocationChanged(loc.latitude, loc.longitude)
 
         if (!hazardPrefetched) {
             hazardPrefetched = true
@@ -200,9 +196,8 @@ fun DiagnosticRideActiveScreen(
             val curr = coords.last()
             _bearingDeg(prev.latitude, prev.longitude, curr.latitude, curr.longitude)
         } else 0.0
-        
+
         hazardApproachDetector.onLocationUpdate(loc.latitude, loc.longitude, gpsState.speed, heading)
-        roadIntelligence.onLocationUpdate(coord, heading.toFloat())
     }
     LaunchedEffect(Unit) {
         delay(5000)
@@ -215,18 +210,14 @@ fun DiagnosticRideActiveScreen(
             if (newCount >= RoadConditionClassifier.WINDOW_SIZE) {
                 lastClassifiedDataSize = size
                 val window = motionState.data.takeLast(RoadConditionClassifier.WINDOW_SIZE)
-                val xWin = window.map { it.userAccelX.toFloat() }.toFloatArray()
-                val yWin = window.map { it.userAccelY.toFloat() }.toFloatArray()
                 val zWin = window.map { it.userAccelZ.toFloat() }.toFloatArray()
-                
+
                 val loc = lastKnownLocation ?: return@collect
                 val label = roadConditionClassifier.classify(
-                    xWin, yWin, zWin,
+                    zWin,
                     speedKmh = gpsState.speed.toFloat(),
-                    altitudeM = (gpsState.location?.altitudeM ?: 0.0).toFloat(),
-                    gradePct = (elevationState.gradePct ?: 0.0).toFloat()
                 )
-                
+
                 if (label != RoadConditionLabel.SMOOTH) {
                     roadConditionEvents = roadConditionEvents + RoadConditionEvent(loc.first, loc.second, gpsState.speed.toFloat(), label.name.lowercase(), 0.8f, Clock.System.now().toEpochMilliseconds())
                 }
@@ -258,7 +249,7 @@ fun DiagnosticRideActiveScreen(
             val cur = lat to lon
             val grade = elevationState.gradePct
             if (prevLoc != null && prevLoc != cur && grade != null) {
-                elevationSegments = (elevationSegments + ElevationSegment(prevLoc!!, cur, grade)).takeLast(600)
+                elevationSegments = (elevationSegments + Triple(prevLoc!!.first, prevLoc!!.second, grade)).takeLast(600)
             }
             prevLoc = cur
         }
@@ -335,16 +326,19 @@ fun DiagnosticRideActiveScreen(
         LiveMapSection(gpsState.copy(routeCoordinates = mapCoords), events, gpsState.location?.let { it.latitude to it.longitude }, gpsState.speed, elevationSegments, elevationState.elevationM, elevationState.gradePct, Modifier.fillMaxSize())
         KeepScreenOn()
 
-        if (pip.isSupported && gpsState.location != null) {
-            Box(modifier = Modifier.align(Alignment.TopEnd).padding(top = 18.dp, end = 16.dp).clip(RoundedCornerShape(12.dp)).background(Background.copy(alpha = 0.82f)).border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(12.dp)).clickable { pip.enter() }.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                Text("⊡  Float", fontSize = 12.sp, color = TextPrimary, fontWeight = FontWeight.Medium)
-            }
-        }
-
         // Top HUD
         Column(modifier = Modifier.fillMaxWidth().padding(top = 16.dp, start = 16.dp, end = 16.dp).align(Alignment.TopCenter), horizontalAlignment = Alignment.CenterHorizontally) {
             val avgSpeed = remember(gpsState.speedData) { if (gpsState.speedData.isEmpty()) 0.0 else gpsState.speedData.map { it.speed }.average() }
-            FloatingSessionCard(isActive, elapsedSeconds, gpsState.distance, avgSpeed, elevationState.elevationM, elevationState.gradePct)
+            FloatingSessionCard(
+                isActive = isActive,
+                elapsedSeconds = elapsedSeconds,
+                distance = gpsState.distance,
+                avgSpeed = avgSpeed,
+                elevationM = elevationState.elevationM,
+                gradePct = elevationState.gradePct,
+                pipSupported = pip.isSupported && gpsState.location != null,
+                onPipClick = { pip.enter() }
+            )
             if (!gpsAvailable) { Spacer(Modifier.height(12.dp)); GpsWarningBanner() }
         }
 
@@ -454,11 +448,16 @@ fun DiagnosticRideActiveScreen(
             }
         )
 
-        InsightRail(null, insightHistory, Modifier.align(Alignment.TopStart).padding(top = 40.dp, start = 16.dp).heightIn(max = 200.dp))
+        Column(
+            modifier = Modifier.align(Alignment.TopStart).padding(top = 96.dp, start = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            InsightRail(null, insightHistory, Modifier.heightIn(max = 200.dp))
+        }
 
-        Column(modifier = Modifier.align(Alignment.TopEnd).padding(top = 40.dp, end = 16.dp).heightIn(max = 200.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.End) {
+        Column(modifier = Modifier.align(Alignment.TopEnd).padding(top = 96.dp, end = 16.dp).heightIn(max = 200.dp), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.End) {
             if (speedAlertVisible) RideAdviceBanner("⚠️", "SPEEDING", Color(0xFFDC2626) to Color(0xFFB91C1C))
-            activeHazard?.let { RideAdviceBanner(when(it.label) { "pothole" -> "🕳️"; "speed_bump" -> "🚧"; else -> "⚠️" }, "${it.label.uppercase()} AHEAD", Color(0xFFF59E0B) to Color(0xFFD97706)) }
+            hazardApproach?.let { RideAdviceBanner(when(it.label) { RoadConditionLabel.POTHOLE -> "🕳️"; RoadConditionLabel.SPEED_BUMP -> "🚧"; else -> "⚠️" }, "${it.label.displayName.uppercase()} AHEAD", Color(0xFFF59E0B) to Color(0xFFD97706)) }
             coachingEvent?.let { RideAdviceBanner("✨", it.type.shortMessage, Color(0xFF6366F1) to Color(0xFF4F46E5)) }
             elevationState.shortTerrainTip?.let { RideAdviceBanner(if (elevationState.category.contains("downhill")) "🏔️" else "⛰️", it, Color(0xFF0D9488) to Color(0xFF0F766E)) }
         }
@@ -514,6 +513,272 @@ private fun ReportingCategoriesPanel(pulses: Set<ReportCategory>, onCategoryClic
     }
 }
 
+// ── Private HUD Composables ───────────────────────────────────────────────────────
+
+@Composable
+private fun FloatingObservePanel(elapsedSeconds: Int, icbcStates: Map<String, ObsState>, onObservation: (String, String, String) -> Unit) {
+    // Delegate to the full IcbcObservationSheet bottom sheet
+    IcbcObservationSheet(
+        elapsedSeconds = elapsedSeconds,
+        onObservation = { type, label, severity -> onObservation(type, label, severity) },
+        onDismiss = {},
+    )
+}
+
+@Composable
+private fun FloatingSessionCard(
+    isActive: Boolean,
+    elapsedSeconds: Int,
+    distance: Double,
+    avgSpeed: Double,
+    elevationM: Double? = null,
+    gradePct: Double? = null,
+    pipSupported: Boolean = false,
+    onPipClick: () -> Unit = {}
+) {
+    Surface(color = Color.Black.copy(alpha = 0.6f), shape = RoundedCornerShape(24.dp), border = BorderStroke(1.dp, GlassStroke), modifier = Modifier.wrapContentSize()) {
+        Row(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 1. Duration Column
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(if (isActive) Secondary else Warning))
+                    Spacer(Modifier.width(6.dp))
+                    Text("${pad2(elapsedSeconds / 60)}:${pad2(elapsedSeconds % 60)}", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
+                }
+                Spacer(Modifier.height(2.dp))
+                Text("DURATION", fontSize = 8.sp, color = TextMuted, fontWeight = FontWeight.Black)
+            }
+
+            Box(Modifier.width(1.dp).height(24.dp).background(Color.White.copy(alpha = 0.15f)))
+
+            // 2. Distance Column
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text("%.1f".format(distance), fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text(" km", fontSize = 10.sp, color = TextMuted, modifier = Modifier.padding(start = 2.dp, bottom = 1.dp))
+                }
+                Spacer(Modifier.height(2.dp))
+                Text("DISTANCE", fontSize = 8.sp, color = TextMuted, fontWeight = FontWeight.Black)
+            }
+
+            Box(Modifier.width(1.dp).height(24.dp).background(Color.White.copy(alpha = 0.15f)))
+
+            // 3. Elevation Column
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(if (elevationM != null) "⛰ ${elevationM.toInt()}m" else "⛰ —", fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    if (gradePct != null && abs(gradePct) >= 0.5) {
+                        val gradeColor = when {
+                            gradePct > 10 -> Color(0xFFEF4444)
+                            gradePct > 5  -> Color(0xFFF97316)
+                            gradePct > 2  -> Color(0xFFF59E0B)
+                            gradePct > -2 -> Color(0xFF94A3B8)
+                            gradePct > -5 -> Color(0xFF38BDF8)
+                            else          -> Color(0xFF6366F1)
+                        }
+                        val arrow = if (gradePct > 2) "↑" else if (gradePct < -2) "↓" else ""
+                        Text(" $arrow${abs(gradePct).toInt()}%", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = gradeColor, modifier = Modifier.padding(start = 4.dp, bottom = 1.dp))
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
+                Text("ELEVATION", fontSize = 8.sp, color = TextMuted, fontWeight = FontWeight.Black)
+            }
+
+            Box(Modifier.width(1.dp).height(24.dp).background(Color.White.copy(alpha = 0.15f)))
+
+            // 4. Avg Speed Column
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(avgSpeed.toInt().toString(), fontSize = 18.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text(" avg", fontSize = 10.sp, color = TextMuted, modifier = Modifier.padding(start = 2.dp, bottom = 1.dp))
+                }
+                Spacer(Modifier.height(2.dp))
+                Text("AVG SPEED", fontSize = 8.sp, color = TextMuted, fontWeight = FontWeight.Black)
+            }
+
+            if (pipSupported) {
+                Box(Modifier.width(1.dp).height(24.dp).background(Color.White.copy(alpha = 0.15f)))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White.copy(alpha = 0.12f))
+                        .clickable { onPipClick() }
+                        .padding(horizontal = 8.dp, vertical = 6.dp)
+                ) {
+                    Text("⊡ Float", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FloatingSpeedometer(speed: Double, speedLimit: Double?, roadName: String?) {
+    val speedColor by animateColorAsState(targetValue = when { speedLimit == null -> TextPrimary; speed > speedLimit + 5 -> Error; speed > speedLimit -> Warning; else -> Secondary }, animationSpec = tween(300), label = "speedColor")
+    val maxDisplay = if (speedLimit != null) (speedLimit * 1.6).coerceAtLeast(80.0).toFloat() else 120f
+    val fraction by animateFloatAsState(targetValue = (speed / maxDisplay).coerceIn(0.0, 1.0).toFloat(), animationSpec = tween(500, easing = FastOutSlowInEasing), label = "speedFraction")
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(modifier = Modifier.wrapContentSize(), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.size(152.dp), contentAlignment = Alignment.Center) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stroke = 7.dp.toPx(); val inset = stroke / 2f; val arcRect = Size(size.width - stroke, size.height - stroke); val arcOffset = Offset(inset, inset)
+                    drawArc(Color.White.copy(alpha = 0.07f), 150f, 240f, false, arcOffset, arcRect, style = Stroke(width = stroke, cap = StrokeCap.Round))
+                    if (fraction > 0f) drawArc(speedColor, 150f, 240f * fraction, false, arcOffset, arcRect, style = Stroke(width = stroke, cap = StrokeCap.Round))
+                    if (speedLimit != null) {
+                        val limitFraction = (speedLimit / maxDisplay).coerceIn(0.0, 1.0).toFloat()
+                        val limitAngle = 150f + (240f * limitFraction)
+                        val angleRad = limitAngle * (PI / 180f).toFloat(); val r = size.width / 2f - inset
+                        val tickStart = Offset(center.x + (r - 4.dp.toPx()) * cos(angleRad), center.y + (r - 4.dp.toPx()) * sin(angleRad))
+                        val tickEnd   = Offset(center.x + (r + 4.dp.toPx()) * cos(angleRad), center.y + (r + 4.dp.toPx()) * sin(angleRad))
+                        drawLine(Color.White, tickStart, tickEnd, strokeWidth = 1.5.dp.toPx(), cap = StrokeCap.Round)
+                    }
+                }
+                Surface(modifier = Modifier.size(130.dp), shape = CircleShape, color = Color.Black.copy(alpha = 0.6f), border = BorderStroke(1.dp, GlassStroke), tonalElevation = 8.dp) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(speed.toInt().toString(), fontSize = 52.sp, fontWeight = FontWeight.Black, color = speedColor, lineHeight = 52.sp)
+                            if (speedLimit != null) Text("/ ${speedLimit.toInt()}", fontSize = 14.sp, fontWeight = FontWeight.Black, color = Color.White.copy(alpha = 0.5f), modifier = Modifier.offset(y = (-4).dp))
+                            Text("KM/H", fontSize = 10.sp, fontWeight = FontWeight.Black, color = Color.White.copy(alpha = 0.4f), letterSpacing = 1.5.sp)
+                        }
+                    }
+                }
+            }
+        }
+        if (!roadName.isNullOrBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Box(modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White.copy(alpha = 0.05f)).border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(10.dp)).padding(horizontal = 12.dp, vertical = 4.dp)) {
+                Text(roadName.uppercase(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextMuted, letterSpacing = 1.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun GpsWarningBanner() {
+    Box(Modifier.clip(RoundedCornerShape(16.dp)).background(Warning.copy(alpha = 0.15f)).border(1.dp, Warning.copy(alpha = 0.3f), RoundedCornerShape(16.dp)).padding(horizontal = 16.dp, vertical = 10.dp)) {
+        Text("📡 Searching for GPS signal…", fontSize = 13.sp, color = Warning, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+private fun IcbcObserveButton(observationCount: Int, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Button(onClick = onClick, modifier = modifier.height(56.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Black.copy(alpha = 0.6f)), shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, GlassStroke), contentPadding = PaddingValues(horizontal = 16.dp)) {
+        Text("👁️", fontSize = 18.sp)
+        if (observationCount > 0) {
+            Spacer(Modifier.width(8.dp)); Box(modifier = Modifier.size(24.dp).clip(CircleShape).background(Primary), contentAlignment = Alignment.Center) { Text(observationCount.toString(), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black) }
+        } else { Spacer(Modifier.width(8.dp)); Text("Log", color = TextPrimary, fontWeight = FontWeight.Black, fontSize = 15.sp) }
+    }
+}
+
+@Composable
+private fun EndRideButton(enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Button(onClick = onClick, enabled = enabled, modifier = modifier.height(56.dp), colors = ButtonDefaults.buttonColors(containerColor = Error.copy(alpha = 0.8f), disabledContainerColor = Error.copy(alpha = 0.2f)), shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)), contentPadding = PaddingValues(horizontal = 24.dp)) {
+        Text("End Ride", color = Color.White, fontWeight = FontWeight.Black, fontSize = 15.sp, letterSpacing = 0.5.sp)
+    }
+}
+
+
+
+@Composable
+private fun LiveMapSection(gpsState: GPSTrackingState, events: List<RideEvent>, currentLocation: Pair<Double, Double>?, speedKmh: Double, elevationSegments: List<Triple<Double, Double, Double>>, currentElevationM: Double?, currentGradePct: Double?, modifier: Modifier = Modifier) {
+    val coords = remember(gpsState.routeCoordinates) { gpsState.routeCoordinates.map { it.latitude to it.longitude } }
+    val routeEvents = remember(events, currentLocation) { events.mapNotNull { e -> val loc = currentLocation ?: return@mapNotNull null; RouteEvent(e.type, loc.first, loc.second, e.severity, e.description, e.timestamp) } }
+    if (coords.isNotEmpty()) {
+        PlatformOsmMap(
+            coordinates = coords,
+            events = routeEvents,
+            modifier = modifier,
+            followCurrentLocation = true,
+            speedKmh = speedKmh,
+        )
+    } else {
+        Box(modifier = modifier.background(SurfaceVariant), contentAlignment = Alignment.Center) { Text("Waiting for GPS signal…", color = TextMuted) }
+    }
+}
+
+@Composable
+private fun EndRideConfirmation(onConfirm: () -> Unit, onCancel: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+        Card(colors = CardDefaults.cardColors(containerColor = Surface), shape = RoundedCornerShape(16.dp)) {
+            Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("🏁", style = MaterialTheme.typography.displayLarge); Spacer(Modifier.height(12.dp)); Text("End Diagnostic Ride?", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(8.dp)); Text("This will stop recording and process your results.", style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = TextMuted)
+                Spacer(Modifier.height(24.dp)); PrimaryButton("End & See Results", onConfirm, color = Secondary); Spacer(Modifier.height(8.dp)); TextButton(onCancel) { Text("Keep Riding", color = Primary) }
+            }
+        }
+    }
+}
+
+private fun _bearingDeg(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+    val r = PI / 180.0; val dLon = (lon2 - lon1) * r
+    return (atan2(sin(dLon) * cos(lat2 * r), cos(lat1 * r) * sin(lat2 * r) - sin(lat1 * r) * cos(lat2 * r) * cos(dLon)) * 180.0 / PI + 360) % 360
+}
+
+@Composable
+private fun RoadHazardAlert(approach: HazardApproach?, modifier: Modifier = Modifier) {
+    AnimatedVisibility(visible = approach != null, enter = slideInVertically(animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMedium), initialOffsetY = { it }) + fadeIn(), exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(), modifier = modifier) {
+        val a = approach ?: return@AnimatedVisibility; val isPothole = a.label == RoadConditionLabel.POTHOLE || a.label == RoadConditionLabel.SPEED_BUMP; val color = if (isPothole) HazardRed else HazardAmber
+        val icon = when (a.label) { RoadConditionLabel.POTHOLE -> "⚠️"; RoadConditionLabel.SPEED_BUMP -> "🚧"; RoadConditionLabel.BUMP -> "〰️"; else -> "⚠️" }
+        val dist = if (a.distanceMetres < 100) "${a.distanceMetres.toInt()} m" else "${(a.distanceMetres / 10).toInt() * 10} m"
+        Row(modifier = Modifier.wrapContentWidth().clip(RoundedCornerShape(22.dp)).background(HazardBg).border(1.dp, color.copy(alpha = 0.8f), RoundedCornerShape(22.dp)).padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(color.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) { Text(icon, fontSize = 16.sp) }
+            Spacer(Modifier.width(10.dp)); Column { Text(a.label.displayName.uppercase(), fontSize = 9.sp, fontWeight = FontWeight.ExtraBold, color = color, letterSpacing = 1.sp); Text("Ahead · $dist", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White) }
+        }
+    }
+}
+
+@Composable
+private fun PipMiniDashboard(speedKmh: Double, limitKmh: Double?, elapsedSeconds: Int, distanceKm: Double, accel: Vec3, rot: Vec3, isSpeeding: Boolean, elevM: Double?, gradePct: Double?) {
+    val G = 9.81; val ax = if (abs(accel.x) < 0.08) 0.0 else accel.x; val az = if (abs(accel.z) < 0.08) 0.0 else accel.z
+    val latG = (abs(ax) / G).toFloat().coerceIn(0f, 1.2f); val lonG = (abs(az) / G).toFloat().coerceIn(0f, 1.2f)
+    val grade = gradePct ?: 0.0; val gradeColor = when { grade > 10 -> Color(0xFFEF4444); grade > 5 -> Color(0xFFF97316); grade > 2 -> Color(0xFFF59E0B); grade > -2 -> Color(0xFF94A3B8); grade > -5 -> Color(0xFF38BDF8); else -> Color(0xFF6366F1) }
+    Box(Modifier.fillMaxSize().background(Color(0xFF080D1A))) {
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("⛰", fontSize = 14.sp)
+                    Column {
+                        Text(if (elevM != null) "${elevM.toInt()} m" else "—", fontSize = 11.sp, fontWeight = FontWeight.Black, color = Color.White)
+                        if (elevM != null && abs(grade) >= 0.5)
+                            Text("${if (grade > 2) "↑" else if (grade < -2) "↓" else ""} ${"%.1f".format(abs(grade))}%", fontSize = 9.sp, fontWeight = FontWeight.Black, color = gradeColor)
+                    }
+                }
+                Box(Modifier.size(6.dp).clip(CircleShape).background(Secondary))
+            }
+            HorizontalDivider(color = Color.White.copy(alpha = 0.05f), thickness = 1.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PipGRow("BRAKE", if (az >= 0) lonG else 0f, if (az >= 0 && lonG > 0.4f) Error else Color(0xFFEF4444), 1.0f, "ACCEL", if (az < 0) lonG else 0f, if (az < 0 && lonG > 0.3f) Error else Color(0xFF10B981), 0.8f)
+                PipGRow("LAT G", latG, if (latG > 0.35f) Error else Color(0xFF6366F1), 1.0f, "TURN", sqrt(rot.x * rot.x + rot.y * rot.y + rot.z * rot.z).toFloat().coerceIn(0f, 2f), if (sqrt(rot.x * rot.x + rot.y * rot.y + rot.z * rot.z) > 0.5f) Error else Color(0xFFF59E0B), 2.0f)
+                PipGRow("LEFT", if (ax > 0) latG else 0f, Color(0xFF38BDF8), 1.0f, "RIGHT", if (ax < 0) latG else 0f, Color(0xFF38BDF8), 1.0f)
+            }
+            HorizontalDivider(color = Color.White.copy(alpha = 0.05f), thickness = 1.dp)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) { Text("${speedKmh.toInt()}", fontSize = 28.sp, fontWeight = FontWeight.Black, color = if (isSpeeding) Error else Color.White, lineHeight = 28.sp); Text("KM/H", fontSize = 9.sp, fontWeight = FontWeight.Black, color = Color.White.copy(alpha = 0.4f)) }
+                    if (limitKmh != null) Text("LIMIT ${limitKmh.toInt()}", fontSize = 10.sp, fontWeight = FontWeight.Black, color = if (isSpeeding) Error else Success, letterSpacing = 0.5.sp)
+                }
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) { Text("${pad2(elapsedSeconds / 60)}:${pad2(elapsedSeconds % 60)}", fontSize = 13.sp, fontWeight = FontWeight.Black, color = Color.White); Text("${"%.1f".format(distanceKm)} KM", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White.copy(alpha = 0.4f)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PipGRow(labelL: String, valL: Float, colL: Color, maxL: Float, labelR: String, valR: Float, colR: Color, maxR: Float) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { PipGHalf(labelL, valL, colL, maxL, Modifier.weight(1f)); Spacer(Modifier.width(10.dp)); PipGHalf(labelR, valR, colR, maxR, Modifier.weight(1f)) }
+}
+
+@Composable
+private fun PipGHalf(label: String, value: Float, color: Color, max: Float, modifier: Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Text(label, fontSize = 8.sp, color = Color.White.copy(alpha = 0.5f), fontWeight = FontWeight.Black); Text("%.2f".format(value), fontSize = 8.sp, color = color, fontWeight = FontWeight.Black) }
+        Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = 0.08f))) { Box(Modifier.fillMaxHeight().fillMaxWidth((value / max).coerceIn(0f, 1f)).clip(RoundedCornerShape(2.dp)).background(color)) }
+    }
+}
 @Composable
 private fun ReportSubtypePanel(category: ReportCategory, onSubmit: (ReportSubtype, String) -> Unit) {
     var selectedSeverity by remember { mutableStateOf("Medium") }
@@ -526,14 +791,49 @@ private fun ReportSubtypePanel(category: ReportCategory, onSubmit: (ReportSubtyp
             LazyVerticalGrid(columns = GridCells.Fixed(2), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.heightIn(max = 240.dp)) {
                 items(subtypes) { subtype ->
                     val isSelected = selectedSubtype == subtype
-                    Surface(onClick = { selectedSubtype = subtype }, shape = RoundedCornerShape(14.dp), color = if (isSelected) Color(0xFF6366F1).copy(alpha = 0.15f) else Color(0xFF1E293B), border = BorderStroke(1.dp, if (isSelected) {
-                        true
-                    }) {
-                        true
-                    }) {
-                        true
+                    Surface(
+                        onClick = { selectedSubtype = subtype },
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (isSelected) Color(0xFF6366F1).copy(alpha = 0.15f) else Color(0xFF1E293B),
+                        border = BorderStroke(1.dp, if (isSelected) Color(0xFF6366F1) else Color(0xFF334155)),
+                    ) {
+                        Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(subtype.icon, fontSize = 16.sp)
+                            Text(subtype.label, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                        }
                     }
                 }
+            }
+            Spacer(Modifier.height(12.dp))
+            // Severity chips
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Low", "Medium", "High").forEach { sev ->
+                    Surface(
+                        onClick = { selectedSeverity = sev },
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (selectedSeverity == sev) Color(0xFF6366F1).copy(alpha = 0.2f) else Color.Transparent,
+                        border = BorderStroke(1.dp, if (selectedSeverity == sev) Color(0xFF6366F1) else Color(0xFF334155)),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(sev, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White, modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(), textAlign = TextAlign.Center)
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Surface(
+                onClick = { selectedSubtype?.let { onSubmit(it, selectedSeverity) } },
+                shape = RoundedCornerShape(14.dp),
+                color = if (selectedSubtype != null) Color(0xFF6366F1) else Color(0xFF334155),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = if (selectedSubtype != null) "Submit Report" else "Select an option",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 12.dp),
+                )
             }
         }
     }

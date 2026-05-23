@@ -64,7 +64,7 @@ fun InsightRail(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.width(260.dp),
+        modifier = modifier.widthIn(max = 200.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.Start
     ) {
