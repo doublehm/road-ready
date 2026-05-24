@@ -117,10 +117,12 @@ def grade_summary(
 ) -> dict:
     """Compute grade between two points and return a response dict."""
     dist_m = _haversine_m(lat1, lon1, lat2, lon2)
-    grade_pct = (elev2 - elev1) / dist_m * 100 if dist_m >= 1 else 0.0
+    # elev1 is the current elevation, elev2 is the previous elevation.
+    # Going uphill (elev1 > elev2) should yield a positive grade.
+    grade_pct = (elev1 - elev2) / dist_m * 100 if dist_m >= 1 else 0.0
     cat = _grade_category(grade_pct)
     return {
-        "elevation_m": round(elev2, 1),
+        "elevation_m": round(elev1, 1),
         "grade_pct": round(grade_pct, 1),
         "category": cat,
         "tips": GRADE_TIPS.get(cat, []),
