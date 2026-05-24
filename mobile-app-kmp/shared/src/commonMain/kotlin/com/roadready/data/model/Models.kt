@@ -91,6 +91,8 @@ data class StudentProfile(
     @SerialName("license_expiry") val licenseExpiry: String? = null,
     val city: String? = null,
     val province: String? = null,
+    @SerialName("license_status") val licenseStatus: String? = "pending",
+    @SerialName("rejection_reason") val rejectionReason: String? = null,
 )
 
 @Serializable
@@ -127,6 +129,9 @@ data class InstructorProfile(
     @SerialName("stripe_account_id") val stripeAccountId: String? = null,
     @SerialName("stripe_onboarding_completed") val stripeOnboardingCompleted: Boolean = false,
     @SerialName("average_rating") val averageRating: Double? = null,
+    @SerialName("license_image_status") val licenseImageStatus: String? = "pending_upload",
+    @SerialName("insurance_image_status") val insuranceImageStatus: String? = "pending_upload",
+    @SerialName("certification_image_status") val certificationImageStatus: String? = "pending_upload",
 ) {
     /** Display name from the nested user, or fallback. */
     val fullName: String get() = user?.fullName ?: "Instructor"

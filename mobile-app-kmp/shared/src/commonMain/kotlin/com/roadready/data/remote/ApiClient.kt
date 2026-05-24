@@ -16,8 +16,12 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.*
 import io.ktor.client.request.forms.submitForm
+import io.ktor.client.request.forms.MultiPartFormDataContent
+import io.ktor.client.request.forms.formData
 import io.ktor.http.ContentType
 import io.ktor.http.Parameters
+import io.ktor.http.Headers
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import kotlinx.serialization.json.JsonObject
 
@@ -242,6 +246,34 @@ class ApiClient(
         }.body()
     }
 
+    /**
+     * Report a road event (construction, traffic, hazard, road condition, or
+     * speed-limit-sign correction) from the active ride screen orbit buttons.
+     * Posts to `/road-events/` which feeds the flagged-incidents pipeline.
+     */
+    suspend fun reportRoadEvent(
+        category: com.roadready.ui.components.ReportCategory,
+        subtypeId: String,
+        severity: String,
+        lat: Double,
+        lon: Double,
+        rideId: Int?,
+    ): Result<Unit> = safeCall {
+        httpClient.post("road-events/") {
+            setBody(buildString {
+                append("{")
+                append("\"category\":\"${category.name.lowercase()}\",")
+                append("\"subtype\":\"$subtypeId\",")
+                append("\"severity\":\"$severity\",")
+                append("\"lat\":$lat,")
+                append("\"lon\":$lon")
+                if (rideId != null) append(",\"ride_id\":$rideId")
+                append("}")
+            })
+            contentType(io.ktor.http.ContentType.Application.Json)
+        }.body<Unit>()
+    }
+
     suspend fun getNearbyFlags(lat: Double, lon: Double, radiusKm: Double = 1.0): Result<List<SpeedLimitFlagResponse>> = safeCall {
         httpClient.get("speed-limits/flags/nearby") {
             parameter("lat", lat)
@@ -264,6 +296,31 @@ class ApiClient(
 
     suspend fun getStudentProgress(): Result<StudentProgress> = safeCall {
         httpClient.get("users/me/progress").body()
+    }
+
+    // --- Document Verification & GDPR Compliance ---
+
+    suspend fun uploadDocument(documentType: String, fileBytes: ByteArray, fileName: String): Result<Unit> = safeCall {
+        httpClient.post("users/me/upload-document") {
+            parameter("document_type", documentType)
+            contentType(ContentType.MultiPart.FormData)
+            setBody(MultiPartFormDataContent(
+                formData {
+                    append("file", fileBytes, Headers.build {
+                        append(HttpHeaders.ContentType, "image/jpeg")
+                        append(HttpHeaders.ContentDisposition, "filename=\"$fileName\"")
+                    })
+                }
+            ))
+        }.body()
+    }
+
+    suspend fun exportPersonalData(): Result<String> = safeCall {
+        httpClient.get("users/me/export").body()
+    }
+
+    suspend fun anonymizeProfile(): Result<Unit> = safeCall {
+        httpClient.delete("users/me").body()
     }
 
     // --- Helpers ---
