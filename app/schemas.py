@@ -144,6 +144,9 @@ class InstructorProfile(InstructorProfileBase):
     license_image: Optional[str] = None
     insurance_image: Optional[str] = None
     certification_image: Optional[str] = None
+    license_image_status: Optional[str] = "pending_upload"
+    insurance_image_status: Optional[str] = "pending_upload"
+    certification_image_status: Optional[str] = "pending_upload"
 
     class Config:
         from_attributes = True
@@ -171,6 +174,8 @@ class StudentProfile(StudentProfileBase):
     user_id: int
     license_image: Optional[str] = None
     is_verified: bool
+    license_status: Optional[str] = "pending"
+    rejection_reason: Optional[str] = None
     user: Optional[User] = None
 
     class Config:
@@ -241,6 +246,7 @@ class BookingRequestBase(BaseModel):
     pickup_address: str
     dropoff_address: Optional[str] = None
     notes: Optional[str] = None
+    focus_areas: Optional[List[str]] = None
 
 class BookingRequestCreate(BookingRequestBase):
     pass
@@ -260,6 +266,23 @@ class BookingRequest(BookingRequestBase):
     student: Optional[UserWithProfile] = None
     driving_session: Optional['DrivingSession'] = None
     
+    class Config:
+        from_attributes = True
+
+# --- Document Review Log Schemas ---
+class DocumentReviewLogBase(BaseModel):
+    user_id: int
+    document_type: str
+    file_path: str
+    status: str
+    rejection_reason: Optional[str] = None
+    submitted_at: str
+    reviewed_at: Optional[str] = None
+    reviewed_by: Optional[int] = None
+
+class DocumentReviewLog(DocumentReviewLogBase):
+    id: int
+
     class Config:
         from_attributes = True
 
@@ -519,3 +542,7 @@ class LiveEvent(BaseModel):
 class LiveWebSocketMessage(BaseModel):
     type: str # "telemetry", "event", "ping", "pong", "system"
     data: Optional[Dict] = None
+
+class AdminVerifyAction(BaseModel):
+    action: str # "approve" or "reject"
+    rejection_reason: Optional[str] = None

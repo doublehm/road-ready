@@ -33,6 +33,9 @@ class InstructorProfile(Base):
     license_image = Column(String, nullable=True) # Filename of the uploaded license
     insurance_image = Column(String, nullable=True) # Filename of the uploaded insurance
     certification_image = Column(String, nullable=True) # Filename of the uploaded ICBC certificate
+    license_image_status = Column(String, default="pending_upload") # "pending_upload", "submitted", "verified", "rejected"
+    insurance_image_status = Column(String, default="pending_upload") # "pending_upload", "submitted", "verified", "rejected"
+    certification_image_status = Column(String, default="pending_upload") # "pending_upload", "submitted", "verified", "rejected"
     is_verified = Column(Boolean, default=False)
     is_available = Column(Boolean, default=True)
     
@@ -129,6 +132,7 @@ class BookingRequest(Base):
     status = Column(String, default="pending_payment") # Changed default: pending -> pending_payment -> pending (approval)
     
     module_id = Column(Integer, ForeignKey("learning_modules.id"), nullable=True)
+    focus_areas = Column(String, nullable=True) # JSON string array
 
     student = relationship("User", foreign_keys=[student_id])
     instructor = relationship("InstructorProfile", foreign_keys=[instructor_id], back_populates="booking_requests")
@@ -360,3 +364,19 @@ class SpeedLimitFlag(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     corrected_at = Column(DateTime, nullable=True)
     osm_changeset_id = Column(Integer, nullable=True)
+
+
+class DocumentReviewLog(Base):
+    __tablename__ = "document_review_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    document_type = Column(String) # "student_license", "instructor_license", "insurance", "certification"
+    file_path = Column(String)
+    status = Column(String, default="pending") # "pending", "approved", "rejected"
+    rejection_reason = Column(Text, nullable=True)
+    submitted_at = Column(String) # ISO Timestamp
+    reviewed_at = Column(String, nullable=True)
+    reviewed_by = Column(Integer, ForeignKey("users.id"), nullable=True) # Admin User ID
+
+    user = relationship("User", foreign_keys=[user_id])

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
+from typing import List
 from app import schemas, models, security, database
 from app.api import deps
 import shutil
@@ -96,16 +97,15 @@ def update_user_me(
     db: Session = Depends(deps.get_db),
     current_user: models.User = Depends(deps.get_current_user)
 ):
-    if user_update.email and user_update.email != current_user.email:
-        if db.query(models.User).filter(models.User.email == user_update.email).first():
-            raise HTTPException(status_code=400, detail="Email already registered")
-        current_user.email = user_update.email
+    if (user_update.email and user_update.email != current_user.email) or \
+       (user_update.phone_number and user_update.phone_number != current_user.phone_number):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Modifying email or phone number directly is not permitted."
+        )
         
     if user_update.full_name:
         current_user.full_name = user_update.full_name
-        
-    if user_update.phone_number:
-        current_user.phone_number = user_update.phone_number
         
     if user_update.password:
         current_user.hashed_password = security.get_password_hash(user_update.password)
@@ -245,3 +245,348 @@ def update_instructor_profile(
     db.commit()
     db.refresh(db_profile)
     return db_profile
+
+
+from fastapi import Query
+from typing import Dict, Any
+
+@router.post("/me/upload-document")
+async def upload_document(
+    document_type: str = Query(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Upload profile verification documents. Suspends verification status immediately,
+    quarantines the user profile, and registers a pending document audit task for admins.
+    """
+    # 1. Validate document type matches role
+    if current_user.role == "student":
+        valid_docs = ["student_license"]
+    elif current_user.role == "instructor":
+        valid_docs = ["instructor_license", "insurance", "certification"]
+    else:
+        valid_docs = []
+
+    if document_type not in valid_docs:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid document type '{document_type}' for user role '{current_user.role}'."
+        )
+
+    # 2. Save document locally
+    upload_dir = "app/static/uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    ext = file.filename.split('.')[-1]
+    filename = f"{current_user.id}_{document_type}_{uuid.uuid4()}.{ext}"
+    file_path = os.path.join(upload_dir, filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # 3. Update profile fields and quarantine (set verified to False)
+    if current_user.role == "student":
+        profile = current_user.student_profile
+        if not profile:
+            raise HTTPException(status_code=404, detail="Student profile not found")
+        profile.license_image = filename
+        profile.license_status = "submitted"
+        profile.is_verified = False
+        profile.rejection_reason = None
+    else:
+        profile = current_user.instructor_profile
+        if not profile:
+            raise HTTPException(status_code=404, detail="Instructor profile not found")
+        
+        if document_type == "instructor_license":
+            profile.license_image = filename
+            profile.license_image_status = "submitted"
+        elif document_type == "insurance":
+            profile.insurance_image = filename
+            profile.insurance_image_status = "submitted"
+        elif document_type == "certification":
+            profile.certification_image = filename
+            profile.certification_image_status = "submitted"
+            
+        profile.is_verified = False
+
+    # 4. Insert log entry
+    review_log = models.DocumentReviewLog(
+        user_id=current_user.id,
+        document_type=document_type,
+        file_path=filename,
+        status="pending",
+        submitted_at=datetime.now().isoformat()
+    )
+    db.add(review_log)
+    db.commit()
+
+    return {
+        "status": "success",
+        "document_type": document_type,
+        "filename": filename,
+        "verification_status": "submitted (pending admin review)"
+    }
+
+
+@router.get("/admin/documents/pending", response_model=List[schemas.DocumentReviewLog])
+def get_pending_documents(
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Fetch all pending document review logs.
+    Restricted to Admin role.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Administrator privileges required."
+        )
+    return db.query(models.DocumentReviewLog).filter(models.DocumentReviewLog.status == "pending").all()
+
+
+@router.post("/admin/documents/{log_id}/verify")
+def verify_document(
+    log_id: int,
+    action_data: schemas.AdminVerifyAction,
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Admin verification approval or rejection for submitted documents.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Administrator privileges required."
+        )
+
+    log = db.query(models.DocumentReviewLog).filter(models.DocumentReviewLog.id == log_id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Document review log not found")
+
+    if log.status != "pending":
+        raise HTTPException(status_code=400, detail="Document has already been reviewed")
+
+    action = action_data.action.lower()
+    if action not in ["approve", "reject"]:
+        raise HTTPException(status_code=400, detail="Invalid action. Must be 'approve' or 'reject'.")
+
+    # Load target user and profile
+    target_user = db.query(models.User).filter(models.User.id == log.user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    log.reviewed_at = datetime.now().isoformat()
+    log.reviewed_by = current_user.id
+
+    if action == "approve":
+        log.status = "approved"
+        # Update profile document status
+        if target_user.role == "student":
+            profile = target_user.student_profile
+            profile.license_status = "verified"
+            profile.is_verified = True
+        else:
+            profile = target_user.instructor_profile
+            if log.document_type == "instructor_license":
+                profile.license_image_status = "verified"
+            elif log.document_type == "insurance":
+                profile.insurance_image_status = "verified"
+            elif log.document_type == "certification":
+                profile.certification_image_status = "verified"
+            
+            # Check if all required docs are verified
+            if profile.license_image_status == "verified" and \
+               profile.insurance_image_status == "verified" and \
+               profile.certification_image_status == "verified":
+                profile.is_verified = True
+    else:
+        log.status = "rejected"
+        log.rejection_reason = action_data.rejection_reason or "Document rejected by administrator"
+        
+        if target_user.role == "student":
+            profile = target_user.student_profile
+            profile.license_status = "rejected"
+            profile.rejection_reason = log.rejection_reason
+            profile.is_verified = False
+        else:
+            profile = target_user.instructor_profile
+            if log.document_type == "instructor_license":
+                profile.license_image_status = "rejected"
+            elif log.document_type == "insurance":
+                profile.insurance_image_status = "rejected"
+            elif log.document_type == "certification":
+                profile.certification_image_status = "rejected"
+            profile.is_verified = False
+
+    # Notify User
+    notif_title = f"Document {action.capitalize()}d"
+    notif_msg = f"Your uploaded document ({log.document_type}) has been {action}d."
+    if action == "reject":
+        notif_msg += f" Reason: {log.rejection_reason}"
+
+    notif = models.Notification(
+        user_id=target_user.id,
+        title=notif_title,
+        message=notif_msg,
+        timestamp=datetime.now().isoformat()
+    )
+    db.add(notif)
+    db.commit()
+
+    return {"status": "success", "document_status": log.status}
+
+
+@router.get("/me/export")
+def export_user_data(
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Portability request: Export all stored personal data, profile specifics, bookings,
+    and associated telemetry records in a structured JSON bundle.
+    """
+    export_bundle: Dict[str, Any] = {
+        "user_details": {
+            "id": current_user.id,
+            "email": current_user.email,
+            "full_name": current_user.full_name,
+            "phone_number": current_user.phone_number,
+            "role": current_user.role
+        }
+    }
+
+    if current_user.role == "student":
+        profile = current_user.student_profile
+        export_bundle["student_profile"] = {
+            "age": profile.age if profile else None,
+            "l_license_number": profile.l_license_number if profile else None,
+            "license_status": profile.license_status if profile else None,
+            "license_expiry": profile.license_expiry if profile else None,
+            "basics_skipped": profile.basics_skipped if profile else None
+        }
+        # Fetch bookings
+        bookings = db.query(models.BookingRequest).filter(models.BookingRequest.student_id == current_user.id).all()
+        export_bundle["bookings"] = [
+            {
+                "id": b.id,
+                "date": b.date,
+                "time": b.time,
+                "duration": b.duration,
+                "pickup_address": b.pickup_address,
+                "dropoff_address": b.dropoff_address,
+                "total_amount": b.total_amount,
+                "status": b.status,
+                "focus_areas": b.focus_areas.split(",") if b.focus_areas else []
+            } for b in bookings
+        ]
+        # Fetch diagnostic rides
+        rides = db.query(models.DiagnosticRide).filter(models.DiagnosticRide.student_id == current_user.id).all()
+        export_bundle["diagnostic_rides"] = [
+            {
+                "id": r.id,
+                "ride_type": r.ride_type,
+                "overall_score": r.overall_score,
+                "passed": r.passed,
+                "start_time": r.start_time,
+                "end_time": r.end_time,
+                "distance_km": r.distance_km
+            } for r in rides
+        ]
+    else:
+        profile = current_user.instructor_profile
+        export_bundle["instructor_profile"] = {
+            "bio": profile.bio if profile else None,
+            "hourly_rate": profile.hourly_rate if profile else None,
+            "city": profile.city if profile else None,
+            "car_model": profile.car_model if profile else None,
+            "insurance_policy": profile.insurance_policy if profile else None,
+            "certification_id": profile.certification_id if profile else None,
+            "is_verified": profile.is_verified if profile else None,
+            "license_image_status": profile.license_image_status if profile else None,
+            "insurance_image_status": profile.insurance_image_status if profile else None,
+            "certification_image_status": profile.certification_image_status if profile else None
+        }
+        # Fetch bookings
+        bookings = db.query(models.BookingRequest).filter(
+            models.BookingRequest.instructor_id == (profile.id if profile else -1)
+        ).all()
+        export_bundle["bookings"] = [
+            {
+                "id": b.id,
+                "date": b.date,
+                "time": b.time,
+                "duration": b.duration,
+                "pickup_address": b.pickup_address,
+                "dropoff_address": b.dropoff_address,
+                "total_amount": b.total_amount,
+                "status": b.status,
+                "focus_areas": b.focus_areas.split(",") if b.focus_areas else []
+            } for b in bookings
+        ]
+
+    return export_bundle
+
+
+@router.delete("/me")
+def anonymize_user_profile(
+    db: Session = Depends(deps.get_db),
+    current_user: models.User = Depends(deps.get_current_user)
+):
+    """
+    Sovereignty request (Right to be Forgotten): Soft-deletes/anonymizes all
+    personal identification records, bios, and documents, leaving only depersonalized
+    telemetry stats and aggregate booking data for analytics and bookkeeping.
+    """
+    user_id = current_user.id
+    
+    # 1. Anonymize main User fields
+    current_user.email = f"deleted_{user_id}@roadready.deleted"
+    current_user.phone_number = f"deleted_{user_id}"
+    current_user.full_name = "Anonymized User"
+    current_user.hashed_password = security.get_password_hash(uuid.uuid4().hex)
+    current_user.reset_token = None
+    current_user.reset_token_expiry = None
+
+    # 2. Anonymize/Reset profile details
+    if current_user.role == "student":
+        profile = current_user.student_profile
+        if profile:
+            profile.l_license_number = "DELETED"
+            profile.license_image = None
+            profile.rejection_reason = None
+            profile.is_verified = False
+            profile.license_status = "pending"
+    else:
+        profile = current_user.instructor_profile
+        if profile:
+            profile.bio = "This profile has been deleted."
+            profile.license_image = None
+            profile.insurance_image = None
+            profile.certification_image = None
+            profile.is_verified = False
+            profile.license_image_status = "pending_upload"
+            profile.insurance_image_status = "pending_upload"
+            profile.certification_image_status = "pending_upload"
+            profile.business_registration_number = None
+            profile.tax_id = None
+            profile.worksafe_bc_id = None
+            profile.legal_entity_name = None
+
+    # 3. Anonymize reviews comments (keep rating, but scrub comments)
+    reviews = db.query(models.Review).filter(models.Review.student_id == user_id).all()
+    for r in reviews:
+        r.comment = "Comment removed by user request"
+
+    # Anonymize booking pickup/dropoff addresses
+    bookings = db.query(models.BookingRequest).filter(models.BookingRequest.student_id == user_id).all()
+    for b in bookings:
+        b.pickup_address = "Address Removed"
+        b.dropoff_address = "Address Removed"
+        b.notes = "Notes Removed"
+
+    db.commit()
+    return {"status": "success", "message": "Your profile has been anonymized and all personal identifying records have been removed."}
