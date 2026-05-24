@@ -30,6 +30,7 @@ fun RoadReadyTextField(
     onImeAction: () -> Unit = {},
     isError: Boolean = false,
     errorMessage: String? = null,
+    enabled: Boolean = true,
 ) {
     Column(modifier = modifier) {
         OutlinedTextField(
@@ -39,6 +40,7 @@ fun RoadReadyTextField(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             isError = isError,
+            enabled = enabled,
             visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = KeyboardOptions(
                 keyboardType = keyboardType,
