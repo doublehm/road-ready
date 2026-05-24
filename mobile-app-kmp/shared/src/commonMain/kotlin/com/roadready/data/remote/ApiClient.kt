@@ -30,9 +30,9 @@ class ApiClient(
     private val tokenProvider: () -> String?,
 ) {
     val httpClient: HttpClient = createPlatformHttpClient().config {
+        expectSuccess = true
         defaultRequest {
             url(baseUrl)
-            contentType(ContentType.Application.Json)
             tokenProvider()?.let { token ->
                 header("Authorization", "Bearer $token")
             }
