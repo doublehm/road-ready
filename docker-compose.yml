@@ -6,7 +6,7 @@ services:
     container_name: roadready_app
     restart: always
     ports:
-      - "10.66.66.2:8000:8000"
+      - "8000:8000"
     volumes:
       # Persist the SQLite database file
       - ./roadready.db:/app/roadready.db
@@ -32,7 +32,7 @@ services:
     container_name: roadready_mongodb
     restart: always
     ports:
-      - "10.66.66.2:27017:27017"
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     healthcheck:

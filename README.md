@@ -76,7 +76,27 @@ graph TD
 - MongoDB running locally (or via Docker)
 - Android Studio / Xcode (for mobile builds)
 
-### 1. Running the Backend
+### 1. Running the Backend & Databases
+
+You can run the backend services in one of two ways:
+
+#### Option A: Running with Docker Compose (Recommended & Easiest)
+This option automatically builds the backend container and runs a local MongoDB database instance:
+1. Make sure you have Docker installed and running.
+2. Build and start the containers in the root directory:
+   ```bash
+   docker compose up --build
+   ```
+3. Once the servers are running, seed the databases by running these commands in a separate terminal:
+   ```bash
+   docker compose exec web python seed.py
+   docker compose exec web python seed_booking.py
+   docker compose exec web python seed_quiz_comprehensive.py
+   ```
+   The API will be available at `http://localhost:8000` and API docs at `http://localhost:8000/docs`.
+
+#### Option B: Running with a Local Virtual Environment
+Use this option if you want to run Python and MongoDB manually outside of Docker:
 1. Clone the repository and navigate to the project directory.
 2. Create and activate a virtual environment:
    ```bash
@@ -98,6 +118,7 @@ graph TD
    ./run_server.sh
    ```
    The backend will be available at `http://localhost:8000`. API documentation can be accessed at `http://localhost:8000/docs`.
+
 
 ### 2. Running the React Native Mobile App
 1. Navigate to the mobile app directory:
