@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "REACT_NATIVE_PACKAGER_HOSTNAME=10.66.66.2 node node_modules/expo/bin/cli start --offline",
-    "android": "REACT_NATIVE_PACKAGER_HOSTNAME=10.66.66.2 node node_modules/expo/bin/cli start --android --offline",
-    "ios": "REACT_NATIVE_PACKAGER_HOSTNAME=10.66.66.2 node node_modules/expo/bin/cli start --ios --offline",
-    "web": "node node_modules/expo/bin/cli start --web --offline",
+    "start": "expo start --offline",
+    "android": "expo start --android --offline",
+    "ios": "expo start --ios --offline",
+    "web": "expo start --web --offline",
     "test": "jest"
   },
   "jest": {
