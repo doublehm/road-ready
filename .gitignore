@@ -38,3 +38,16 @@ gh_deploy_key.pub
 new_deploy_key_rsa*
 node_modules/
 .aider*
+
+# Local AI workspace logs and temporary files
+geminichat.md
+progress.md
+gemini.md
+improve_road_ready_ui.md
+mobile_app_ui_improvement.md
+PODCAST_TRANSCRIPT.md
+*.orig
+*.rej
+*.bak
+server_stdout.log
+server_8001.log
